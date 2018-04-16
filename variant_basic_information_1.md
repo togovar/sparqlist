@@ -9,7 +9,7 @@
 
 http://togovar.l5dev.jp/sparql-test
 
-## `result` fetch basic information
+## `result1` fetch basic information
 
 ```sparql
 DEFINE sql:select-option "order"
@@ -29,19 +29,46 @@ WHERE {
 }
 ```
 
+## `so_id`
+
+```javascript
+({
+  json({result1}) {
+    var r = result1.results.bindings;
+    return r[0].var_class.value;
+  }
+})
+```
+
+## `result2` fetch display term for variant_class
+
+```sparql
+DEFINE sql:select-option "order"
+
+PREFIX obo: <http://purl.obolibrary.org/obo/>
+
+SELECT ?label
+FROM <http://togovar.org/graph/so>
+WHERE {
+  VALUES ?so { obo:{{so_id}} }
+  ?so rdfs:label ?label .
+}
+```
+
 ## Output
 
 ```javascript
 ({
-  json({result}) {
-    var r = result.results.bindings;
+  json({result1,result2}) {
+    var r1 = result1.results.bindings;
+    var r2 = result2.results.bindings;
     var obj = [
                 { header: 'TogoVar ID',
-                    data: 'tgv' + r[0].tgv_id.value },
+                    data: 'tgv' + r1[0].tgv_id.value },
                 { header: 'rs number',
-                    data: r[0].rs ? r[0].rs.value : '' },
+                    data: r1[0].rs ? r1[0].rs.value : '' },
                 { header: 'Variation',
-                    data: r[0].var_class.value }
+                    data: r2[0].label.value }
               ];
 
     return obj;
