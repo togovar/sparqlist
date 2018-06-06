@@ -7,31 +7,69 @@
 
 ## Endpoint
 
-http://togovar.l5dev.jp/sparql-test
+https://togovar.l5dev.jp/sparql
 
 ## `result` fetch basic information
 
+```sparql
+DEFINE sql:select-option "order"
+
+PREFIX dc: <http://purl.org/dc/terms/>
+PREFIX obo: <http://purl.obolibrary.org/obo/>
+PREFIX cv: <http://purl.jp/bio/10/clinvar/>
+PREFIX tgl: <http://togovar.org/lookup#>
+
+SELECT ?tgv_id ?variant_type ?rs ?chr ?start ?ref ?alt ?label ?condition ?significance ?hgvs
+FROM <http://togovar.org/graph/lookup>
+FROM <http://togovar.org/graph/so>
+FROM <http://togovar.org/graph/hgnc>
+WHERE {
+  VALUES ?var { <http://togovar.org/variation/{{tgv_id}}> }
+  ?var dc:identifier ?tgv_id ;
+    tgl:variant_type ?variant_type ;
+    tgl:chromosome ?chr ;
+    tgl:start ?start ;
+    tgl:stop ?stop ;
+    tgl:hgvs_g ?hgvs .
+  ?variant_type rdfs:label ?label .
+  OPTIONAL { ?var tgl:clinvar/tgl:conditions ?condition . }
+  OPTIONAL { ?var tgl:clinvar/tgl:significances ?significance . }
+  OPTIONAL { ?var tgl:ref ?ref . }
+  OPTIONAL { ?var tgl:alt ?alt . }
+  OPTIONAL { ?var tgl:rs ?rs . }
+}
+```
+
+## Output
+
 ```javascript
-async ({tgv_id}) => {
-  const options = {
-    method: 'GET',
-    headers: { 'Accept': 'application/json' }
-  };
+({
+  json({result}) {
+    var r = result.results.bindings;
+    var obj = [
+                { header: 'TogoVar ID',
+                    data: 'tgv' + r[0].tgv_id.value },
+                { header: 'refSNP ID',
+                    data: r[0].rs ? '<a href=\"https://www.ncbi.nlm.nih.gov/snp/' + r[0].rs.value.split('/').slice(-1)[0] + '\">' + r[0].rs.value.split('/').slice(-1)[0] + '</a>' : '' },
+                { header: 'Variation',
+                    data: r[0].label.value },
+                { header: 'Chromosome',
+                    data: r[0].chr.value },
+                { header: 'Position',
+                    data: r[0].start.value },
+                { header: 'Reference allele',
+                    data: r[0].ref ? r[0].ref.value : '' },
+                { header: 'Alternative allele',
+                    data: r[0] ? r[0].alt.value : '' },
+                { header: 'Condition',
+                    data: r[0].condition ? r.map(x => x.condition.value) : [] },
+                { header: 'Clinical Significance',
+                    data: r[0].significance ? Array.from(new Set(r.map(x => x.significance.value))).sort().join(" / ") : "" },
+                { header: 'HGVS',
+                    data: r[0].hgvs ? r[0].hgvs.value : '' }
+              ];
 
-  try{
-    var req = []
-
-    req[0] = fetch('http://togovar.l5dev.jp/sparqlist/api/variant_basic_information_1?tgv_id=' + tgv_id, options).then(res => res.json());
-    req[1] = fetch('http://togovar.l5dev.jp/sparqlist/api/variant_basic_information_2?tgv_id=' + tgv_id, options).then(res => res.json());
-    req[2] = fetch('http://togovar.l5dev.jp/sparqlist/api/variant_basic_information_3?tgv_id=' + tgv_id, options).then(res => res.json());
-
-    var data = Promise.all(req);
-
-    return data.then(function(res){
-      return res[0].concat(res[1], res[2]);
-    });
-  }catch(error){
-    console.log(error);
+    return obj;
   }
-};
+})
 ```
