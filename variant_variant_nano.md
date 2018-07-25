@@ -9,7 +9,7 @@ Obtain summary of a TogoVar variant
 
 ## Endpoint
 
-https://togovar.org/sparql
+https://togovar.biosciencedbc.jp/sparql
 
 ## `variants` description
 

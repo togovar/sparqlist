@@ -9,7 +9,7 @@ Obtain variant type of a TogoVar variant
 
 ## Endpoint
 
-https://togovar.org/sparql
+https://togovar.biosciencedbc.jp/sparql
 
 ## `variant_type`
 

@@ -7,7 +7,7 @@
 
 ## Endpoint
 
-https://togovar.l5dev.jp/sparql
+https://togovar.biosciencedbc.jp/sparql
 
 ## `result` fetch transcripts
 

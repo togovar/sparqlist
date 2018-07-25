@@ -10,7 +10,7 @@ Obtain variant significance of a TogoVar variant
 
 ## Endpoint
 
-https://togovar.org/sparql
+https://togovar.biosciencedbc.jp/sparql
 
 ## `results`
 
