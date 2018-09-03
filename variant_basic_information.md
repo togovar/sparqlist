@@ -60,7 +60,7 @@ WHERE {
                 { header: 'Reference allele',
                     data: r[0].ref ? r[0].ref.value : '' },
                 { header: 'Alternative allele',
-                    data: r[0] ? r[0].alt.value : '' },
+                    data: r[0].alt ? r[0].alt.value : '' },
                 { header: 'Condition',
                     data: r[0].condition ? r.map(x => x.condition.value) : [] },
                 { header: 'Clinical Significance',
