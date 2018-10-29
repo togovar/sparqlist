@@ -170,7 +170,7 @@ async ({pmid_mesh}) => {
   pmids.forEach(pmid => {
     var article = articles[pmid]
     results.data.push(
-      [ article.pmid, article.reference, article.year, article.citation, article.diseases ]
+      [ article.pmid, article.reference || 'N/A', article.year || 'N/A', article.citation || 0, article.diseases ]
     )
   })
 
