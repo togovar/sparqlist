@@ -22,7 +22,7 @@ PREFIX m2r: <http://med2rdf.org/ontology/med2rdf#>
 
 SELECT DISTINCT ?variant ?hgvs ?variant_type ?so_type ?reference ?start ?stop ?ref ?alt
 FROM <http://togovar.biosciencedbc.jp/graph/variant>
-FROM <http://togovar.biosciencedbc.jp/ontology/so>
+FROM <http://togovar.biosciencedbc.jp/graph/so>
 WHERE {
   VALUES ?variant { <http://togovar.biosciencedbc.jp/variant/{{tgv_id}}> }
   {
