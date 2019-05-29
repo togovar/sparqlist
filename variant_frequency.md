@@ -20,7 +20,7 @@ PREFIX dcterms: <http://purl.org/dc/terms/>
 PREFIX sio:  <http://semanticscience.org/resource/>
 PREFIX tgvo: <http://togovar.biosciencedbc.jp/ontology/>
 
-SELECT ?source ?num_alleles ?num_ref_alleles ?num_alt_alleles ?num_genotype_ref_homo ?num_genotype_hetero ?num_genotype_alt_homo ?frequency ?filter ?quality
+SELECT ?source ?num_alleles ?num_ref_alleles ?num_alt_alleles ?num_genotype_ref_homo ?num_genotype_hetero ?num_genotype_alt_homo ?frequency (GROUP_CONCAT(DISTINCT ?_filter ; separator = ",") AS ?filter) ?quality
 FROM <http://togovar.biosciencedbc.jp/graph/variant>
 FROM <http://togovar.biosciencedbc.jp/graph/variant/frequency/tommo>
 FROM <http://togovar.biosciencedbc.jp/graph/variant/frequency/jga_ngs>
@@ -42,7 +42,7 @@ WHERE {
     OPTIONAL { ?_f tgvo:numGenotypeHetero ?num_genotype_hetero . }
     OPTIONAL { ?_f tgvo:numGenotypeAltHomo ?num_genotype_alt_homo . }
 
-    OPTIONAL { ?_f tgvo:filter ?filter . }
+    OPTIONAL { ?_f tgvo:filter ?_filter . }
     OPTIONAL { ?_f tgvo:quality ?quality . }
   } UNION {
     ?variant tgvo:hasFrequency ?_f .
@@ -58,7 +58,7 @@ WHERE {
     OPTIONAL { ?_population tgvo:numGenotypeHetero ?num_genotype_hetero . }
     OPTIONAL { ?_population tgvo:numGenotypeAltHomo ?num_genotype_alt_homo . }
 
-    OPTIONAL { ?_population tgvo:filter ?filter . }
+    OPTIONAL { ?_population tgvo:filter ?_filter . }
     OPTIONAL { ?_population tgvo:quality ?quality . }
 
     BIND( CONCAT(?_source, ":", ?_label) AS ?source )
