@@ -1,4 +1,4 @@
-# Variant summary
+# Variant report / Summary
 
 ## Parameters
 

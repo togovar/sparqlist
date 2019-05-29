@@ -1,4 +1,4 @@
-# Variant gene
+# Variant report / Gene
 
 ## Parameters
 
