@@ -14,7 +14,7 @@
 
 {{{ep}}}
 
-## `graph` graph name
+## `graph`
 
 ```javascript
 ({
@@ -24,7 +24,7 @@
 })
 ```
 
-## `result` fetch basic information
+## `result`
 
 ```sparql
 DEFINE sql:select-option "order"

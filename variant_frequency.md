@@ -11,7 +11,7 @@
 
 {{{ep}}}
 
-## `result` fetch basic information
+## `result`
 
 ```sparql
 DEFINE sql:select-option "order"
