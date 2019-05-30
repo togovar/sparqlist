@@ -7,7 +7,7 @@
 * `tgv_id` TogoVar ID
   * default: tgv47263127
 * `assembly` assembly
-  * default: GRCh37
+  * default: GRCh38
   * example: GRCh37, GRCh38
 
 ## Endpoint
