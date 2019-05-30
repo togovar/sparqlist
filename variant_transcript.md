@@ -36,7 +36,7 @@ PREFIX faldo: <http://biohackathon.org/resource/faldo#>
 PREFIX m2r: <http://med2rdf.org/ontology/med2rdf#>
 PREFIX tgvo: <http://togovar.biosciencedbc.jp/ontology/>
 
-SELECT ?transcript ?enst_id ?gene_symbol ?gene_xref ?consequence_label ?hgvs_p ?hgvs_c ?sift ?polyphen
+SELECT ?transcript ?enst_id ?gene_symbol ?gene_xref (GROUP_CONCAT(DISTINCT ?_consequence_label ; separator = ",") AS ?consequence_label) ?hgvs_p ?hgvs_c ?sift ?polyphen
 FROM <http://togovar.biosciencedbc.jp/graph/variant>
 FROM <http://togovar.biosciencedbc.jp/graph/so>
 FROM <http://togovar.biosciencedbc.jp/graph/{{graph}}>
@@ -45,7 +45,7 @@ WHERE {
 
   ?variant tgvo:hasConsequence ?_consequence .
   ?_consequence rdf:type ?_consequence_type .
-  ?_consequence_type rdfs:label ?consequence_label .
+  ?_consequence_type rdfs:label ?_consequence_label .
 
   OPTIONAL { ?_consequence tgvo:sift ?sift . }
   OPTIONAL { ?_consequence tgvo:polyphen ?polyphen . }
