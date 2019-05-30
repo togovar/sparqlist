@@ -44,4 +44,5 @@ WHERE {
     FILTER( ?db IN ("MedGen") )
   }
 }
+ORDER BY ?title ?review_status ?interpretation ?last_evaluated ?condition
 ```
