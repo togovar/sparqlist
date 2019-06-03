@@ -32,8 +32,9 @@ LIMIT 20
 
 ```javascript
 ({rs2pmid}) => {
-  var prefix = "http://identifiers.org/pubmed/"
-  return rs2pmid.results.bindings.map(item => item.pmid_uri.value.replace(prefix, ""))
+  let prefix = "http://identifiers.org/pubmed/";
+  
+  return rs2pmid.results.bindings.map(item => item.pmid_uri.value.replace(prefix, ""));
 }
 ```
 
@@ -41,7 +42,7 @@ LIMIT 20
 
 ```javascript
 ({pmids}) => {
-  return pmids.map(pmid => "pmid:" + pmid).join(" ")
+  return pmids.map(pmid => "pmid:" + pmid).join(" ");
 }
 ```
 
@@ -49,7 +50,7 @@ LIMIT 20
 
 ```javascript
 ({pmids}) => {
-  return pmids.map(pmid => '"' + pmid + '"').join(" ")
+  return pmids.map(pmid => '"' + pmid + '"').join(" ");
 }
 ```
 
@@ -75,7 +76,7 @@ ORDER BY DESC(?year)
 
 ```javascript
 ({pmid2reference}) => {
-  return pmid2reference.results.bindings.map(item => item.pmid.value)
+  return pmid2reference.results.bindings.map(item => item.pmid.value);
 }
 ```
 
@@ -127,8 +128,9 @@ WHERE {
 
 ```javascript
 ({pmid2mesh}) => {
-  var prefix = "http://identifiers.org/mesh/"
-  return pmid2mesh.results.bindings.map(item => item.mesh_uri.value.replace(prefix, ""))
+  let prefix = "http://identifiers.org/mesh/";
+  
+  return pmid2mesh.results.bindings.map(item => item.mesh_uri.value.replace(prefix, ""));
 }
 ```
 
@@ -136,7 +138,7 @@ WHERE {
 
 ```javascript
 ({meshs}) => {
-  return meshs.map(mesh => "mesh:" + mesh).join(" ")
+  return meshs.map(mesh => "mesh:" + mesh).join(" ");
 }
 ```
 
@@ -164,63 +166,78 @@ WHERE {
 
 ```javascript
 ({ordered_pmids, pmid2reference, pmid2citation, mesh2label, pmid2mesh}) => {
-  var articles = {}
-  var mesh_lsd = {}
+  let articles = {};
+  let mesh_lsd = {};
+
   ordered_pmids.forEach(pmid => {
-    var pubmed = "<a href=\"https://www.ncbi.nlm.nih.gov/pubmed/" + pmid + "\">" + pmid + "</a>"
-    var pubtator = " (<a href=\"https://www.ncbi.nlm.nih.gov/CBBresearch/Lu/Demo/PubTator/curator_identifier.cgi?pmid=" + pmid + "&Gene_display=1&Disease_display=1&Mutation_display=1&Species_display=1&Chemical_display=1\">PubTator</a>)"
+    let pubmed = "<a href=\"https://www.ncbi.nlm.nih.gov/pubmed/" + pmid + "\">" + pmid + "</a>";
+    let pubtator = " (<a href=\"https://www.ncbi.nlm.nih.gov/CBBresearch/Lu/Demo/PubTator/curator_identifier.cgi?pmid=" + pmid + "&Gene_display=1&Disease_display=1&Mutation_display=1&Species_display=1&Chemical_display=1\">PubTator</a>)";
     articles[pmid] = {
       "pmid": pubmed + pubtator,
       "diseases": []
-    }
-  })
-  pmid2reference.results.bindings.forEach(item => {
-    var pmid = item.pmid.value
-    var html = ""
-    html += "<b>" + item.title.value + "</b><br>\n"
-    html += item.authors.value + "<br>\n"
-    html += "<i><b>" + item.journal.value + "</b></i><br>\n"
-    articles[pmid].reference = html
-    articles[pmid].year = item.year.value
-    // default value for citation
-    articles[pmid].citation = "<a href=\"http://colil.dbcls.jp/browse/papers/" + pmid + "/\">" + 0 + "</a>"
-  })
-  pmid2citation.results.bindings.forEach(item => {
-    var pmid = item.pmid.value
-    articles[pmid].citation = "<a href=\"http://colil.dbcls.jp/browse/papers/" + pmid + "/\">" + item.citation_count.value + "</a>"
-  })
-  mesh2label.results.bindings.forEach(item => {
-    var prefix = "http://purl.jp/bio/10/lsd/mesh/"
-    var mesh = item.mesh_uri.value.replace(prefix, "")
-    mesh_lsd[mesh] = {}
-    mesh_lsd[mesh].en = item.en_label.value || null
-  })
-  pmid2mesh.results.bindings.forEach(item => {
-    var prefix = "http://identifiers.org/pubmed/"
-    var pmid = item.pmid_uri.value.replace(prefix, "")
-    var prefix = "http://identifiers.org/mesh/"
-    var mesh = item.mesh_uri.value.replace(prefix, "")
-    var disease = "MeSH: " + "<a href=\"https://www.ncbi.nlm.nih.gov/mesh/?term=" + mesh + "\">" + mesh + "</a>"
-    if (mesh_lsd[mesh]) {
-      disease += " " + mesh_lsd[mesh].en
-    } else {
-      disease += " (not found in LSD)"
-    }
-    articles[pmid].diseases.push(disease)
-  })
+    };
+  });
 
-  var results = {
-    "columns": [["PMID"], ["Reference"], ["Year"], ["Cited by"], ["Diseases"]],
-    "data": []
-  }
+  pmid2reference.results.bindings.forEach(item => {
+    let pmid = item.pmid.value;
+    let html = "";
+    html += "<b>" + item.title.value + "</b><br>\n";
+    html += item.authors.value + "<br>\n";
+    html += "<i><b>" + item.journal.value + "</b></i><br>\n";
+    articles[pmid].reference = html;
+    articles[pmid].year = item.year.value;
+    // default value for citation
+    articles[pmid].citation = "<a href=\"http://colil.dbcls.jp/browse/papers/" + pmid + "/\">" + 0 + "</a>";
+  });
+
+  pmid2citation.results.bindings.forEach(item => {
+    let pmid = item.pmid.value;
+    articles[pmid].citation = "<a href=\"http://colil.dbcls.jp/browse/papers/" + pmid + "/\">" + item.citation_count.value + "</a>";
+  });
+
+  mesh2label.results.bindings.forEach(item => {
+    let mesh = item.mesh_uri.value.replace("http://purl.jp/bio/10/lsd/mesh/", "");
+    mesh_lsd[mesh] = {};
+    mesh_lsd[mesh].en = item.en_label.value || null;
+  });
+
+  pmid2mesh.results.bindings.forEach(item => {
+    let pmid = item.pmid_uri.value.replace("http://identifiers.org/pubmed/", "");
+    let mesh = item.mesh_uri.value.replace("http://identifiers.org/mesh/", "");
+    let disease = "MeSH: " + "<a href=\"https://www.ncbi.nlm.nih.gov/mesh/?term=" + mesh + "\">" + mesh + "</a>";
+    if (mesh_lsd[mesh]) {
+      disease += " " + mesh_lsd[mesh].en;
+    } else {
+      disease += " (not found in LSD)";
+    }
+    articles[pmid].diseases.push(disease);
+  });
+
+  let results = {
+    header: ["PMID", "Reference", "Year", "Cited by", "Diseases"],
+    data: []
+  };
   
   ordered_pmids.forEach(pmid => {
-    var article = articles[pmid]
+    let article = articles[pmid];
     results.data.push(
       [ article.pmid, article.reference, article.year, article.citation, article.diseases ]
-    )
-  })
+    );
+  });
 
   return results
 }
+```
+
+## `result`
+
+```javascript
+({
+  json({results}) {
+    return {
+      columns: results.header.map(x => [x]),
+      data: results.data
+    };
+  }
+})
 ```
