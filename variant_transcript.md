@@ -40,6 +40,7 @@ SELECT ?transcript ?enst_id ?gene_symbol ?gene_xref (GROUP_CONCAT(DISTINCT ?_con
 FROM <http://togovar.biosciencedbc.jp/graph/variant>
 FROM <http://togovar.biosciencedbc.jp/graph/so>
 FROM <http://togovar.biosciencedbc.jp/graph/{{graph}}>
+FROM <http://togovar.biosciencedbc.jp/graph/hgnc>
 WHERE {
   VALUES ?variant { <http://togovar.biosciencedbc.jp/variant/{{tgv_id}}> }
 
@@ -59,15 +60,17 @@ WHERE {
   }
 
   OPTIONAL {
-    ?_consequence tgvo:transcript ?transcript . 
-    OPTIONAL { ?transcript dc11:identifier ?enst_id . }
+    ?_consequence tgvo:transcript ?transcript .
+    OPTIONAL { ?transcript dcterms:identifier|dc11:identifier ?enst_id . }
   }
   OPTIONAL {
     ?_consequence tgvo:gene ?_gene .
-    ?_gene rdfs:label ?gene_symbol .
     OPTIONAL {
-      ?_gene rdfs:seeAlso ?gene_xref .
-      FILTER REGEX(STR(?gene_xref), "^http://identifiers.org/hgnc/")
+      ?_gene rdfs:label ?gene_symbol .
+    }
+    OPTIONAL {
+      ?_gene rdfs:seeAlso/^rdfs:seeAlso ?gene_xref .
+      FILTER ( strstarts(str(?gene_xref), "http://identifiers.org/hgnc/") ) .
     }
   }
 }
