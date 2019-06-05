@@ -45,13 +45,14 @@ WHERE {
 
   FILTER ( ?_vt IN (obo:SO_0001483, obo:SO_0000667, obo:SO_0000159, obo:SO_1000032, obo:SO_1000002) ) .
 
-  OPTIONAL { 
-    ?_cn tgvo:gene ?gene . 
-    OPTIONAL { ?gene rdfs:label ?symbol . }
-    OPTIONAL { 
-      ?gene rdfs:seeAlso ?gene_xref .
-      FILTER ( strstarts(str(?gene_xref), "http://identifiers.org/hgnc/") ) .
-      BIND ( IRI( REPLACE(str(?gene_xref), "HGNC:", "") ) AS ?hgnc )
+  OPTIONAL {
+    ?_cn tgvo:gene ?gene .
+    OPTIONAL {
+      ?gene rdfs:label ?symbol .
+    }
+    OPTIONAL {
+      ?gene rdfs:seeAlso/^rdfs:seeAlso ?hgnc .
+      FILTER ( strstarts(str(?hgnc), "http://identifiers.org/hgnc/") ) .
       OPTIONAL { ?hgnc dct:description ?approved_name . }
       OPTIONAL { ?hgnc skos:altLabel ?synonym . }
     }
