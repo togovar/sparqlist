@@ -19,13 +19,12 @@ PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX oa: <http://www.w3.org/ns/oa#>
 PREFIX dbsnp: <http://identifiers.org/dbsnp/>
 
-SELECT ?pmid_uri
+SELECT DISTINCT ?pmid_uri
 WHERE {
    ?node rdf:type oa:Annotation ;
          oa:hasTarget ?pmid_uri ;
          oa:hasBody dbsnp:{{rs}} .
 }
-LIMIT 20
 ```
 
 #### `pmids` Array of PubMed IDs
@@ -60,7 +59,7 @@ LIMIT 20
 PREFIX togows: <http://togows.dbcls.jp/ontology/ncbi-pubmed#>
 PREFIX colil: <http://purl.jp/bio/10/colil/ontology/201303#>
 
-SELECT ?pmid ?title ?authors ?journal ?year
+SELECT DISTINCT ?pmid ?title ?authors ?journal ?year
 WHERE {
   VALUES ?pmid  { {{pmid_values}} }
   ?article colil:Authors ?authors ;
@@ -69,7 +68,6 @@ WHERE {
            togows:so ?journal ;
            togows:dp ?year .
 }
-ORDER BY DESC(?year)
 ```
 
 #### `ordered_pmids` Array of PubMed IDs ordered by year
