@@ -41,7 +41,7 @@ WHERE {
 
 ```javascript
 ({pmids}) => {
-  return pmids.map(pmid => "pmid:" + pmid).join(" ");
+  return (pmids && pmids.length > 0) ? pmids.map(pmid => "pmid:" + pmid).join(" ") : '""';
 }
 ```
 
@@ -49,7 +49,7 @@ WHERE {
 
 ```javascript
 ({pmids}) => {
-  return pmids.map(pmid => '"' + pmid + '"').join(" ");
+  return (pmids && pmids.length > 0) ? pmids.map(pmid => '"' + pmid + '"').join(" ") : '""';
 }
 ```
 
@@ -202,7 +202,7 @@ WHERE {
   pmid2mesh.results.bindings.forEach(item => {
     let pmid = item.pmid_uri.value.replace("http://identifiers.org/pubmed/", "");
     let mesh = item.mesh_uri.value.replace("http://identifiers.org/mesh/", "");
-    let disease = "MeSH: " + "<a href=\"https://www.ncbi.nlm.nih.gov/mesh/?term=" + mesh + "\">" + mesh + "</a>";
+    let disease = "<a href=\"https://www.ncbi.nlm.nih.gov/mesh/?term=" + mesh + "\">" + mesh + "</a>";
     if (mesh_lsd[mesh]) {
       disease += " " + mesh_lsd[mesh].en;
     } else {
@@ -212,7 +212,7 @@ WHERE {
   });
 
   let results = {
-    header: ["PMID", "Reference", "Year", "Cited by", "Diseases"],
+    header: ["PMID", "Reference", "Year", "Cited by", "MeSH"],
     data: []
   };
   
