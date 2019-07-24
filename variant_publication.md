@@ -136,7 +136,7 @@ WHERE {
 
 ```javascript
 ({meshs}) => {
-  return (meshs && meshs.length > 0) ? meshs.map(x => '"' + x + '"').join(" ") : '""';
+  return (meshs && meshs.length > 0) ? meshs.map(x => "mesh:" + x).join(" ") : '""';
 }
 ```
 
