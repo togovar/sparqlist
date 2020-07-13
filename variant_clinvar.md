@@ -45,27 +45,26 @@ PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX dc: <http://purl.org/dc/terms/>
 
 SELECT ?title ?review_status ?interpretation ?last_evaluated ?condition ?medgen ?clinvar ?vcv
-FROM <http://togovar.biosciencedbc.jp/graph/clinvar>
 WHERE {
   VALUES ?clinvar { <http://ncbi.nlm.nih.gov/clinvar/variation/{{clinvarid}}> }
 
-  GRAPH <http://togovar.biosciencedbc.jp/graph/clinvar> {  
-    ?clinvar a cvo:VariationArchiveType ;
-      rdfs:label ?title ;
-      cvo:accession ?vcv ;
-      cvo:interpreted_record/cvo:review_status ?review_status .
+?clinvar a cvo:VariationArchiveType ;
+    rdfs:label ?title ;
+    cvo:accession ?vcv ;
+    cvo:interpreted_record/cvo:review_status ?review_status .
 
-    ?clinvar cvo:interpreted_record/cvo:rcv_list/cvo:rcv_accession ?_rcv .
+?clinvar cvo:interpreted_record/cvo:rcv_list/cvo:rcv_accession ?_rcv .
 
-    ?_rcv cvo:interpretation ?interpretation ;
-      cvo:date_last_evaluated ?last_evaluated  ;
-      cvo:interpreted_condition/rdfs:label ?condition .
+?_rcv cvo:interpretation ?interpretation ;
+    cvo:date_last_evaluated ?last_evaluated  .
+  
+  OPTIONAL {
+    ?_rcv cvo:interpreted_condition ?node .
 
-    OPTIONAL {
-      ?_rcv cvo:interpreted_condition/dc:source ?db .
-      ?_rcv cvo:interpreted_condition/dc:identifier ?medgen .
-      FILTER( ?db IN ("MedGen") )
-    }
+    ?node dc:source ?db ;
+      dc:identifier ?medgen ;
+      rdfs:label ?condition .
+    FILTER( ?db IN ("MedGen") ).
   }
 }
 ORDER BY ?title ?review_status ?interpretation DESC(?last_evaluated) ?condition
