@@ -5,7 +5,7 @@
 * `ep` Endpoint
   * default: https://togovar.biosciencedbc.jp/sparql
 * `tgv_id` TogoVar ID
-  * default: tgv18085
+  * default: tgv219804
 
 ## Endpoint
 
@@ -16,52 +16,61 @@
 ```sparql
 DEFINE sql:select-option "order"
 
-PREFIX dcterms: <http://purl.org/dc/terms/>
-PREFIX sio:  <http://semanticscience.org/resource/>
-PREFIX tgvo: <http://togovar.biosciencedbc.jp/ontology/>
+PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX sio: <http://semanticscience.org/resource/>
+PREFIX tgvo: <http://togovar.biosciencedbc.jp/vocabulary/>
+PREFIX exo: <http://purl.jp/bio/10/exac/>
 
-SELECT ?source ?num_alleles ?num_ref_alleles ?num_alt_alleles ?num_genotype_ref_homo ?num_genotype_hetero ?num_genotype_alt_homo ?frequency (GROUP_CONCAT(DISTINCT ?_filter ; separator = ",") AS ?filter) ?quality
-FROM <http://togovar.biosciencedbc.jp/graph/variant>
-FROM <http://togovar.biosciencedbc.jp/graph/variant/frequency/tommo>
-FROM <http://togovar.biosciencedbc.jp/graph/variant/frequency/jga_ngs>
-FROM <http://togovar.biosciencedbc.jp/graph/variant/frequency/jga_snp>
-FROM <http://togovar.biosciencedbc.jp/graph/variant/frequency/hgvd>
-FROM <http://togovar.biosciencedbc.jp/graph/variant/frequency/exac>
+SELECT ?source ?num_alleles ?num_ref_alleles ?num_alt_alleles ?frequency ?num_genotype_ref_homo ?num_genotype_hetero ?num_genotype_alt_homo (GROUP_CONCAT(DISTINCT ?_filter ; separator = ", ") AS ?filter) ?quality
+FROM <http://togovar.biosciencedbc.jp/variation>
+FROM <http://togovar.biosciencedbc.jp/variation/frequency/exac>
+FROM <http://togovar.biosciencedbc.jp/variation/frequency/gem_j_wga>
+FROM <http://togovar.biosciencedbc.jp/variation/frequency/hgvd>
+FROM <http://togovar.biosciencedbc.jp/variation/frequency/jga_ngs>
+FROM <http://togovar.biosciencedbc.jp/variation/frequency/jga_snp>
+FROM <http://togovar.biosciencedbc.jp/variation/frequency/tommo_4.7kjpn>
 WHERE {
-  VALUES ?variant { <http://togovar.biosciencedbc.jp/variant/{{tgv_id}}> }
+  VALUES ?tgv_id { "{{tgv_id}}" }
+
+  ?variation dct:identifier ?tgv_id ;
+             rdfs:label ?label .
 
   {
-    ?variant tgvo:hasFrequency ?_f .
-    ?_f rdfs:label ?source ;
-      tgvo:numAlleles ?num_alleles ;
-      tgvo:numRefAlleles ?num_ref_alleles ;
-      tgvo:numAltAlleles ?num_alt_alleles ;
-      tgvo:frequency ?frequency .
+    ?variation tgvo:statistics ?_stat .
 
-    OPTIONAL { ?_f tgvo:numGenotypeRefHomo ?num_genotype_ref_homo . }
-    OPTIONAL { ?_f tgvo:numGenotypeHetero ?num_genotype_hetero . }
-    OPTIONAL { ?_f tgvo:numGenotypeAltHomo ?num_genotype_alt_homo . }
+    ?_stat dct:source ?source ;
+        tgvo:alleleNumber ?num_alleles ;
+        tgvo:alleleCount ?num_alt_alleles ;
+        tgvo:alleleFrequency ?frequency .
 
-    OPTIONAL { ?_f tgvo:filter ?_filter . }
-    OPTIONAL { ?_f tgvo:quality ?quality . }
+    OPTIONAL { ?_stat tgvo:filter ?_filter . }
+    OPTIONAL { ?_stat tgvo:quality ?quality . }
+
+    OPTIONAL { ?_stat tgvo:homozygousReferenceAlleleCount ?num_genotype_ref_homo . }
+    OPTIONAL { ?_stat tgvo:heterozygousAlleleCount ?num_genotype_hetero . }
+    OPTIONAL { ?_stat tgvo:homozygousAlternativeAlleleCount ?num_genotype_alt_homo . }
   } UNION {
-    ?variant tgvo:hasFrequency ?_f .
-    ?_f rdfs:label ?_source ;
-      sio:SIO_000028 ?_population .
-    ?_population rdfs:label ?_label ;
-      tgvo:numAlleles ?num_alleles ;
-      tgvo:numRefAlleles ?num_ref_alleles ;
-      tgvo:numAltAlleles ?num_alt_alleles ;
-      tgvo:frequency ?frequency .
+    ?exac dct:identifier ?label ;
+          exo:alleleCount ?num_alt_alleles ;
+          exo:alleleNum ?num_alleles ;
+          exo:alleleFrequency ?frequency ;
+          exo:filter ?_filter .
 
-    OPTIONAL { ?_population tgvo:numGenotypeRefHomo ?num_genotype_ref_homo . }
-    OPTIONAL { ?_population tgvo:numGenotypeHetero ?num_genotype_hetero . }
-    OPTIONAL { ?_population tgvo:numGenotypeAltHomo ?num_genotype_alt_homo . }
+    BIND ("ExAC" AS ?source)
+  } UNION {
+    ?exac dct:identifier ?label ;
+          exo:population ?_pop .
 
-    OPTIONAL { ?_population tgvo:filter ?_filter . }
-    OPTIONAL { ?_population tgvo:quality ?quality . }
+    ?_pop a exo:Population ;
+            rdfs:label ?_population ;
+            exo:alleleCount ?num_alt_alleles ;
+            exo:alleleNum ?num_alleles ;
+            exo:alleleFrequency ?frequency .
 
-    BIND( CONCAT(?_source, ":", ?_label) AS ?source )
+    BIND (CONCAT("ExAC:", ?_population) AS ?source)
   }
+
+  BIND ((?num_alleles - ?num_alt_alleles) AS ?num_ref_alleles)
 }
+ORDER BY ?source
 ```

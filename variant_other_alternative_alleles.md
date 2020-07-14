@@ -18,20 +18,23 @@
 ```sparql
 DEFINE sql:select-option "order"
 
-PREFIX tgv:   <http://togovar.biosciencedbc.jp/variant/>
+PREFIX dct: <http://purl.org/dc/terms/>
 PREFIX faldo: <http://biohackathon.org/resource/faldo#>
 PREFIX hco:   <http://identifiers.org/hco/>
 
 SELECT (IF(BOUND(?stop), CONCAT(?chromosome, ":", ?start, "-", ?stop), CONCAT(?chromosome, ":", ?start))) AS ?position
-FROM <http://togovar.biosciencedbc.jp/graph/variant>
+FROM <http://togovar.biosciencedbc.jp/variation>
 WHERE {
-  VALUES ?variant { tgv:{{tgv_id}} }
+    VALUES ?tgv_id { "tgv55413188" }
 
-  ?variant faldo:location/faldo:begin?/faldo:reference ?reference .
-  ?variant faldo:location/faldo:begin?/faldo:position ?start .
-  OPTIONAL { ?variant faldo:location/faldo:end/faldo:position ?stop . }
+    ?variation dct:identifier ?tgv_id ;
+        faldo:location ?_loc .
 
-  BIND( REPLACE(REPLACE(STR(?reference), hco:, ""), "#.*", "") AS ?chromosome )
+    ?_loc faldo:begin?/faldo:reference ?reference ;
+        faldo:begin?/faldo:position ?start .
+    OPTIONAL { ?_loc faldo:end/faldo:position ?stop . }
+
+    BIND (REPLACE(REPLACE(STR(?reference), hco:, ""), "/.*", "") AS ?chromosome)
 }
 ```
 

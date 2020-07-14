@@ -5,9 +5,9 @@
 * `ep` Endpoint
   * default: https://togovar.biosciencedbc.jp/sparql
 * `tgv_id` TogoVar ID
-  * default: tgv47263127
+  * default: tgv219804
 * `assembly` assembly
-  * default: GRCh38
+  * default: GRCh37
   * example: GRCh37, GRCh38
 
 ## Endpoint
@@ -30,32 +30,30 @@
 DEFINE sql:select-option "order"
 
 PREFIX dct: <http://purl.org/dc/terms/>
-PREFIX obo: <http://purl.obolibrary.org/obo/>
-PREFIX tgvo: <http://togovar.biosciencedbc.jp/ontology/>
+PREFIX cvo:  <http://purl.jp/bio/10/clinvar/>
+PREFIX tgvo: <http://togovar.biosciencedbc.jp/vocabulary/>
 
-SELECT DISTINCT ?variant ?gene ?symbol ?approved_name ?synonym
-FROM <http://togovar.biosciencedbc.jp/graph/variant>
-FROM <http://togovar.biosciencedbc.jp/graph/{{graph}}>
-FROM <http://togovar.biosciencedbc.jp/graph/hgnc>
+SELECT DISTINCT ?variation ?gene ?symbol ?approved_name ?synonym
+FROM <http://togovar.biosciencedbc.jp/variation>
+FROM <http://togovar.biosciencedbc.jp/{{graph}}>
+FROM <http://togovar.biosciencedbc.jp/hgnc>
 WHERE {
-  VALUES ?variant { <http://togovar.biosciencedbc.jp/variant/{{tgv_id}}> }
+  VALUES ?tgv_id { "{{tgv_id}}" }
 
-  ?variant a ?_vt ;
-    tgvo:hasConsequence ?_cn .
+  ?variation dct:identifier ?tgv_id ;
+             tgvo:hasConsequence ?_cn .
 
-  FILTER ( ?_vt IN (obo:SO_0001483, obo:SO_0000667, obo:SO_0000159, obo:SO_1000032, obo:SO_1000002) ) .
+  ?_cn tgvo:gene ?gene .
+  FILTER STRSTARTS(STR(?gene), "http://rdf.ebi.ac.uk/resource/ensembl/ENSG")
 
   OPTIONAL {
-    ?_cn tgvo:gene ?gene .
-    OPTIONAL {
-      ?gene rdfs:label ?symbol .
-    }
-    OPTIONAL {
-      ?gene rdfs:seeAlso/^rdfs:seeAlso ?hgnc .
-      FILTER ( strstarts(str(?hgnc), "http://identifiers.org/hgnc/") ) .
-      OPTIONAL { ?hgnc dct:description ?approved_name . }
-      OPTIONAL { ?hgnc skos:altLabel ?synonym . }
-    }
+    ?gene rdfs:label ?symbol .
+  }
+  OPTIONAL {
+    ?gene rdfs:seeAlso/^rdfs:seeAlso ?hgnc .
+    FILTER STRSTARTS(STR(?hgnc), "http://identifiers.org/hgnc/")
+    OPTIONAL { ?hgnc dct:description ?approved_name . }
+    OPTIONAL { ?hgnc skos:altLabel ?synonym . }
   }
 }
 ```
