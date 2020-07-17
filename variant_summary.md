@@ -21,8 +21,9 @@ PREFIX obo: <http://purl.obolibrary.org/obo/>
 PREFIX obo_in_owl: <http://www.geneontology.org/formats/oboInOwl#>
 PREFIX faldo: <http://biohackathon.org/resource/faldo#>
 PREFIX m2r: <http://med2rdf.org/ontology/med2rdf#>
+PREFIX tgvo: <http://togovar.biosciencedbc.jp/vocabulary/>
 
-SELECT DISTINCT ?tgv_id ?variation ?label ?type_label ?so ?reference ?start ?stop ?ref ?alt
+SELECT DISTINCT ?tgv_id ?variation ?label ?type_label ?so ?reference ?start ?stop ?ref ?alt ?hgvs
 FROM <http://togovar.biosciencedbc.jp/variation>
 FROM <http://togovar.biosciencedbc.jp/so>
 WHERE {
@@ -47,6 +48,11 @@ WHERE {
         obo_in_owl:id ?_so_id .
 
       BIND(REPLACE(STR(?_so_id), ":", "_") AS ?so)
+    }
+
+    OPTIONAL {
+       ?variation tgvo:hasConsequence/rdfs:label ?hgvs .
+       FILTER(!STRSTARTS(?hgvs, 'ENS'))
     }
 }
 ```
