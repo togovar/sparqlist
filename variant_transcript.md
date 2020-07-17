@@ -55,11 +55,11 @@ WHERE {
 
   OPTIONAL {
     ?_consequence rdfs:label ?hgvs_p .
-    FILTER REGEX(?hgvs_p, "^ENSP")
+    FILTER STRSTARTS(?hgvs_p, 'ENSP')
   }
   OPTIONAL {
     ?_consequence rdfs:label ?hgvs_c .
-    FILTER REGEX(?hgvs_c, "^ENST")
+    FILTER STRSTARTS(?hgvs_p, 'ENST')
   }
 
   OPTIONAL {
