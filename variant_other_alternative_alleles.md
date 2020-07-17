@@ -14,38 +14,31 @@
 
 {{ep}}
 
-## `position`
+## `label`
 ```sparql
 DEFINE sql:select-option "order"
 
 PREFIX dct: <http://purl.org/dc/terms/>
-PREFIX faldo: <http://biohackathon.org/resource/faldo#>
-PREFIX hco:   <http://identifiers.org/hco/>
 
-SELECT (IF(BOUND(?stop), CONCAT(?chromosome, ":", ?start, "-", ?stop), CONCAT(?chromosome, ":", ?start))) AS ?position
+SELECT ?label
 FROM <http://togovar.biosciencedbc.jp/variation>
 WHERE {
-    VALUES ?tgv_id { "tgv55413188" }
+    VALUES ?tgv_id { "{{tgv_id}}" }
 
     ?variation dct:identifier ?tgv_id ;
-        faldo:location ?_loc .
-
-    ?_loc faldo:begin?/faldo:reference ?reference ;
-        faldo:begin?/faldo:position ?start .
-    OPTIONAL { ?_loc faldo:end/faldo:position ?stop . }
-
-    BIND (REPLACE(REPLACE(STR(?reference), hco:, ""), "/.*", "") AS ?chromosome)
+        rdfs:label ?label .
 }
 ```
 
 ## `result`
 
 ```javascript
-async ({search_api, position}) => {
-  let binding = position.results.bindings[0];
+async ({search_api, label}) => {
+  const binding = label.results.bindings[0];
 
   if (binding) {
-    let res = await fetch(search_api.concat("?stat=0&quality=0&term=", binding.position.value));
+    const position = `${binding.label.value.split('-')[0]}:${binding.label.value.split('-')[1]}`;
+    const res = await fetch(search_api.concat("?stat=0&quality=0&term=", position));
     return res.json();
   } else {
     return { data: [] };
