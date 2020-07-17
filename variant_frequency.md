@@ -9,7 +9,7 @@
 
 ## Endpoint
 
-{{{ep}}}
+{{ep}}
 
 ## `result`
 

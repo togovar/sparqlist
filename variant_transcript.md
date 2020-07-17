@@ -12,7 +12,7 @@
 
 ## Endpoint
 
-{{{ep}}}
+{{ep}}
 
 ## `graph`
 

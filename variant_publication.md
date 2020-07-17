@@ -12,7 +12,7 @@ Generate rs2pubmed table data by dbSNP ID
 
 ## Endpoint
 
-{{{ep}}}
+{{ep}}
 
 ## `rs2pmid` dbSNP ID to PubMed Info by Pubtator and PubMed
 
