@@ -21,7 +21,7 @@ PREFIX sio: <http://semanticscience.org/resource/>
 PREFIX tgvo: <http://togovar.biosciencedbc.jp/vocabulary/>
 PREFIX exo: <http://purl.jp/bio/10/exac/>
 
-SELECT ?source ?num_alleles ?num_ref_alleles ?num_alt_alleles ?frequency ?num_genotype_ref_homo ?num_genotype_hetero ?num_genotype_alt_homo (GROUP_CONCAT(DISTINCT ?_filter ; separator = ", ") AS ?filter) ?quality
+SELECT ?source ?num_alleles ?num_alt_alleles ?frequency ?num_genotype_ref_homo ?num_genotype_hetero ?num_genotype_alt_homo (GROUP_CONCAT(DISTINCT ?_filter ; separator = ", ") AS ?filter) ?quality
 FROM <http://togovar.biosciencedbc.jp/variation>
 FROM <http://togovar.biosciencedbc.jp/variation/frequency/exac>
 FROM <http://togovar.biosciencedbc.jp/variation/frequency/gem_j_wga>
@@ -44,7 +44,9 @@ WHERE {
         tgvo:alleleFrequency ?frequency .
 
     OPTIONAL { ?_stat tgvo:filter ?_filter . }
-    OPTIONAL { ?_stat tgvo:quality ?quality . }
+    OPTIONAL { ?_stat tgvo:quality ?_quality . }
+
+    BIND (IF(?source IN ("ToMMo 4.7KJPN", "HGVD", "JGA-SNP"), undef, ?_quality) AS ?quality)
 
     OPTIONAL { ?_stat tgvo:homozygousReferenceAlleleCount ?num_genotype_ref_homo . }
     OPTIONAL { ?_stat tgvo:heterozygousAlleleCount ?num_genotype_hetero . }
@@ -53,8 +55,10 @@ WHERE {
     ?exac dct:identifier ?label ;
           exo:alleleCount ?num_alt_alleles ;
           exo:alleleNum ?num_alleles ;
-          exo:alleleFrequency ?frequency ;
-          exo:filter ?_filter .
+          exo:alleleFrequency ?frequency .
+
+    OPTIONAL { ?exac exo:filter ?_filter . }
+    OPTIONAL { ?exac tgvo:statistics/tgvo:quality ?quality . }
 
     BIND ("ExAC" AS ?source)
   } UNION {
@@ -69,8 +73,6 @@ WHERE {
 
     BIND (CONCAT("ExAC:", ?_population) AS ?source)
   }
-
-  BIND ((?num_alleles - ?num_alt_alleles) AS ?num_ref_alleles)
 }
 ORDER BY ?source
 ```
