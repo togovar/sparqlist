@@ -31,16 +31,17 @@ WHERE {
 
     ?variation dct:identifier ?tgv_id ;
         rdfs:label ?label ;
+        faldo:location ?_loc ;
         a ?_type .
 
-    ?variation faldo:location+/faldo:reference ?reference .
+    ?_loc (faldo:end|faldo:after)?/faldo:reference ?reference .
 
     OPTIONAL { ?variation m2r:reference_allele ?ref . }
     OPTIONAL { ?variation m2r:alternative_allele ?alt . }
 
     FILTER ( ?_type IN (obo:SO_0001483, obo:SO_0000667, obo:SO_0000159, obo:SO_1000032, obo:SO_1000002) ) .
 
-  	OPTIONAL {
+    OPTIONAL {
       ?_type rdfs:label ?type_label ;
         obo_in_owl:id ?_so_id .
 
