@@ -23,7 +23,7 @@ PREFIX faldo: <http://biohackathon.org/resource/faldo#>
 PREFIX m2r: <http://med2rdf.org/ontology/med2rdf#>
 PREFIX tgvo: <http://togovar.biosciencedbc.jp/vocabulary/>
 
-SELECT DISTINCT ?tgv_id ?variation ?label ?type_label ?so ?reference ?start ?stop ?ref ?alt ?hgvs
+SELECT DISTINCT ?tgv_id ?variation ?label ?type_label ?so ?reference ?ref ?alt ?hgvs
 FROM <http://togovar.biosciencedbc.jp/variation>
 FROM <http://togovar.biosciencedbc.jp/so>
 WHERE {
@@ -31,15 +31,12 @@ WHERE {
 
     ?variation dct:identifier ?tgv_id ;
         rdfs:label ?label ;
-        faldo:location ?_loc ;
         a ?_type .
+
+    ?variation faldo:location+/faldo:reference ?reference .
 
     OPTIONAL { ?variation m2r:reference_allele ?ref . }
     OPTIONAL { ?variation m2r:alternative_allele ?alt . }
-
-    ?_loc faldo:begin?/faldo:reference ?reference ;
-        faldo:begin?/faldo:position ?start .
-    OPTIONAL { ?_loc faldo:end/faldo:position ?stop . }
 
     FILTER ( ?_type IN (obo:SO_0001483, obo:SO_0000667, obo:SO_0000159, obo:SO_1000032, obo:SO_1000002) ) .
 
