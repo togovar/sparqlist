@@ -33,7 +33,7 @@ PREFIX dct: <http://purl.org/dc/terms/>
 PREFIX cvo:  <http://purl.jp/bio/10/clinvar/>
 PREFIX tgvo: <http://togovar.biosciencedbc.jp/vocabulary/>
 
-SELECT DISTINCT ?variation ?gene ?symbol ?approved_name ?synonym
+SELECT DISTINCT ?variation ?gene ?hgnc ?symbol ?approved_name ?synonym
 FROM <http://togovar.biosciencedbc.jp/variation>
 FROM <http://togovar.biosciencedbc.jp/{{graph}}>
 FROM <http://togovar.biosciencedbc.jp/hgnc>
