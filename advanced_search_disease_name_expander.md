@@ -1,5 +1,5 @@
-# Disease name extender for Advanced search
-* Disease name in terms of MedGen is extended to subtypes by using the Mesh tree  
+# Disease name expander for Advanced search
+* A disease name in terms of MedGen is expanded to subtypes by using the Mesh tree  
 
 # Parameters
 * `disease_name_in_medgen` (Exact MedGen term including case-sensitivity must be specified) 
@@ -14,8 +14,8 @@
 
   
 # TestURL
-- [disease_name_in_medgen=Leukemia](https://togovar-dev.biosciencedbc.jp/sparqlist/api/advanced_search_disease_name_extender?disease_name_in_medgen=Leukemia)
-- [disease_name_in_medgen="Acute myeloid leukemia"](https://togovar-dev.biosciencedbc.jp/sparqlist/api/advanced_search_disease_name_extender?disease_name_in_medgen=Acute%20myeloid%20leukemia)
+- [disease_name_in_medgen=Leukemia](https://togovar-dev.biosciencedbc.jp/sparqlist/api/advanced_search_disease_name_expander?disease_name_in_medgen=Leukemia)
+- [disease_name_in_medgen="Acute myeloid leukemia"](https://togovar-dev.biosciencedbc.jp/sparqlist/api/advanced_search_disease_name_expander?disease_name_in_medgen=Acute%20myeloid%20leukemia)
 
 ## Endpoint
 https://togovar-dev.biosciencedbc.jp/sparql
