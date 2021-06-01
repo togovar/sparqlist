@@ -38,7 +38,12 @@ async ({search_api, label}) => {
 
   if (binding) {
     const position = `${binding.label.value.split('-')[0]}:${binding.label.value.split('-')[1]}`;
-    const res = await fetch(search_api.concat("?stat=0&quality=0&term=", position));
+    const res = await fetch(search_api.concat("?stat=0&quality=0&term=", position), {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      },
+    });
     return res.json();
   } else {
     return { data: [] };
