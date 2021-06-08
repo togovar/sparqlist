@@ -17,7 +17,7 @@
 DEFINE sql:select-option "order"
 
 PREFIX dct: <http://purl.org/dc/terms/>
-PREFIX cvo:  <http://purl.jp/bio/10/clinvar/>
+PREFIX cvo: <http://purl.jp/bio/10/clinvar/>
 PREFIX tgvo: <http://togovar.biosciencedbc.jp/vocabulary/>
 
 SELECT ?title ?review_status ?interpretation ?last_evaluated ?condition ?medgen ?clinvar ?vcv
@@ -41,7 +41,7 @@ WHERE {
 
   ?_rcv cvo:interpretation ?interpretation ;
         cvo:date_last_evaluated ?last_evaluated ;
-        cvo:interpreted_condition ?_interpreted_condition .
+        cvo:interpreted_condition_list/cvo:interpreted_condition ?_interpreted_condition .
 
   ?_interpreted_condition rdfs:label ?condition .
 
