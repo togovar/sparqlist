@@ -1,4 +1,4 @@
-# Disease selector (Mesh Diseases category [C] 階層から))
+# Disease selector for Advanced search
 
 # Parameters
 
@@ -32,7 +32,8 @@ SELECT DISTINCT
   ?mesh_child ?mesh_child_label (SAMPLE(?mesh_child_tree_number) AS ?mesh_child_tree) 
   (GROUP_CONCAT(DISTINCT ?medgen_child_label, "|") AS ?medgen_child_labels)
   count(distinct ?mesh_offsprings) -1 AS ?mesh_offsprings_count
-#  ?medgen_child ?medgen_child_label
+#  ?medgen_child 
+# ?medgen_child_label
 #  count(distinct ?medgen_offsprings) -1 AS ?medgen_offsprings_count
 #  ?medgen_offsprings_label 
 FROM <http://togovar.biosciencedbc.jp/mesh>
@@ -72,8 +73,10 @@ WHERE {
   }
   
    # mesh children (D015470) to mesh offsprings (D004915, D007946)
-  GRAPH <http://togovar.biosciencedbc.jp/mesh>{ 
-    ?mesh_offsprings meshv:treeNumber/meshv:parentTreeNumber* ?mesh_child_tree_number .
+  GRAPH <http://togovar.biosciencedbc.jp/mesh>{
+    OPTIONAL {
+      ?mesh_offsprings meshv:treeNumber/meshv:parentTreeNumber ?mesh_child_tree_number
+    }
   }
   
 }
@@ -85,17 +88,18 @@ ORDER BY ?mesh_child_tree
 - 整形
 ```javascript
 ({data})=>{
-  const idVarName = "mesh";
   const idPrfix = "http://id.nlm.nih.gov/mesh/";
   const categoryPrefix = "http://id.nlm.nih.gov/mesh/";
 
   return data.results.bindings.map(d=>{
     let labelSets = new Set();
+    labelSets = labelSets.add(d.mesh_child_label.value).add(d.medgen_child_labels.value);
+    
     return {
       categoryId: d.mesh_child.value.replace('http://id.nlm.nih.gov/mesh/',''),
-//      catgoryTreeId: d.mesh_child_tree_number.value.replace('http://id.nlm.nih.gov/mesh/',''),
-      label : labelSets.add(d.mesh_child_label.value).add(split('|',medgen_child_labels.value)),
-      hasChild : d.mesh_offsprings_count.value
+      label : Array.from(labelSets).join('|'), 
+      hasChild : (Number(d.mesh_offsprings_count.value) > 0 ? true : false)
+//      medgen_child : d.medgen_child.value
     }
   });
 }
