@@ -49,7 +49,7 @@ WHERE {
       ?slot olo:item ?item .
       ?item foaf:name ?author .
    }
-}
+} limit 10000
 ```
 
 ## `shaping_pmidinfo` Shaping pmid infomation
