@@ -87,7 +87,7 @@ SELECT <http://togovar.biosciencedbc.jp/ensembl37> count(*) WHERE {
   for (let x in list){
     result[list[x].results.bindings[0][key1].value] = list[x].results.bindings[0][key2].value
   }
-  
+
   return result
 }
 ```

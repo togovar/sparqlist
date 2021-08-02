@@ -27,8 +27,6 @@
 ## `result`
 
 ```sparql
-#DEFINE sql:select-option "order"
-
 PREFIX dct: <http://purl.org/dc/terms/>
 PREFIX cvo:  <http://purl.jp/bio/10/clinvar/>
 PREFIX tgvo: <http://togovar.biosciencedbc.jp/vocabulary/>

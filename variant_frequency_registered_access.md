@@ -6,12 +6,40 @@
   * default: https://togovar.biosciencedbc.jp/sparql
 * `tgv_id` TogoVar ID
   * default: tgv219804
+* `access_token` Access Token
 
 ## Endpoint
 
 {{ep}}
 
-## `result`
+## `get_attributes` account attributes for API response
+
+```javascript
+async ({access_token})=>{
+    const options = {
+      method: 'GET',
+      headers: {
+        'Accept':'application/json',
+        'Content-Type':'application/json',
+        'Authorization':'Bearer ' + access_token
+      }
+    };
+    try{
+      var res = await fetch("https://test51.biosciencedbc.jp/openam/oauth2/userinfo?realm=/togoVarRegisteredAccess", options).then(res=>res.json());
+      return res;
+    }catch(error){
+      console.log(error);
+    }
+};
+```
+
+## `search_account` Search Account for Virtuoso 
+# APIから取得したアカウントIDを基にvirtuosoを検索
+# アカウントIDが空の場合、検索したくないけど方法ある？
+
+
+
+## `search_frequency` Search Frequency for Virtuoso 
 
 ```sparql
 DEFINE sql:select-option "order"
@@ -75,4 +103,17 @@ WHERE {
   }
 }
 ORDER BY ?source
+```
+## `result` Compile results
+
+```javascript
+({get_attributes, search_frequency}) =>{
+
+   if(!get_attributes.sub || get_attributes.sub === ""){
+      return "＜制限公開データセットの情報を参照する場合はログインしてください＞";
+   }
+
+   return search_frequency;
+
+}
 ```

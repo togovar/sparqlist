@@ -1,101 +1,142 @@
-# Gene Report publication
+# Gene report / Publication
 
+Generate gene2pubmed table data by dbSNP ID
 ## Parameters
 
-* `hgnc_id` HGNC ID
+* `hgnc_id`
   * default: 404
-  * example: 404, 3084, 1101
+* `ep` Endpoint
+  * default: https://togovar.biosciencedbc.jp/sparql
 
 ## Endpoint
 
-https://togovar-dev.biosciencedbc.jp/sparql
+{{ ep }}
 
-
-### `hgnc2pmids` HGNC ID to PubMed IDs by Pubtator
+## `gene2pmid` HGNC gene ID to PubMed Info by Pubtator and PubMed
 
 ```sparql
-
+PREFIX hgnc: <http://identifiers.org/hgnc/HGNC_>
+PREFIX tgvo: <http://togovar.biosciencedbc.jp/vocabulary/>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX oa: <http://www.w3.org/ns/oa#>
-PREFIX dbsnp: <http://identifiers.org/dbsnp/>
-PREFIX ncbigene: <http://identifiers.org/ncbigene/>
 PREFIX bibo: <http://purl.org/ontology/bibo/>
 PREFIX dcterms: <http://purl.org/dc/terms/>
 PREFIX olo: <http://purl.org/ontology/olo/core#>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
-SELECT DISTINCT ?pmid_uri ?pmid ?title ?year ?authors ?journal  
+SELECT DISTINCT ?rs_id ?pmid_uri  ?pmid ?title ?year ?author ?journal
 WHERE {
-    VALUES ?hgnc_uri { <http://identifiers.org/hgnc/{{ hgnc_id }}> }
- 
-    GRAPH <http://togovar.biosciencedbc.jp/hgnc>{ 
-      ?hgnc_uri rdfs:seeAlso ?ncbi_gene.
-      ?ncbi_gene rdf:type  <http://identifiers.org/ncbigene>.
-    }
-  
-    GRAPH <http://togovar.biosciencedbc.jp/pubtator>{
-      ?pubtator_node rdf:type oa:Annotation ;
-       oa:hasBody ?ncbi_gene;
-       oa:hasTarget ?pmid_uri.
-    }
-   {
-    #  See https://docs.cambridgesemantics.com/anzograph/v2.2/userdoc/group-concat.htm
-    SELECT ?pmid_uri (CONCAT(group_concat(distinct ?author ; separator = ", "), ?et_al) AS ?authors)
-    WHERE {
-      GRAPH <http://togovar.biosciencedbc.jp/pubmed>{
-        ?pmid_uri dcterms:source ?journal.
-        ?pmid_uri dcterms:creator ?creator_node.
-        ?creator_node olo:length ?num_authors.
-        ?creator_node olo:slot ?slot .
-        ?slot olo:index ?item_idx.
-        ?slot olo:item ?item .
-        ?item foaf:name ?author .
-        FILTER(?item_idx < 2)
-        BIND(IF(?num_authors > 1, " et al.", "") AS ?et_al)
-       }
-     }
-     GROUP BY ?pmid_uri ?et_al
-   }
-      
-    GRAPH <http://togovar.biosciencedbc.jp/pubmed>{
-      ?pmid_uri dcterms:source ?journal ;
-      dcterms:title ?title ;
-      dcterms:issued ?year ;
-      bibo:pmid ?pmid .
-   }
-} ORDER BY DESC(?year) limit 100
-```
+  VALUES ?hgnc_uri { hgnc:{{ hgnc_id }} }
+  ?rs_id ^rdfs:seeAlso / tgvo:hasConsequence / tgvo:gene / rdfs:seeAlso ?hgnc_uri .
 
+  GRAPH <http://togovar.biosciencedbc.jp/pubtator>{
+    ?pubtator_node rdf:type oa:Annotation ;
+    oa:hasTarget ?pmid_uri ;
+    oa:hasBody ?rs_id .
+  }
+
+  GRAPH <http://togovar.biosciencedbc.jp/pubmed>{
+    ?pmid_uri dcterms:source ?journal ;
+    dcterms:creator ?creator_node ;
+    dcterms:title ?title ;
+    dcterms:issued ?year ;
+    bibo:pmid ?pmid .
+    ?creator_node olo:slot ?slot .
+    ?slot olo:item ?item .
+    ?item foaf:name ?author .
+  }
+} limit 10000
+```
 
 ## `shaping_pmidinfo` Shaping pmid infomation
 
 ```javascript
-({hgnc2pmids}) => {
+({gene2pmid}) => {
   let ref = {}
-  hgnc2pmids.results.bindings.forEach((x) => {
+  gene2pmid.results.bindings.forEach((x) => {
     if (ref[x.pmid.value]) {
-      ref[x.pmid.value]["author"] = ref[x.pmid.value]["author"] + ", " + x.authors.value
+      ref[x.pmid.value]["author"] = ref[x.pmid.value]["author"] + ", " + x.author.value
     }else{
-      ref[x.pmid.value] = {pmid_uri: x.pmid_uri.value, title: x.title.value, year: x.year.value, author: x.authors.value, journal: x.journal.value.replace("():",":")}
+      ref[x.pmid.value] = {pmid_uri: x.pmid_uri.value, title: x.title.value, year: x.year.value, author: x.author.value, journal: x.journal.value}
     }
   })
   return ref
 }
 ```
 
-## `pmids`
+## `rs2pmid_litvar` dbSNP ID to PubMed IDs by Litvar
 
 ```javascript
-({shaping_pmidinfo}) => {
-  return Object.keys(shaping_pmidinfo).filter(function (x, i, self){ return self.indexOf(x) === i;}).map(pmid => '"' + pmid + '"' ).join(" ")
+async ({gene2pmid})=>{
+  var rsids = [...new Set(gene2pmid.results.bindings.map(x => x.rs_id.value.replace("http://identifiers.org/dbsnp/" , "" )))];
+  var param = JSON.stringify({ "rsids" : rsids });
+  const options = {
+    method: 'POST',
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json'
+    },
+    body: param
+  };
+  try{
+    var res = await fetch("https://www.ncbi.nlm.nih.gov/research/bionlp/litvar/api/v1/public/rsids2pmids", options).then(res=>res.json());
+    var pmids = [];
+    for(var i=0; i < res.length; i++){
+      res[i]["pmids"].forEach( pmid => pmids.push(pmid.toString()))
+    }
+    return pmids;
+  }catch(error){
+    console.log(error);
+  }
+};
+```
 
+## `dup_pmid_litvar` Remove duplicate PMID
+
+```javascript
+({rs2pmid_litvar, shaping_pmidinfo}) => {
+  let ret = rs2pmid_litvar.filter(i => Object.keys(shaping_pmidinfo).indexOf(i)== -1)
+  if (ret.length > 0){ return ret.map(x => x.replace(/^/, "pubmed:")).join(" ") } else { return "'nodata'" }
 }
 ```
 
+## `concat_pmids` Concat PMIDs from Pubtator and Litvar
+
+```javascript
+({rs2pmid_litvar, shaping_pmidinfo}) => {
+  let ret = rs2pmid_litvar.concat(Object.keys(shaping_pmidinfo)).filter(function (x, i, self){ return self.indexOf(x) === i; });
+  if (ret.length > 0){ return ret.map(pmid => '"' + pmid + '"' ).join(" ") } else { return "'nodata'" }
+}
+```
+
+## `litvar2pmidinfo` PMIDs to infomation
+
+```sparql
+PREFIX bibo: <http://purl.org/ontology/bibo/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX olo: <http://purl.org/ontology/olo/core#>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX pubmed: <http://rdf.ncbi.nlm.nih.gov/pubmed/>
+SELECT DISTINCT ?pmid_uri  ?pmid ?title ?year ?author ?journal
+WHERE {
+  VALUES ?pmid_uri  { {{dup_pmid_litvar}} }
+  GRAPH <http://togovar.biosciencedbc.jp/pubmed>{
+    ?pmid_uri dcterms:source ?journal ;
+    dcterms:creator ?creator_node ;
+    dcterms:title ?title ;
+    dcterms:issued ?year ;
+    bibo:pmid ?pmid .
+    ?creator_node olo:slot ?slot .
+    ?slot olo:item ?item .
+    ?item foaf:name ?author .
+  }
+}
+```
 
 ## Endpoint
 http://colil.dbcls.jp/sparql
 
 ## `pmid2citation` PubMed IDs to citation count
+
 ```sparql
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -103,10 +144,9 @@ PREFIX bibo: <http://purl.org/ontology/bibo/>
 PREFIX colil: <http://purl.jp/bio/10/colil/ontology/201303#>
 PREFIX togows: <http://togows.dbcls.jp/ontology/ncbi-pubmed#>
 
-SELECT distinct ?pmid (COUNT(?citation_paper) AS ?citation_count)
+SELECT ?pmid (COUNT(?citation_paper) AS ?citation_count)
 WHERE {
-  VALUES ?pmid { {{pmids}} }
-#  VALUES ?pmid { {{concat_pmids}} }
+  VALUES ?pmid { {{concat_pmids}} }
   ?citation_paper bibo:cites ?reference_paper .
   ?reference_paper rdfs:seeAlso ?dummy .
   ?dummy rdf:type colil:PubMed ;
@@ -114,49 +154,70 @@ WHERE {
 }
 ```
 
+## `shaping_pmidinfo_litvar` Shaping PMIDs infomation
+
+```javascript
+({litvar2pmidinfo}) => {
+  let ref = {}
+  litvar2pmidinfo.results.bindings.forEach((x) => {
+    if (ref[x.pmid.value]) {
+      ref[x.pmid.value]["author"] = ref[x.pmid.value]["author"] + ", " + x.author.value
+    }else{
+      ref[x.pmid.value] = {pmid_uri: x.pmid_uri.value, title: x.title.value, year: x.year.value, author: x.author.value, journal: x.journal.value}
+    }
+  })
+  return ref
+}
+```
+
 ## `result` Compile results
 
 ```javascript
-({shaping_pmidinfo, pmid2citation}) =>{
+({rs, rs2pmid_litvar, shaping_pmidinfo, shaping_pmidinfo_litvar,pmid2citation}) =>{
   let articles = {};
   let mesh_lsd = {};
+  let ordered_pmids = Object.keys(shaping_pmidinfo).concat(Object.keys(shaping_pmidinfo_litvar)).sort()
   let pubtator_pmids = Object.keys(shaping_pmidinfo)
-  
-  
-  for (let pmid in shaping_pmidinfo){
-    console.log(shaping_pmidinfo[pmid].year);
+  let pmids_info = Object.assign(shaping_pmidinfo, shaping_pmidinfo_litvar)
+
+  for (let pmid in pmids_info){
+    console.log(pmids_info[pmid].year);
     let pubmed = "<a href=\"https://www.ncbi.nlm.nih.gov/pubmed/" + pmid + "\">" + pmid + "</a>";
     let pubtator = "<br>(<a href=\"https://www.ncbi.nlm.nih.gov/research/pubtator/?view=docsum&query=" + pmid + "\">PubTatorCentral</a>)";
+    let litvar = "<br>(<a href=\"https://www.ncbi.nlm.nih.gov/CBBresearch/Lu/Demo/LitVar/#!?query="+ rs + "\">Litvar</a>)";
     let pmid_info = pubmed;
     if(pubtator_pmids.includes(pmid)){
       pmid_info += pubtator;
     }
-    
+    if(rs2pmid_litvar.includes(pmid)){
+      pmid_info += litvar;
+    }
+
     articles[pmid] = {
       pmid: pmid_info ,
       diseases: []
     };
-    
+
     let html = "";
-    html += "<b>" + shaping_pmidinfo[pmid].title + "</b><br>\n";
-    html += shaping_pmidinfo[pmid].author + "<br>\n";
-    html += "<i><b>" + shaping_pmidinfo[pmid].journal + "</b></i><br>\n";
+    html += "<b>" + pmids_info[pmid].title + "</b><br>\n";
+    html += pmids_info[pmid].author + "<br>\n";
+    html += "<i><b>" + pmids_info[pmid].journal + "</b></i><br>\n";
     articles[pmid].reference = html;
-    articles[pmid].year = shaping_pmidinfo[pmid].year.split(" ")[0];
+    articles[pmid].year = pmids_info[pmid].year.split(" ")[0];
     articles[pmid].citation = "<a href=\"http://colil.dbcls.jp/browse/papers/" + pmid + "/\" >" + 0 + "</a>";
     articles[pmid].diseases = "meshのリンク"
   };
-  
+
   pmid2citation.results.bindings.forEach(x => {
     let pmid = x.pmid.value;
     if (articles[pmid]) {
-      articles[pmid].citation = "<a href=\"http://colil.dbcls.jp/browse/papers/" + pmid + "/\">" + x.citation_count.value + "</a>";      
+      articles[pmid].citation = "<a href=\"http://colil.dbcls.jp/browse/papers/" + pmid + "/\">" + x.citation_count.value + "</a>";
     }
   });
-  
+
   return {
     columns: [["PMID"], ["Reference"], ["Year"], ["Cited by"]],
-    data: pubtator_pmids.map(x => {
+    data: ordered_pmids.map(x => {
       let article = articles[x];
       return [article.pmid, article.reference, article.year, article.citation]
     })

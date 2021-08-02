@@ -3,13 +3,13 @@
 ## Parameters
 
 * `ep` Endpoint
-  * default: https://togovar-dev.biosciencedbc.jp/sparql
+  * default: https://togovar.biosciencedbc.jp/sparql
 * `hgnc_id`HGNC Id
   * default: 404
 
 ## Endpoint
 
-{{{ep}}}
+{{ ep }}
 
 ## `result`
 
@@ -18,14 +18,11 @@ PREFIX dct: <http://purl.org/dc/terms/>
 PREFIX obo: <http://purl.obolibrary.org/obo/>
 PREFIX ide: <http://identifiers.org/>
 
-SELECT  ?hgnc_uri ?gene_symbol ?approved_name ?chromosomal_location ?alias ?ncbigene ?ensg ?refseq ?omim
-
+SELECT ?hgnc_uri ?gene_symbol ?approved_name ?chromosomal_location ?alias ?ncbigene ?ensg ?refseq ?omim
 FROM <http://togovar.biosciencedbc.jp/hgnc>
-
 WHERE {
-
   VALUES ?hgnc_uri { <http://identifiers.org/hgnc/{{ hgnc_id }}> }
-  ?hgnc_uri rdfs:label ?gene_symbol;
+  ?hgnc_uri rdfs:label ?gene_symbol ;
     dct:description ?approved_name ;
     obo:so_part_of ?chromosomal_location .
     OPTIONAL { ?hgnc_uri skos:altLabel ?alias . }
