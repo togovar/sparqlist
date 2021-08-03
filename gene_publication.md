@@ -67,8 +67,8 @@ WHERE {
 
 ```javascript
 async ({gene2pmid})=>{
-  var rsids = [...new Set(gene2pmid.results.bindings.map(x => x.rs_id.value.replace("http://identifiers.org/dbsnp/" , "" )))];
-  var param = JSON.stringify({ "rsids" : rsids });
+  const rsids = [...new Set(gene2pmid.results.bindings.map(x => x.rs_id.value.replace("http://identifiers.org/dbsnp/" , "" )))];
+  const param = JSON.stringify({ "rsids" : rsids });
   const options = {
     method: 'POST',
     headers: {
@@ -78,9 +78,9 @@ async ({gene2pmid})=>{
     body: param
   };
   try{
-    var res = await fetch("https://www.ncbi.nlm.nih.gov/research/bionlp/litvar/api/v1/public/rsids2pmids", options).then(res=>res.json());
-    var pmids = [];
-    for(var i=0; i < res.length; i++){
+    const res = await fetch("https://www.ncbi.nlm.nih.gov/research/bionlp/litvar/api/v1/public/rsids2pmids", options).then(res=>res.json());
+    let pmids = [];
+    for(let i=0; i < res.length; i++){
       res[i]["pmids"].forEach( pmid => pmids.push(pmid.toString()))
     }
     return pmids;
