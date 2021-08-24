@@ -39,7 +39,7 @@ async ({search_api, id2symbol}) => {
     });
     const first_json = await first_res.json();
     let result_data = first_json.data;
-    let data_count = first_json.statistics.filtered < max_rows ? first_json.statistics.filtered : max_rows;
+    const data_count = first_json.statistics.filtered < max_rows ? first_json.statistics.filtered : max_rows;
 
     let tmp_res = [];
     let counnt = 0;
