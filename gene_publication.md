@@ -51,14 +51,19 @@ WHERE {
 
 ```javascript
 ({gene2pmid}) => {
-  let ref = {}
+  const ref = {}
+  const check_array = {}
   gene2pmid.results.bindings.forEach((x) => {
     if (ref[x.pmid.value]) {
-      ref[x.pmid.value]["author"] = ref[x.pmid.value]["author"] + ", " + x.author.value
+      check_array[x.pmid.value].push(x.author.value)
     }else{
+      check_array[x.pmid.value] = [x.author.value];
       ref[x.pmid.value] = {pmid_uri: x.pmid_uri.value, title: x.title.value, year: x.year.value, author: x.author.value, journal: x.journal.value}
     }
   })
+  for (let key in check_array) {
+    ref[key]["author"] = Array.from(new Set(check_array[key])).join()  
+  }
   return ref
 }
 ```
