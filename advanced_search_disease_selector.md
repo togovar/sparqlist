@@ -2,15 +2,15 @@
 
 # Parameters
 
-* `mesh_in` (type: mesh descriptor)
-  * default:
-  * example: なし ([MeSH Diseases[C]](https://meshb.nlm.nih.gov/treeView)), D007938(Childにmedgenない例),D007942(medgenがない例), D007951 (medgenが存在する例)
+* `mesh_descriptor` (type: mesh descriptor)
+  * default: 
+  * example: なし(MeSH TreeのRoot(Diseases[C])),D007938(Childにmedgenない例), D007942(medgenがない例), D007951 (medgenが存在する例)
 
 ## `top`
 - Top レベルかどうかのチェック
 ```javascript
-({mesh_in})=>{
-  if (mesh_in) return false;
+({mesh_descriptor})=>{
+  if (mesh_descriptor) return false;
   return true;
 }
 ```
@@ -26,43 +26,40 @@ PREFIX meshv: <http://id.nlm.nih.gov/mesh/vocab#>
 PREFIX dct: <http://purl.org/dc/terms/>
 PREFIX medgen_ncbi: <http://www.ncbi.nlm.nih.gov/medgen/>
 PREFIX medgen_med2rdf: <http://med2rdf/ontology/medgen#>
-PREFIX cvo: <http://purl.jp/bio/10/clinvar/>
+PREFIX sty: <http://purl.bioontology.org/ontology/STY/>
 
-SELECT DISTINCT
-  ?mesh_child ?mesh_child_label (SAMPLE(?mesh_child_tree_number) AS ?mesh_child_tree)
-  (GROUP_CONCAT(DISTINCT ?medgen_child_label, "|") AS ?medgen_child_labels)
-  count(distinct ?mesh_offsprings) -1 AS ?mesh_offsprings_count
-#  ?medgen_child
-# ?medgen_child_label
-#  count(distinct ?medgen_offsprings) -1 AS ?medgen_offsprings_count
-#  ?medgen_offsprings_label
+SELECT ?mesh_child_tree_number ?mesh_child ?mesh_child_label (GROUP_CONCAT(DISTINCT ?medgen_child_label, "|") AS ?medgen_child_labels) count(distinct ?mesh_offsprings) -1 AS ?mesh_offsprings_count
 FROM <http://togovar.biosciencedbc.jp/mesh>
 FROM <http://togovar.biosciencedbc.jp/medgen>
 WHERE {
- # Top レベル ('C') はノードじゃ無いため URI もラベルもないので objectList 出力の Attribute は取れるもので最上位を?mesh_childとする
 {{#if top}}
-  ?mesh_child meshv:treeNumber ?mesh_child_tree_number.
-  ?mesh_child rdfs:label ?mesh_child_label.
-  ?mesh_child_tree_number a meshv:TreeNumber .
-  MINUS {
-    ?mesh_child_tree_number meshv:parentTreeNumber ?_parent .
-  }
-  FILTER (CONTAINS(STR(?mesh_child_tree_number),"mesh/C"))
+  # MeSH TreeのRoot(Diseases[C]) のURI もラベルもないので、その下の階層(Infections[C01],...)のDescriptor(D007239)を列挙する
+  # mesh:D000820 (Animal diseases [C22])を除く 
+  # See https://meshb.nlm.nih.gov/treeView
+  VALUES ?mesh_child { mesh:D007239 mesh:D009369 mesh:D009140 mesh:D004066 mesh:D009057 mesh:D012140 mesh:D010038 mesh:D009422 mesh:D005128 mesh:D052801 mesh:D005261 mesh:D002318 mesh:D006425 mesh:D009358 mesh:D017437 mesh:D009750 mesh:D004700 mesh:D0071154 mesh:D007280 mesh:D013568 mesh:D009784 }
 {{else}}
- # Top レベルでないノードは?mesh_inの直下?mesh_childを求める
-  VALUES ?mesh_in {  <http://id.nlm.nih.gov/mesh/{{mesh_in}}> }
+  # Top レベルでないノードは?mesh_inの直下?mesh_childを求める
+  VALUES ?mesh_in {  <http://id.nlm.nih.gov/mesh/{{mesh_descriptor}}> }
 
   # input mesh descriptor (D015470) to mesh children (D004915, D007946)
   GRAPH <http://togovar.biosciencedbc.jp/mesh>{
     ?mesh_in meshv:treeNumber ?mesh_in_tree_number .
     ?mesh_in rdfs:label ?mesh_in_label .
     ?mesh_child meshv:treeNumber/meshv:parentTreeNumber ?mesh_in_tree_number .
-    ?mesh_child rdfs:label ?mesh_child_label.
-    ?mesh_child meshv:treeNumber ?mesh_child_tree_number.
   }
 {{/if}}
 
+  GRAPH <http://togovar.biosciencedbc.jp/mesh>{
+    ?mesh_child rdfs:label ?mesh_child_label.
+    ?mesh_child meshv:treeNumber ?mesh_child_tree_number.
+    FILTER NOT EXISTS{
+      ?mesh_child meshv:treeNumber ?mesh_child_tree_number2.
+      FILTER(STRSTARTS(STR(?mesh_child_tree_number2), "http://id.nlm.nih.gov/mesh/C22")).
+    }
+  }
+
   # mesh childeren (D004915, D007946...) to medgen (C0023440, C0023461...)
+  # medgen must be classified in "Disease or Syndrome" of Semantics Types Ontology (https://bioportal.bioontology.org/ontologies/STY?p=classes&conceptid=T047) 
   GRAPH <http://togovar.biosciencedbc.jp/medgen>{
     OPTIONAL {
      ?mgconso_child rdfs:seeAlso ?mesh_child.
@@ -80,27 +77,33 @@ WHERE {
   }
 
 }
-GROUP BY ?mesh_child ?mesh_child_label
-ORDER BY ?mesh_child_tree
+GROUP BY ?mesh_child_tree_number ?mesh_child ?mesh_child_label
+ORDER BY ?mesh_child_tree_number
 ```
 
 ## `return`
 - 整形
 ```javascript
 ({data})=>{
-  const idPrfix = "http://id.nlm.nih.gov/mesh/";
-  const categoryPrefix = "http://id.nlm.nih.gov/mesh/";
+  const idPrefix = "http://id.nlm.nih.gov/mesh/";
+  let results = [];
 
-  return data.results.bindings.map(d=>{
-    let labelSets = new Set();
-    labelSets = labelSets.add(d.mesh_child_label.value).add(d.medgen_child_labels.value);
+  data.results.bindings.forEach(d=>{
+    const medgen_labels = d.medgen_child_labels.value;
+    const mesh_label = d.mesh_child_label.value;
+    const has_child = (Number(d.mesh_offsprings_count.value) > 0 ? true : false); 
 
-    return {
-      categoryId: d.mesh_child.value.replace('http://id.nlm.nih.gov/mesh/',''),
-      label : Array.from(labelSets).join('|'),
-      hasChild : (Number(d.mesh_offsprings_count.value) > 0 ? true : false)
-//      medgen_child : d.medgen_child.value
+    if(medgen_labels){
+      results = results.concat(medgen_labels.split('|').map(medgen_label=>{
+        return {
+          mesh_descriptor: d.mesh_child.value.replace(idPrefix,''),
+          label : medgen_label,
+          hasChild : has_child
+        }
+      }));
     }
   });
+
+ return results;
 }
 ```
