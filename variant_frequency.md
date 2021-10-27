@@ -11,67 +11,228 @@
 
 {{ep}}
 
-## `result`
+## `type`
 
 ```sparql
-DEFINE sql:select-option "order"
-
 PREFIX dct: <http://purl.org/dc/terms/>
-PREFIX sio: <http://semanticscience.org/resource/>
-PREFIX tgvo: <http://togovar.biosciencedbc.jp/vocabulary/>
-PREFIX exo: <http://purl.jp/bio/10/exac/>
 
-SELECT ?source ?num_alleles ?num_alt_alleles ?frequency ?num_genotype_ref_homo ?num_genotype_hetero ?num_genotype_alt_homo (GROUP_CONCAT(DISTINCT ?_filter ; separator = ", ") AS ?filter) ?quality
-FROM <http://togovar.biosciencedbc.jp/variation>
-FROM <http://togovar.biosciencedbc.jp/variation/frequency/exac>
-FROM <http://togovar.biosciencedbc.jp/variation/frequency/gem_j_wga>
-FROM <http://togovar.biosciencedbc.jp/variation/frequency/hgvd>
-FROM <http://togovar.biosciencedbc.jp/variation/frequency/jga_ngs>
-FROM <http://togovar.biosciencedbc.jp/variation/frequency/jga_snp>
-FROM <http://togovar.biosciencedbc.jp/variation/frequency/tommo_4.7kjpn>
+SELECT ?type
 WHERE {
   VALUES ?tgv_id { "{{tgv_id}}" }
 
-  ?variation dct:identifier ?tgv_id ;
-             rdfs:label ?label .
+  GRAPH <http://togovar.biosciencedbc.jp/variant> {
+    ?variation dct:identifier ?tgv_id ;
+      a ?_type .
+    BIND(REPLACE(STR(?_type), "http://genome-variation.org/resource#", "") AS ?type)
+  }
+}
+LIMIT 1
+```
+
+## `type`
+
+```javascript
+({type}) => {
+  const t = type.results.bindings[0].type.value
+  return { 
+    snv: t == "SNV",
+    ins: t == "Insertion",
+    del: t == "Deletion",
+    indel: t == "Indel",
+    mnv: t == "MNV",
+  };
+}
+```
+
+## `result`
+
+```sparql
+PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX faldo: <http://biohackathon.org/resource/faldo#>
+PREFIX gvo: <http://genome-variation.org/resource#>
+
+SELECT ?source (GROUP_CONCAT(DISTINCT ?_filter ; separator = ", ") AS ?filter) ?quality ?info_label ?info_value
+WHERE {
+  VALUES ?tgv_id { "{{tgv_id}}" }
+
+  GRAPH <http://togovar.biosciencedbc.jp/variant> {
+    ?variation dct:identifier ?tgv_id ;
+      gvo:ref ?ref ;
+      gvo:alt ?alt ;
+      faldo:location ?location .
+
+  {{#if type.snv}}
+    ?location a faldo:ExactPosition ;
+      faldo:position ?pos1 ;
+      faldo:reference ?reference .
+  {{else if type.del}}
+    ?location a faldo:Region ;
+      faldo:begin ?begin ;
+      faldo:end ?end .
+
+    ?begin a faldo:InBetweenPosition ;
+      faldo:after ?pos1 ;
+      faldo:before ?pos2 ;
+      faldo:reference ?reference .
+
+    ?end a faldo:InBetweenPosition ;
+      faldo:after ?pos3 ;
+      faldo:before ?pos4 .
+  {{else if type.indel}}
+    ?location a faldo:Region ;
+      faldo:begin ?begin ;
+      faldo:end ?end .
+
+    ?begin a faldo:InBetweenPosition ;
+      faldo:after ?pos1 ;
+      faldo:before ?pos2 ;
+      faldo:reference ?reference .
+
+    ?end a faldo:InBetweenPosition ;
+      faldo:after ?pos3 ;
+      faldo:before ?pos4 .
+  {{else if type.ins}}
+    ?location a faldo:InBetweenPosition ;
+      faldo:after ?pos1 ;
+      faldo:before ?pos2 ;
+      faldo:reference ?reference .
+  {{else if type.mnv}}
+    ?location a faldo:Region ;
+      faldo:begin ?pos1 ;
+      faldo:end ?pos2 ;
+      faldo:reference ?reference .
+  {{/if}}
+
+    BIND(STR(?variation) AS ?label)    
+  }
 
   {
-    ?variation tgvo:statistics ?_stat .
+    VALUES ?g { <http://togovar.biosciencedbc.jp/variant/frequency/gem_j_wga> <http://togovar.biosciencedbc.jp/variant/frequency/hgvd> <http://togovar.biosciencedbc.jp/variant/frequency/jga_ngs> <http://togovar.biosciencedbc.jp/variant/frequency/jga_snp> <http://togovar.biosciencedbc.jp/variant/frequency/tommo_8.3kjpn> }
+    GRAPH ?g {
+      ?variation gvo:info ?info .
 
-    ?_stat dct:source ?source ;
-        tgvo:alleleNumber ?num_alleles ;
-        tgvo:alleleCount ?num_alt_alleles ;
-        tgvo:alleleFrequency ?frequency .
+      ?info rdfs:label ?info_label ;
+        rdf:value ?info_value .
 
-    OPTIONAL { ?_stat tgvo:filter ?_filter . }
-    OPTIONAL { ?_stat tgvo:quality ?_quality . }
+      OPTIONAL { ?variation gvo:filter ?_filter . }
+      OPTIONAL { ?variation gvo:qual ?quality . }
 
-    BIND (IF(?source IN ("ToMMo 4.7KJPN", "HGVD", "JGA-SNP"), undef, ?_quality) AS ?quality)
-
-    OPTIONAL { ?_stat tgvo:homozygousReferenceAlleleCount ?num_genotype_ref_homo . }
-    OPTIONAL { ?_stat tgvo:heterozygousAlleleCount ?num_genotype_hetero . }
-    OPTIONAL { ?_stat tgvo:homozygousAlternativeAlleleCount ?num_genotype_alt_homo . }
+      BIND(REPLACE(STR(?g), ".*/", "") AS ?source)
+    }
   } UNION {
-    ?exac dct:identifier ?label ;
-          exo:alleleCount ?num_alt_alleles ;
-          exo:alleleNum ?num_alleles ;
-          exo:alleleFrequency ?frequency .
+    GRAPH <http://togovar.biosciencedbc.jp/variant/frequency/gnomad_genomes> {
+    {{#if type.snv}}
+      ?location2 a faldo:ExactPosition ;
+        faldo:position ?pos1 ;
+        faldo:reference ?reference .
+    {{else if type.del}}
+      ?location2 a faldo:Region ;
+        faldo:begin ?begin ;
+        faldo:end ?end .
 
-    OPTIONAL { ?exac exo:filter ?_filter . }
-    OPTIONAL { ?exac tgvo:statistics/tgvo:quality ?quality . }
+      ?begin a faldo:InBetweenPosition ;
+        faldo:after ?pos1 ;
+        faldo:before ?pos2 ;
+        faldo:reference ?reference .
 
-    BIND ("ExAC" AS ?source)
+      ?end a faldo:InBetweenPosition ;
+        faldo:after ?pos3 ;
+        faldo:before ?pos4 .
+    {{else if type.indel}}
+      ?location2 a faldo:Region ;
+        faldo:begin ?begin ;
+        faldo:end ?end .
+
+      ?begin a faldo:InBetweenPosition ;
+        faldo:after ?pos1 ;
+        faldo:before ?pos2 ;
+        faldo:reference ?reference .
+
+      ?end a faldo:InBetweenPosition ;
+        faldo:after ?pos3 ;
+        faldo:before ?pos4 .
+    {{else if type.ins}}
+      ?location2 a faldo:InBetweenPosition ;
+        faldo:after ?pos1 ;
+        faldo:before ?pos2 ;
+        faldo:reference ?reference .
+    {{else if type.mnv}}
+      ?location2 a faldo:Region ;
+        faldo:begin ?pos1 ;
+        faldo:end ?pos2 ;
+        faldo:reference ?reference .
+    {{/if}}
+
+      ?s gvo:ref ?ref ;
+        gvo:alt ?alt ;
+        faldo:location ?location2 ;
+        gvo:info ?info .
+
+      ?info rdfs:label ?info_label ;
+          rdf:value ?info_value .
+
+      OPTIONAL { ?s gvo:filter ?_filter . }
+      OPTIONAL { ?s gvo:qual ?quality . }
+
+      BIND ("gnomad_genomes" AS ?source)
+    }
   } UNION {
-    ?exac dct:identifier ?label ;
-          exo:population ?_pop .
+    GRAPH <http://togovar.biosciencedbc.jp/variant/frequency/gnomad_exomes> {
+    {{#if type.snv}}
+      ?location2 a faldo:ExactPosition ;
+        faldo:position ?pos1 ;
+        faldo:reference ?reference .
+    {{else if type.del}}
+      ?location2 a faldo:Region ;
+        faldo:begin ?begin ;
+        faldo:end ?end .
 
-    ?_pop a exo:Population ;
-            rdfs:label ?_population ;
-            exo:alleleCount ?num_alt_alleles ;
-            exo:alleleNum ?num_alleles ;
-            exo:alleleFrequency ?frequency .
+      ?begin a faldo:InBetweenPosition ;
+        faldo:after ?pos1 ;
+        faldo:before ?pos2 ;
+        faldo:reference ?reference .
 
-    BIND (CONCAT("ExAC:", ?_population) AS ?source)
+      ?end a faldo:InBetweenPosition ;
+        faldo:after ?pos3 ;
+        faldo:before ?pos4 .
+    {{else if type.indel}}
+      ?location2 a faldo:Region ;
+        faldo:begin ?begin ;
+        faldo:end ?end .
+
+      ?begin a faldo:InBetweenPosition ;
+        faldo:after ?pos1 ;
+        faldo:before ?pos2 ;
+        faldo:reference ?reference .
+
+      ?end a faldo:InBetweenPosition ;
+        faldo:after ?pos3 ;
+        faldo:before ?pos4 .
+    {{else if type.ins}}
+      ?location2 a faldo:InBetweenPosition ;
+        faldo:after ?pos1 ;
+        faldo:before ?pos2 ;
+        faldo:reference ?reference .
+    {{else if type.mnv}}
+      ?location2 a faldo:Region ;
+        faldo:begin ?pos1 ;
+        faldo:end ?pos2 ;
+        faldo:reference ?reference .
+    {{/if}}
+
+      ?s gvo:ref ?ref ;
+        gvo:alt ?alt ;
+        faldo:location ?location2 ;
+        gvo:info ?info .
+
+      ?info rdfs:label ?info_label ;
+          rdf:value ?info_value .
+
+      OPTIONAL { ?s gvo:filter ?_filter . }
+      OPTIONAL { ?s gvo:qual ?quality . }
+
+      BIND ("gnomad_exomes" AS ?source)
+    }
   }
 }
 ORDER BY ?source

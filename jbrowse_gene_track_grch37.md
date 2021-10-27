@@ -64,7 +64,7 @@ PREFIX sio: <http://semanticscience.org/resource/>
 PREFIX faldo: <http://biohackathon.org/resource/faldo#>
 
 SELECT DISTINCT ?gene_id ?gene_type ?gene_start ?gene_end ?feat_id ?feat_type ?feat_start ?feat_end ?exon_id ?exon_type ?exon_start ?exon_end ?strand ?gene_name ?gene_description ?feat_name ?feat_description ?feat_class ?exon_name
-FROM <http://togovar.biosciencedbc.jp/ensembl37>
+FROM <http://togovar.biosciencedbc.jp/ensembl>
 WHERE {
   VALUES ?region_start { {{start}} }
   VALUES ?region_end { {{end}} }

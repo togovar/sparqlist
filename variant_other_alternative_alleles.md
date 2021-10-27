@@ -16,17 +16,16 @@
 
 ## `label`
 ```sparql
-DEFINE sql:select-option "order"
-
 PREFIX dct: <http://purl.org/dc/terms/>
 
 SELECT ?label
-FROM <http://togovar.biosciencedbc.jp/variation>
 WHERE {
-    VALUES ?tgv_id { "{{tgv_id}}" }
+  VALUES ?tgv_id { "{{tgv_id}}" }
 
-    ?variation dct:identifier ?tgv_id ;
-        rdfs:label ?label .
+  GRAPH <http://togovar.biosciencedbc.jp/variant> {
+    ?variation dct:identifier ?tgv_id .
+    BIND(STR(?variation) AS ?label)
+  }
 }
 ```
 
