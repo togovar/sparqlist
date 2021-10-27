@@ -23,7 +23,7 @@ SELECT DISTINCT ?tgv_id ?type ?variation ?reference ?ref ?alt ?hgvs
 FROM <http://togovar.biosciencedbc.jp/variant>
 FROM <http://togovar.biosciencedbc.jp/variant/annotation/ensembl>
 WHERE {
-  VALUES ?tgv_id { "tgv83272255" }
+  VALUES ?tgv_id { "{{tgv_id}}" }
 
   ?variation dct:identifier ?tgv_id ;
     a ?_type ;
