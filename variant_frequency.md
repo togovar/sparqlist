@@ -306,6 +306,6 @@ ORDER BY ?source
       "filter": suffix.length == 0 ? hash[0]?.filter : "",
       "quality": suffix.length == 0 ? hash[0]?.quality : "",
     };
-  }).filter(x => Object.keys(x).includes("frequency"));
+  }).filter(x => x.frequency);
 };
 ```
