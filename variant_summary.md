@@ -33,7 +33,7 @@ WHERE {
     faldo:location/(faldo:end|faldo:after)?/faldo:reference ?reference .
 
     BIND(REPLACE(STR(?_type), "http://genome-variation.org/resource#", "") AS ?type)
-    BIND(IRI(CONCAT("http://identifiers.org/hco/", REPLACE(STR(?variation), "-.*", ""), "/GRCh37#", REPLACE(STR(?variation), "^[^-]-", ""))) AS ?hco)
+    BIND(IRI(CONCAT("http://identifiers.org/hco/", REPLACE(STR(?variation), "-.*", ""), "/GRCh37#", REPLACE(STR(?variation), "^[^-]+-", ""))) AS ?hco)
 
   OPTIONAL {
     ?hco tgvo:hasConsequence/tgvo:hgvsg ?hgvs .

@@ -24,7 +24,7 @@ WHERE {
 
   GRAPH <http://togovar.biosciencedbc.jp/variant> {
     ?variation dct:identifier ?tgv_id .
-    BIND(IRI(CONCAT("http://identifiers.org/hco/", REPLACE(STR(?variation), "-.*", ""), "/GRCh37#", REPLACE(STR(?variation), "^[^-]-", ""))) AS ?hco)
+    BIND(IRI(CONCAT("http://identifiers.org/hco/", REPLACE(STR(?variation), "-.*", ""), "/GRCh37#", REPLACE(STR(?variation), "^[^-]+-", ""))) AS ?hco)
   }
 
   GRAPH <http://togovar.biosciencedbc.jp/variant/annotation/ensembl> {
