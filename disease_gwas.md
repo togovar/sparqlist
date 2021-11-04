@@ -3,11 +3,14 @@
 ## Parameters
 
 * `ep` Endpoint
-  * default: https://togovar-dev.biosciencedbc.jp/sparql
+  * default: https://togovar.biosciencedbc.jp/sparql
 * `medgen_cid` MedGen CID
   * default: C0023467 
   * example: C0023467(acute myeloid leukemia), C2675520(breast-ovarian cancer)
-
+* `base_url` TogoVar URL
+  * default: https://togovar.biosciencedbc.jp
+  
+  
 ## Endpoint
 
 {{ ep }}
@@ -108,14 +111,69 @@ WHERE {
       terms:replication_sample_size ?replication_sample_size .
  }
 }
+
+```
+
+## `rs2tgv`
+```javascript
+async ({efo2gwas, base_url}) => {
+  let rs_uri = [];
+  const tmp = [];
+  const rs_array = {};
+  const tgv_tag = {};
+  let count = 0;
+  const variant_and_risk_allele ={};
+  
+  efo2gwas.results.bindings.map(binding => {
+    variant_and_risk_allele[binding.variant_and_risk_allele.value] = binding.variant_and_risk_allele.value;
+    binding.variant_and_risk_allele.value.split("; ").forEach(rs => {
+      rs_uri.push("<http://identifiers.org/dbsnp/" + rs.split('-')[0] + ">");
+    });
+  });
+  rs_uri = Array.from(new Set(rs_uri));
+  for (const elem of rs_uri) {
+    tmp.push(elem);
+    if (tmp.length == 100){
+      let api = "https://test43.biosciencedbc.jp/sparqlist/api/rs2tgvid";
+      rs_array[count] = api.concat("?ep=https://togovar-dev.biosciencedbc.jp/sparql&rs_uri=", tmp.join(" ")).toString();
+      count ++;
+      tmp.length = 0;
+    }
+    let api = "https://test43.biosciencedbc.jp/sparqlist/api/rs2tgvid";
+    rs_array[count] = api.concat("?ep=https://togovar-dev.biosciencedbc.jp/sparql&rs_uri=", tmp.join(" ")).toString();
+  };
+  for (let key in rs_array){
+    const tmp_res = await fetch(rs_array[key], {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      },
+    });
+    const json = await tmp_res.json();
+    for (let binding of json.results.bindings){
+      const rs = binding.dbsnp.value.replace("http://identifiers.org/dbsnp/","");
+      tgv_tag[rs] = binding.tgv_id.value ? "(<a href='" + base_url + "/variant/" + binding.tgv_id.value + "'>" + binding.tgv_id.value +"</a>)" : "";
+    }
+  }
+   for (let key in variant_and_risk_allele){
+     const val = variant_and_risk_allele[key];
+     const disp_rs = [];
+     val.split("; ").forEach(rs => {
+       const html = tgv_tag[rs.split('-')[0]] ? tgv_tag[rs.split('-')[0]] : "";
+      disp_rs.push("<a href='https://www.ncbi.nlm.nih.gov/snp/" + rs.split('-')[0] + "'>" + rs + "</a>" + html );
+    });
+     variant_and_risk_allele[key] = disp_rs.join();
+   }
+  return variant_and_risk_allele;  
+}
 ```
 
 ## `result`
 
 ```javascript
-({efo2gwas}) => {
+async ({efo2gwas,rs2tgv}) => {
   return efo2gwas.results.bindings.map(d => ({
-    variant_and_risk_allele: d.variant_and_risk_allele.value,
+    variant_and_risk_allele: rs2tgv[d.variant_and_risk_allele.value],
     raf: d.raf.value,
     p_value: d.p_value.value,
     odds_ratio: d.odds_ratio.value,
@@ -125,7 +183,7 @@ WHERE {
     mapped_trait_uri: d.mapped_trait_uri.value,
     pubmed_id: d.pubmed_id.value,
     pubmed_uri: d.pubmed_uri.value,
-    study_detail: d.study_detail.value,
+    study_detail: d.study.value.replace("http://www.ebi.ac.uk/gwas/studies/",""),
     study: d.study.value,
     initial_sample_size: d.initial_sample_size.value,
     replication_sample_size: d.replication_sample_size.value
