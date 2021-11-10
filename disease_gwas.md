@@ -74,6 +74,7 @@ SELECT ?variant_and_risk_allele
        ?odds_ratio
        ?ci_text
        ?beta
+       ?beta_unit
        ?mapped_trait
        ?mapped_trait_uri
        ?pubmed_id
@@ -97,6 +98,7 @@ WHERE {
       terms:p_value ?p_value ;
       terms:odds_ratio ?odds_ratio ;
       terms:beta ?beta ;
+      terms:beta_unit ?beta_unit ;
       terms:ci_text ?ci_text ;
       terms:mapped_trait ?mapped_trait ;
       terms:mapped_trait_uri ?mapped_trait_uri ;
@@ -160,7 +162,7 @@ async ({efo2gwas, base_url}) => {
      const disp_rs = [];
      val.split("; ").forEach(rs => {
        const html = tgv_tag[rs.split('-')[0]] ? tgv_tag[rs.split('-')[0]] : "";
-      disp_rs.push("<a href='https://www.ncbi.nlm.nih.gov/snp/" + rs.split('-')[0] + "'>" + rs + "</a>" + html );
+      disp_rs.push("<a href='https://www.ebi.ac.uk/gwas/variants/" + rs.split('-')[0] + "'>" + rs + "</a>" + html );
     });
      variant_and_risk_allele[key] = disp_rs.join();
    }
@@ -179,6 +181,7 @@ async ({efo2gwas,rs2tgv}) => {
     odds_ratio: d.odds_ratio.value,
     ci_text: d.ci_text.value,
     beta: d.beta.value,
+    beta_unit: d.beta_unit.value,
     mapped_trait: d.mapped_trait.value,
     mapped_trait_uri: d.mapped_trait_uri.value,
     pubmed_id: d.pubmed_id.value,
