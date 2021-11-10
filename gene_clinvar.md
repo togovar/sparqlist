@@ -36,6 +36,7 @@ WHERE {
 }
 ```
 
+
 ## `result`
 
 ```sparql
@@ -44,7 +45,7 @@ PREFIX cvo:  <http://purl.jp/bio/10/clinvar/>
 PREFIX tgvo: <http://togovar.biosciencedbc.jp/vocabulary/>
 PREFIX dct: <http://purl.org/dc/terms/>
 
-SELECT DISTINCT ?tgv_id ?review_status ?interpretation ?last_evaluated ?condition ?medgen ?clinvar ?vcv ?vcv_disp
+SELECT DISTINCT ?tgv_id ?review_status ?interpretation ?last_evaluated ?condition ?medgen ?clinvar ?title ?vcv ?vcv_disp
 
 WHERE {
   VALUES ?ens_gene { <{{ ensg_uri_string }}> }
