@@ -68,7 +68,8 @@ PREFIX mondo: <http://purl.obolibrary.org/obo/mondo#>
 PREFIX oboinowl: <http://www.geneontology.org/formats/oboInOwl#>
 PREFIX terms: <http://med2rdf.org/gwascatalog/terms/>
 
-SELECT ?variant_and_risk_allele
+SELECT ?assoc
+       ?variant_and_risk_allele
        ?raf
        ?p_value
        ?odds_ratio
@@ -83,7 +84,6 @@ SELECT ?variant_and_risk_allele
        ?study
        ?initial_sample_size
        ?replication_sample_size
-#FROM <http://togovar.biosciencedbc.jp/medgen>
 FROM <http://togovar.biosciencedbc.jp/efo>
 FROM <http://togovar.biosciencedbc.jp/gwas-catalog>
 WHERE {
@@ -170,10 +170,22 @@ async ({efo2gwas, base_url}) => {
 }
 ```
 
+## `trait_html`
+```javascript
+({efo2gwas})=>{
+  const traits = {};
+  efo2gwas.results.bindings.map(x=>{
+    if (! traits[x.assoc.value]){ traits[x.assoc.value] = [] } 
+    traits[x.assoc.value].push('<a href="' + x.mapped_trait_uri.value + '">' + x.mapped_trait.value + '</a>');
+  })
+  return traits;
+}
+```
+
 ## `result`
 
 ```javascript
-async ({efo2gwas,rs2tgv}) => {
+async ({efo2gwas,rs2tgv,trait_html}) => {
   return efo2gwas.results.bindings.map(d => ({
     variant_and_risk_allele: rs2tgv[d.variant_and_risk_allele.value],
     raf: d.raf.value,
@@ -182,8 +194,7 @@ async ({efo2gwas,rs2tgv}) => {
     ci_text: d.ci_text.value,
     beta: d.beta.value,
     beta_unit: d.beta_unit.value,
-    mapped_trait: d.mapped_trait.value,
-    mapped_trait_uri: d.mapped_trait_uri.value,
+    mapped_trait: trait_html[d.assoc.value].join(),
     pubmed_id: d.pubmed_id.value,
     pubmed_uri: d.pubmed_uri.value,
     study_detail: d.study.value.replace("http://www.ebi.ac.uk/gwas/studies/",""),
