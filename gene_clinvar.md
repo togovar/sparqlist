@@ -194,7 +194,7 @@ ORDER BY ?title ?review_status ?interpretation DESC(?last_evaluated) ?condition
   return ensg2clinvar.results.bindings.map(d => ({
     tgv_id: d.tgv_id.value,
     tgv_link: base_url + "/variant/" + d.tgv_id.value,
-    position: "<b>" + d.label.value.split("-")[0] + "</b>:" + d.label.value.split("-")[1],
+    position: d.label.value.split("-")[0] + ":" + d.label.value.split("-")[1],
     title: d.title.value,
     vcv: d.vcv_disp.value,
     clinvar: d.clinvar.value,
