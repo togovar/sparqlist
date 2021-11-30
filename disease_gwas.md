@@ -87,10 +87,11 @@ SELECT ?assoc
 FROM <http://togovar.biosciencedbc.jp/efo>
 FROM <http://togovar.biosciencedbc.jp/gwas-catalog>
 WHERE {
- VALUES ?mapped_trait_uri { <{{ efo }}> }
+ VALUES ?conditions { <{{ efo }}> }
 
  GRAPH <http://togovar.biosciencedbc.jp/gwas-catalog>{
     ?assoc a gwas:Association ;
+      terms:mapped_trait_uri ?conditions ;
       terms:reported_genes ?reported_genes ;
       terms:strongest_snp_risk_allele ?variant_and_risk_allele ;
       terms:risk_allele_frequency ?raf ;
@@ -100,13 +101,15 @@ WHERE {
       terms:beta ?beta ;
       terms:beta_unit ?beta_unit ;
       terms:ci_text ?ci_text ;
-      terms:mapped_trait ?mapped_trait ;
-      terms:mapped_trait_uri ?mapped_trait_uri ;
       terms:study ?study ;
       dct:date ?association_date ;
       dct:references ?pubmed ;
       gwas:has_pubmed_id ?pubmed_id .
 
+    OPTIONAL{
+      ?assoc terms:mapped_trait ?mapped_trait ;
+        terms:mapped_trait_uri ?mapped_trait_uri .
+    }
     ?study dct:identifier ?study_id ;
       dct:description ?description ;
       terms:initial_sample_size ?initial_sample_size ;
@@ -186,21 +189,27 @@ async ({efo2gwas, base_url}) => {
 
 ```javascript
 async ({efo2gwas,rs2tgv,trait_html}) => {
-  return efo2gwas.results.bindings.map(d => ({
-    variant_and_risk_allele: rs2tgv[d.variant_and_risk_allele.value],
-    raf: d.raf.value,
-    p_value: d.p_value.value,
-    odds_ratio: d.odds_ratio.value,
-    ci_text: d.ci_text.value,
-    beta: d.beta.value,
-    beta_unit: d.beta_unit.value,
-    mapped_trait: trait_html[d.assoc.value].join(),
-    pubmed_id: d.pubmed_id.value,
-    pubmed_uri: d.pubmed_uri.value,
-    study_detail: d.study.value.replace("http://www.ebi.ac.uk/gwas/studies/",""),
-    study: d.study.value,
-    initial_sample_size: d.initial_sample_size.value,
-    replication_sample_size: d.replication_sample_size.value
-  }));
+  const associations = {};
+  return efo2gwas.results.bindings.map(d => {
+    if (! associations[d.assoc.value]){
+      associations[d.assoc.value] = d.assoc.value;
+      return {
+        variant_and_risk_allele: rs2tgv[d.variant_and_risk_allele.value],
+        raf: d.raf.value,
+        p_value: d.p_value.value,
+        odds_ratio: d.odds_ratio.value,
+        ci_text: d.ci_text.value,
+        beta: d.beta.value,
+        beta_unit: d.beta_unit.value,
+        mapped_trait: trait_html[d.assoc.value].join(),
+        pubmed_id: d.pubmed_id.value,
+        pubmed_uri: d.pubmed_uri.value,
+        study_detail: d.study.value.replace("http://www.ebi.ac.uk/gwas/studies/",""),
+        study: d.study.value,
+        initial_sample_size: d.initial_sample_size.value,
+        replication_sample_size: d.replication_sample_size.value
+      };
+    }
+  });
 }
 ```
