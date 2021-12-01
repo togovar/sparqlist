@@ -107,13 +107,15 @@ WHERE {
       gwas:has_pubmed_id ?pubmed_id .
 
     OPTIONAL{
-      ?assoc terms:mapped_trait ?mapped_trait ;
-        terms:mapped_trait_uri ?mapped_trait_uri .
+       ?assoc terms:mapped_trait_uri ?mapped_trait_uri .
     }
     ?study dct:identifier ?study_id ;
       dct:description ?description ;
       terms:initial_sample_size ?initial_sample_size ;
       terms:replication_sample_size ?replication_sample_size .
+ }
+ GRAPH <http://togovar.biosciencedbc.jp/efo>{
+   ?mapped_trait_uri rdfs:label ?mapped_trait.
  }
 }
 
