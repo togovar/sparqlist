@@ -192,10 +192,11 @@ async ({efo2gwas, base_url}) => {
 ```javascript
 async ({efo2gwas,rs2tgv,trait_html}) => {
   const associations = {};
-  return efo2gwas.results.bindings.map(d => {
+  const res = [];
+  efo2gwas.results.bindings.map(d => {
     if (! associations[d.assoc.value]){
       associations[d.assoc.value] = d.assoc.value;
-      return {
+      res.push({
         variant_and_risk_allele: rs2tgv[d.variant_and_risk_allele.value],
         raf: d.raf.value,
         p_value: d.p_value.value,
@@ -210,8 +211,9 @@ async ({efo2gwas,rs2tgv,trait_html}) => {
         study: d.study.value,
         initial_sample_size: d.initial_sample_size.value,
         replication_sample_size: d.replication_sample_size.value
-      };
+      });
     }
   });
+  return res;
 }
 ```
