@@ -187,27 +187,35 @@ async ({search_api}) => {
 ## `result`
 ```javascript
 async ({gene2gwas, trait_html, extract_data, base_url}) => {
-  return gene2gwas.results.bindings.map(d => ({
-    tgv_id: extract_data[d.rs_id.value] ? extract_data[d.rs_id.value].tgv_id : "",
-    tgv_link: extract_data[d.rs_id.value] ? base_url + "/variant/" + extract_data[d.rs_id.value].tgv_id : "",
-    variant_and_risk_allele: d.variant_and_risk_allele.value,
-    rs_uri: "https://www.ebi.ac.uk/gwas/variants/" + d.rs_id.value,
-    position: extract_data[d.rs_id.value] ? extract_data[d.rs_id.value].position : "",
-    ref_alt: extract_data[d.rs_id.value] ? extract_data[d.rs_id.value].ref_alt : "",
-    alt_freq: extract_data[d.rs_id.value] ? extract_data[d.rs_id.value].alt_freq.frequency : "",
-    raf: d.raf.value != "NR" ? parseFloat(d.raf.value) : null,
-    p_value: d.p_value.value != "NAN" ? parseFloat(d.p_value.value) : null,
-    odds_ratio: d.odds_ratio.value != "NA" ? parseFloat(d.odds_ratio.value) : null,
-    ci_text: d.ci_text.value,
-    beta: d.beta.value != "NA" ? parseFloat(d.beta.value) : null,
-    beta_unit: d.beta_unit.value,
-    mapped_trait: trait_html[d.assoc.value].join(),
-    pubmed_id: d.pubmed_id.value,
-    pubmed_uri: d.pubmed_uri.value,
-    study_detail: d.study.value.replace("http://www.ebi.ac.uk/gwas/studies/",""),
-    study: d.study.value,
-    initial_sample_size: d.initial_sample_size.value,
-    replication_sample_size: d.replication_sample_size.value
-  }));
+  const associations = {};
+  const res = [];
+  gene2gwas.results.bindings.map(d => {
+    if (! associations[d.assoc.value]){
+      associations[d.assoc.value] = d.assoc.value;
+      res.push({
+        tgv_id: extract_data[d.rs_id.value] ? extract_data[d.rs_id.value].tgv_id : "",
+        tgv_link: extract_data[d.rs_id.value] ? base_url + "/variant/" + extract_data[d.rs_id.value].tgv_id : "",
+        variant_and_risk_allele: d.variant_and_risk_allele.value,
+        rs_uri: "https://www.ebi.ac.uk/gwas/variants/" + d.rs_id.value,
+        position: extract_data[d.rs_id.value] ? extract_data[d.rs_id.value].position : "",
+        ref_alt: extract_data[d.rs_id.value] ? extract_data[d.rs_id.value].ref_alt : "",
+        alt_freq: extract_data[d.rs_id.value] ? extract_data[d.rs_id.value].alt_freq.frequency : "",
+        raf: d.raf.value != "NR" ? parseFloat(d.raf.value) : null,
+        p_value: d.p_value.value != "NAN" ? parseFloat(d.p_value.value) : null,
+        odds_ratio: d.odds_ratio.value != "NA" ? parseFloat(d.odds_ratio.value) : null,
+        ci_text: d.ci_text.value,
+        beta: d.beta.value != "NA" ? parseFloat(d.beta.value) : null,
+        beta_unit: d.beta_unit.value,
+        mapped_trait: trait_html[d.assoc.value].join(),
+        pubmed_id: d.pubmed_id.value,
+        pubmed_uri: d.pubmed_uri.value,
+        study_detail: d.study.value.replace("http://www.ebi.ac.uk/gwas/studies/",""),
+        study: d.study.value,
+        initial_sample_size: d.initial_sample_size.value,
+        replication_sample_size: d.replication_sample_size.value
+      });
+    }
+  });
+  return res;
 }
 ```
