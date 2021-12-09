@@ -47,6 +47,10 @@ LIMIT 1
 ## `info`
 
 ```sparql
+{{#unless type.snv}}
+DEFINE sql:select-option "order"
+{{/unless}}
+
 PREFIX dct: <http://purl.org/dc/terms/>
 PREFIX faldo: <http://biohackathon.org/resource/faldo#>
 PREFIX gvo: <http://genome-variation.org/resource#>
