@@ -3,12 +3,12 @@
 ## Parameters
 
 * `ep` Endpoint
-  * default: https://togovar-dev.biosciencedbc.jp/sparql
+  * default: https://togovar.biosciencedbc.jp/sparql
 * `medgen_cid` MedGen CID 
   * default: C0023467
   * example: C0023467
 * `base_url` TogoVar URL
-  * default: https://togovar-dev.biosciencedbc.jp
+  * default: https://togovar.biosciencedbc.jp
 
 ## Endpoint
 
@@ -177,5 +177,3 @@ ORDER BY ?title ?review_status ?interpretation DESC(?last_evaluated) ?condition
   }));
 }
 ```
-
-

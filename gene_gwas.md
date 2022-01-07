@@ -9,7 +9,7 @@
 * `search_api` Search endpoint
   * default: https://togovar.biosciencedbc.jp/search
 * `base_url` TogoVar URL
-  * default: https://togovar-dev.biosciencedbc.jp
+  * default: https://togovar.biosciencedbc.jp
   
   
 ## Endpoint

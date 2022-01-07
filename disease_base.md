@@ -6,7 +6,7 @@
   * default: C2675520 
   * example: C2675520
 * `ep` Endpoint
-  * default: https://togovar-dev.biosciencedbc.jp/sparql
+  * default: https://togovar.biosciencedbc.jp/sparql
 
 ## Endpoint
 
