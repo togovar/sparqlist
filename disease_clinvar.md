@@ -25,8 +25,8 @@ PREFIX tgvo: <http://togovar.biosciencedbc.jp/vocabulary/>
 
 SELECT DISTINCT ?tgv_id ?title ?vcv_disp ?clinvar ?interpretation ?review_status ?last_evaluated ?condition
 FROM <http://togovar.biosciencedbc.jp/clinvar>
-FROM <http://togovar.biosciencedbc.jp/variation/annotation/clinvar>
-FROM <http://togovar.biosciencedbc.jp/variation>
+FROM <http://togovar.biosciencedbc.jp/variant/annotation/clinvar>
+FROM <http://togovar.biosciencedbc.jp/variant>
 WHERE {
   VALUES ?medgen { medgen:{{ medgen_cid }} }
 
@@ -48,11 +48,11 @@ WHERE {
     BIND (REPLACE (STR(?vcv), 'VCV0+', '') AS ?vcv_disp)
   }
 
-  GRAPH <http://togovar.biosciencedbc.jp/variation/annotation/clinvar>{
+  GRAPH <http://togovar.biosciencedbc.jp/variant/annotation/clinvar>{
     ?togovar tgvo:condition / rdfs:seeAlso ?clinvar .
   }
 
-  GRAPH <http://togovar.biosciencedbc.jp/variation>{
+  GRAPH <http://togovar.biosciencedbc.jp/variant>{
     ?togovar dct:identifier ?tgv_id .
   }
 

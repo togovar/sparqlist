@@ -52,12 +52,12 @@ SELECT DISTINCT ?tgv_id ?review_status ?interpretation ?last_evaluated ?conditio
 WHERE {
   VALUES ?ens_gene { <{{ ensg_uri_string }}> }
 
-  GRAPH <http://togovar.biosciencedbc.jp/variation>{
+  GRAPH <http://togovar.biosciencedbc.jp/variant>{
     ?togovar tgvo:hasConsequence / tgvo:gene ?ens_gene .
     ?togovar dct:identifier ?tgv_id .
     ?togovar rdfs:label ?label
   }
-  GRAPH <http://togovar.biosciencedbc.jp/variation/annotation/clinvar>{
+  GRAPH <http://togovar.biosciencedbc.jp/variant/annotation/clinvar>{
     ?togovar tgvo:condition / rdfs:seeAlso ?clinvar .
   }
 
