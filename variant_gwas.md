@@ -1,9 +1,9 @@
-# Variant_GWAS
+# Variant report / GWAS
 
 ## Parameters
 
 * `ep` Endpoint
-  * default: https://togovar-dev.biosciencedbc.jp/sparql
+  * default: https://togovar.biosciencedbc.jp/sparql
 * `tgv_id` TogoVar ID
   * default: tgv47264307
   * example: tgv6252547
@@ -16,89 +16,79 @@
 ## `tgv2rs`
 ```sparql
 PREFIX dct: <http://purl.org/dc/terms/>
-PREFIX sio: <http://semanticscience.org/resource/>
-PREFIX tgvo: <http://togovar.biosciencedbc.jp/vocabulary/>
-PREFIX exo: <http://purl.jp/bio/10/exac/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 SELECT ?tgv_id ?label ?variation ?rs_uri
-FROM <http://togovar.biosciencedbc.jp/variation>
+FROM <http://togovar.biosciencedbc.jp/variant>
 WHERE {
   VALUES ?tgv_id { "{{ tgv_id }}" }
 
   ?variation dct:identifier ?tgv_id ;
-             rdfs:label ?label;
-             rdfs:seeAlso ?rs_uri.
+    rdfs:label ?label;
+    rdfs:seeAlso ?rs_uri.
 }
 ```
 
 ## `rs_str`
 ```javascript
 ({tgv2rs}) => {
-  let prefix = "http://identifiers.org/dbsnp/";
+  const prefix = "http://identifiers.org/dbsnp/";
   return tgv2rs.results.bindings[0].rs_uri.value.replace(prefix, "");
 }
 ```
 
 ## `rs2gwas`
 ```sparql
-PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
-PREFIX terms: <http://med2rdf.org/gwascatalog/terms/> 
-PREFIX gwas: <http://rdf.ebi.ac.uk/terms/gwas/> 
-PREFIX oban: <http://purl.org/oban/> 
-PREFIX owl: <http://www.w3.org/2002/07/owl#> 
-PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> 
-PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> 
-PREFIX ro: <http://www.obofoundry.org/ro/ro.owl#> 
-PREFIX study: <http://www.ebi.ac.uk/gwas/studies/> 
-PREFIX dct: <http://purl.org/dc/terms/> 
-PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> 
-PREFIX pubmed: <http://rdf.ncbi.nlm.nih.gov/pubmed/> 
 
-SELECT ?assoc 
-       ?variant_and_risk_allele 
+PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX gwas: <http://rdf.ebi.ac.uk/terms/gwas/>
+PREFIX terms: <http://med2rdf.org/gwascatalog/terms/>
+
+SELECT ?assoc
+       ?variant_and_risk_allele
        ?rs_id
-       ?raf 
-       ?p_value 
-       ?odds_ratio 
-       ?ci_text 
+       ?raf
+       ?p_value
+       ?odds_ratio
+       ?ci_text
        ?beta
        ?beta_unit
        ?pubmed_id
        ?pubmed as ?pubmed_uri
-       ?description as ?study_detail 
+       ?description as ?study_detail
        ?study ?initial_sample_size ?replication_sample_size
+FROM <http://togovar.biosciencedbc.jp/gwas-catalog>
 WHERE {
   VALUES ?rs_id  { "{{ rs_str }}" }
-  
-  GRAPH <http://togovar.biosciencedbc.jp/gwas-catalog>{
-    ?assoc a gwas:Association ;
-      terms:reported_genes ?reported_genes;
-      terms:strongest_snp_risk_allele ?variant_and_risk_allele;
-      terms:risk_allele_frequency ?raf;
-      terms:snps ?rs_id;
-      terms:p_value ?p_value;
-      terms:odds_ratio ?odds_ratio;
-      terms:beta ?beta;
-      terms:beta_unit ?beta_unit ;
-      terms:ci_text ?ci_text;
-      terms:study ?study;
-      dct:date ?association_date;
-      dct:references ?pubmed;
-      gwas:has_pubmed_id ?pubmed_id.
-     
-    ?study dct:identifier ?study_id;
-      dct:description ?description;
-      terms:initial_sample_size ?initial_sample_size;
-      terms:replication_sample_size ?replication_sample_size.
-  }
+
+  ?assoc a gwas:Association ;
+    terms:reported_genes ?reported_genes;
+    terms:strongest_snp_risk_allele ?variant_and_risk_allele;
+    terms:risk_allele_frequency ?raf;
+    terms:snps ?rs_id;
+    terms:p_value ?p_value;
+    terms:odds_ratio ?odds_ratio;
+    terms:beta ?beta;
+    terms:beta_unit ?beta_unit ;
+    terms:ci_text ?ci_text;
+    terms:study ?study;
+    dct:date ?association_date;
+    dct:references ?pubmed;
+    gwas:has_pubmed_id ?pubmed_id.
+
+  ?study dct:identifier ?study_id;
+    dct:description ?description;
+    terms:initial_sample_size ?initial_sample_size;
+    terms:replication_sample_size ?replication_sample_size.
+
 } ORDER by ?p_value
 ```
 
 ## `rs2traits`
 ```sparql
-PREFIX terms: <http://med2rdf.org/gwascatalog/terms/> 
-PREFIX gwas: <http://rdf.ebi.ac.uk/terms/gwas/> 
-PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> 
+PREFIX gwas: <http://rdf.ebi.ac.uk/terms/gwas/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX terms: <http://med2rdf.org/gwascatalog/terms/>
 
 SELECT ?assoc ?mapped_trait ?mapped_trait_uri
 WHERE{
@@ -119,7 +109,7 @@ WHERE{
 ({rs2traits})=>{
   const traits = {};
   rs2traits.results.bindings.map(x=>{
-    if (! traits[x.assoc.value]){ traits[x.assoc.value] = [] } 
+    if (! traits[x.assoc.value]){ traits[x.assoc.value] = [] }
     traits[x.assoc.value].push('<a href="' + x.mapped_trait_uri.value + '">' + x.mapped_trait.value + '</a>');
   })
   return traits;
@@ -129,7 +119,7 @@ WHERE{
 ## `result`
 ```javascript
 ({rs2gwas, trait_html})=>{
-  return rs2gwas.results.bindings.map(d=>{ 
+  return rs2gwas.results.bindings.map(d=>{
     return {
       variant_and_risk_allele: d.variant_and_risk_allele.value,
       rs_uri: "https://www.ebi.ac.uk/gwas/variants/" + d.rs_id.value,
@@ -147,6 +137,6 @@ WHERE{
       initial_sample_size: d.initial_sample_size.value,
       replication_sample_size: d.replication_sample_size.value
     };
-  });	
+  });
 }
 ```
