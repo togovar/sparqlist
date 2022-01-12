@@ -25,25 +25,26 @@ PREFIX medgen: <http://www.ncbi.nlm.nih.gov/medgen/>
 PREFIX mesh: <http://id.mesh.nlm.gov>
 PREFIX mo: <http://med2rdf/ontology/medgen#>
 PREFIX mondo: <http://purl.obolibrary.org/obo/mondo#>
+PREFIX oboinowl: <http://www.geneontology.org/formats/oboInOwl#>
 
 SELECT DISTINCT ?efo
 FROM <http://togovar.biosciencedbc.jp/medgen>
-FROM <http://togovar.biosciencedbc.jp/efo>
+FROM <http://togovar.biosciencedbc.jp/mondo>
 WHERE {
-  VALUES ?medgen { medgen:{{ medgen_cid }} }
+  VALUES ?medgen { medgen:{{ medgen_cid }}  }
   
   GRAPH <http://togovar.biosciencedbc.jp/medgen> {
     ?medgen a mo:ConceptID.
     ?medgen rdfs:label ?medgen_label.
     ?medgen mo:mgconso ?mgconso.
-    ?mgconso dct:source mo:MSH.
-    ?mgconso rdfs:seeAlso ?mesh.
+    ?mgconso dct:source mo:MONDO.
+    ?mgconso rdfs:seeAlso ?mondo.
   }
 
-   BIND(IRI(REPLACE(STR(?mesh), "http://id.nlm.nih.gov/mesh/","http://identifiers.org/mesh/")) AS ?mesh_idt)
-
-  GRAPH <http://togovar.biosciencedbc.jp/efo>{
-    ?efo mondo:exactMatch ?mesh_idt.
+  GRAPH <http://togovar.biosciencedbc.jp/mondo> {
+    ?mondo oboinowl:hasDbXref ?dbxref.
+    FILTER(STRSTARTS(STR(?dbxref), "EFO:")).
+    BIND(URI(CONCAT("http://www.ebi.ac.uk/efo/EFO_", SUBSTR(?dbxref,5))) AS ?efo).
   }
 }
 ```
@@ -51,9 +52,6 @@ WHERE {
 ## `efo`
 ```javascript
 ({medgen2efo}) => {
-// const prefix = "http://identifiers.org/dbsnp/";
-// return medgen2efo.results.bindings[0].efo.value.replace(prefix, "");
-//  return medgen2efo.results.bindings[0].efo.value;
   return medgen2efo.results.bindings.map(b => b.efo.value);
 }
 ```
