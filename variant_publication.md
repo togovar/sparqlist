@@ -4,15 +4,13 @@ Generate rs2pubmed table data by dbSNP ID
 
 ## Parameters
 
-* `ep` Endpoint
-  * default: https://togovar.biosciencedbc.jp/sparql
 * `rs` dbSNP ID
   * default: rs671
   * example: rs671(hit both), rs797044836(pubTatorCentral only), rs112750067(no hits)
 
 ## Endpoint
 
-{{ep}}
+{{SPARQLIST_TOGOVAR_SPARQL}}
 
 ## `rs2pmid` dbSNP ID to PubMed Info by Pubtator and PubMed
 

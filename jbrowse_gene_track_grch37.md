@@ -2,49 +2,19 @@
 
 ## Parameters
 
-* `query` {chromosome}:{start}:{end}@{endpoint}
-  * default: 12:112200000:112250000@https://togovar.biosciencedbc.jp/sparql
-
-## `ep` Extract endpoint URL
-
-```javascript
-({
-  json({query}) {
-    return query.split('@')[1] || 'https://togovar.biosciencedbc.jp/sparql';
-  }
-})
-```
+* `query` {chromosome}:{start}:{end}
+  * default: 12:112200000:112250000
 
 ## Endpoint
 
-{{ep}}
+{{SPARQLIST_TOGOVAR_SPARQL}}
 
-## `chromosome` Extract chromosome
-
-```javascript
-({
-  json({query}) {
-    return query.split(':')[0];
-  }
-})
-```
-
-## `start` Extract start position
+## `q` Extract chromosome and start/end position
 
 ```javascript
 ({
   json({query}) {
-    return query.split(':')[1];
-  }
-})
-```
-
-## `end` Extract end position
-
-```javascript
-({
-  json({query}) {
-    return query.split(':')[2].replace(/@.*/, '');
+    return query.match(/^([1-9]|1[0-9]|2[0-2]|X|Y|MT):(\d+):(\d+)/).slice(1, 4);
   }
 })
 ```
@@ -66,9 +36,9 @@ PREFIX faldo: <http://biohackathon.org/resource/faldo#>
 SELECT DISTINCT ?gene_id ?gene_type ?gene_start ?gene_end ?feat_id ?feat_type ?feat_start ?feat_end ?exon_id ?exon_type ?exon_start ?exon_end ?strand ?gene_name ?gene_description ?feat_name ?feat_description ?feat_class ?exon_name
 FROM <http://togovar.biosciencedbc.jp/ensembl>
 WHERE {
-  VALUES ?region_start { {{start}} }
-  VALUES ?region_end { {{end}} }
-  VALUES ?chr_id { <http://identifiers.org/hco/{{chromosome}}#GRCh37> }
+  VALUES ?region_start { {{q.[1]}} }
+  VALUES ?region_end { {{q.[2]}} }
+  VALUES ?chr_id { <http://identifiers.org/hco/{{q.[0]}}#GRCh37> }
 
   # gene
   BIND ("gene" AS ?gene_type)

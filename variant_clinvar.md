@@ -2,14 +2,12 @@
 
 ## Parameters
 
-* `ep` Endpoint
-  * default: https://togovar.biosciencedbc.jp/sparql
 * `tgv_id` TogoVar ID
   * default: tgv219804
 
 ## Endpoint
 
-{{ep}}
+{{SPARQLIST_TOGOVAR_SPARQL}}
 
 ## `type`
 

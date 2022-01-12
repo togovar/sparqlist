@@ -5,14 +5,10 @@
 * `tgv_id` TogoVar ID
   * default: tgv55413188
   * example: tgv218973
-* `ep` Endpoint
-  * default: https://togovar.biosciencedbc.jp/sparql
-* `search_api` Search endpoint
-  * default: https://togovar.biosciencedbc.jp/search
 
 ## Endpoint
 
-{{ep}}
+{{SPARQLIST_TOGOVAR_SPARQL}}
 
 ## `label`
 ```sparql
@@ -32,12 +28,12 @@ WHERE {
 ## `result`
 
 ```javascript
-async ({search_api, label}) => {
+async ({SPARQLIST_TOGOVAR_SEARCH, label}) => {
   const binding = label.results.bindings[0];
 
   if (binding) {
     const position = `${binding.label.value.split('-')[0]}:${binding.label.value.split('-')[1]}`;
-    const res = await fetch(search_api.concat("?stat=0&quality=0&term=", position), {
+    const res = await fetch(SPARQLIST_TOGOVAR_SEARCH.concat("?stat=0&quality=0&term=", position), {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
