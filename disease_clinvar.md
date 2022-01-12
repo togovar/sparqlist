@@ -23,7 +23,7 @@ PREFIX medgen: <http://ncbi.nlm.nih.gov/medgen/>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX tgvo: <http://togovar.biosciencedbc.jp/vocabulary/>
 
-SELECT DISTINCT ?tgv_id ?title ?vcv_disp ?clinvar ?interpretation ?review_status ?last_evaluated ?condition
+SELECT DISTINCT ?tgv_id ?tgv_label ?title ?vcv_disp ?clinvar ?interpretation ?review_status ?last_evaluated ?condition
 FROM <http://togovar.biosciencedbc.jp/clinvar>
 FROM <http://togovar.biosciencedbc.jp/variant/annotation/clinvar>
 FROM <http://togovar.biosciencedbc.jp/variant>
@@ -54,8 +54,11 @@ WHERE {
 
   GRAPH <http://togovar.biosciencedbc.jp/variant>{
     ?togovar dct:identifier ?tgv_id .
+    ?togovar rdfs:label ?tgv_label
   }
-
+  GRAPH <http://togovar.biosciencedbc.jp/variant/annotation/clinvar>{
+    ?togovar tgvo:condition / rdfs:seeAlso ?clinvar .
+  }
 }
 ORDER BY ?title ?review_status ?interpretation DESC(?last_evaluated) ?condition
 ```
@@ -167,6 +170,7 @@ ORDER BY ?title ?review_status ?interpretation DESC(?last_evaluated) ?condition
   return medgen_clinvar.results.bindings.map(d => ({
     tgv_id: d.tgv_id.value,
     tgv_link: base_url + "/variant/" + d.tgv_id.value,
+    position: d.tgv_label.value.split("-")[0] + ":" + d.tgv_label.value.split("-")[1],
     title: d.title.value,
     vcv: d.vcv_disp.value,
     clinvar: d.clinvar.value,
