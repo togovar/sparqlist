@@ -16,7 +16,7 @@ PREFIX dct: <http://purl.org/dc/terms/>
 PREFIX dc11: <http://purl.org/dc/elements/1.1/>
 PREFIX tgvo: <http://togovar.biosciencedbc.jp/vocabulary/>
 
-SELECT DISTINCT ?transcript ?enst_id ?gene_symbol ?gene_xref (GROUP_CONCAT(DISTINCT ?_consequence_label ; separator = ",") AS ?consequence_label) ?hgvsp ?hgvsc ?sift ?polyphen
+SELECT DISTINCT ?transcript ?enst_id ?gene_symbol ?gene_xref (GROUP_CONCAT(DISTINCT ?_consequence_label ; separator = ",") AS ?consequence_label) ?hgvs_p ?hgvs_c ?sift ?polyphen
 WHERE {
   VALUES ?tgv_id { "{{tgv_id}}" }
 
@@ -35,12 +35,12 @@ WHERE {
     OPTIONAL { ?_consequence tgvo:sift ?sift . }
     OPTIONAL { ?_consequence tgvo:polyphen ?polyphen . }
     OPTIONAL {
-      ?_consequence tgvo:hgvsp ?hgvsp .
-      FILTER STRSTARTS(?hgvsp, 'ENSP')
+      ?_consequence tgvo:hgvsp ?hgvs_p .
+      FILTER STRSTARTS(?hgvs_p, 'ENSP')
     }
     OPTIONAL {
-      ?_consequence tgvo:hgvsc ?hgvsc .
-      FILTER STRSTARTS(?hgvsc, 'ENST')
+      ?_consequence tgvo:hgvsc ?hgvs_c .
+      FILTER STRSTARTS(?hgvs_c, 'ENST')
     }
     OPTIONAL {
       ?_consequence tgvo:transcript ?transcript .
