@@ -37,47 +37,6 @@ WHERE {
 }
 ```
 
-## `search_api`
-```javascript
-async ({search_api, gene_symbol}) => {
-  const max_rows = 10000;
-
-  if (gene_symbol) {
-    const first_res = await fetch(search_api.concat("?stat=0&quality=0&term=", gene_symbol), {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-      },
-    });
-    const first_json = await first_res.json();
-    let result_data = first_json.data;
-    const data_count = first_json.statistics.filtered < max_rows ? first_json.statistics.filtered : max_rows;
-    
-    let tmp_res = [];
-    let counnt = 0;
-
-    for (let i = 1; i * 100 < data_count; i++) {
-      let offset = i * 100;
-      let res = await fetch(search_api.concat("?stat=0&quality=0&term=", gene_symbol, "&offset=", offset), {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-        },
-      });
-      let json = await res.json();
-      tmp_res[i] = json.data;
-      count = i;
-    }
-
-    for (let j = 1; j <count + 1; j++){
-     result_data = result_data.concat(tmp_res[j]);
-    }
-    return  { data: result_data };
-  } else {
-    return { data: [] };
-  }
-}
-```
 ## `gene2gwas`
 
 ```sparql
@@ -85,7 +44,7 @@ PREFIX dct: <http://purl.org/dc/terms/>
 PREFIX gwas: <http://rdf.ebi.ac.uk/terms/gwas/>
 PREFIX terms: <http://med2rdf.org/gwascatalog/terms/>
 
-SELECT ?assoc
+SELECT DISTINCT ?assoc
        ?variant_and_risk_allele
        ?rs_id
        ?raf
@@ -135,7 +94,7 @@ PREFIX terms: <http://med2rdf.org/gwascatalog/terms/>
 PREFIX gwas: <http://rdf.ebi.ac.uk/terms/gwas/> 
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> 
 
-SELECT ?assoc ?mapped_trait ?mapped_trait_uri
+SELECT DISTINCT ?assoc ?mapped_trait ?mapped_trait_uri
 WHERE{
   VALUES ?reported_genes  { "{{ gene_symbol }}" }
   GRAPH <http://togovar.biosciencedbc.jp/gwas-catalog>{
@@ -160,46 +119,62 @@ WHERE{
   return traits;
 }
 ```
-## `extract_data`
+
+## `get_variant_info`
 ```javascript
-async ({search_api}) => {
-  const res = {};
-  search_api.data.map(a => {
-    if(a.existing_variations !== void 0){
-      freq = {};
-      a.frequencies.forEach((elem,num) => {
-        freq[elem.source] = elem.allele ; 
-      });
-      a.existing_variations.forEach((elem, num) => {
-        res[elem] = {
-          tgv_id: a.id,
-          position: a.chromosome + ": " + a.start,
-          ref_alt: '<div class="ref-alt"><span class="ref" data-sum="' + a.reference.length + '">' + a.reference + '</span><span class="arrow"></span><span class="alt" data-sum="' + a.alternative.length + '">' + a.alternative + '</span></div>',
-          alt_freq: freq["gem_j_wga"]
+ async ({search_api, gene2gwas}) => {
+  let results = {};
+  let rs_ids = new Set();
+
+  gene2gwas.results.bindings.forEach(d => {
+    rs_ids.add(d.rs_id.value);
+  });
+
+  for(var rs_id of rs_ids){
+    const options = {
+      method: 'GET',
+      headers: {
+         'Accept': 'application/json',
+       }
+    };
+    const request_uri = search_api.concat("?stat=0&quality=0&term=", rs_id);
+    await fetch(request_uri, options).then(res=>res.json()).then(json=> { 
+      json.data.forEach (d => {
+        let gem_j_freq = null;
+        d.frequencies.forEach (f => {
+          if(f.source === 'gem_j_wga' && typeof f.allele != 'undefined'){
+            gem_j_freq = f.allele.frequency;
+          }
+        });
+        results[rs_id] = {
+          tgv_id: d.id,
+          position: d.chromosome + ":" + d.start,
+          ref_alt: '<div class="ref-alt"><span class="ref" data-sum="' + d.reference.length + '">' + d.reference + '</span><span class="arrow"></span><span class="alt" data-sum="' + d.alternative.length + '">' + d.alternative + '</span></div>',
+          alt_freq_gem_j_wga: gem_j_freq,
+          raf: d.raf
         }
       });
-    }
-  });
-  return res;
+    });
+  }
+
+  return results;
 }
 ```
 
 ## `result`
 ```javascript
-async ({gene2gwas, trait_html, extract_data, base_url}) => {
-  const associations = {};
+({gene2gwas, trait_html, get_variant_info, base_url}) => {
   const res = [];
+  const variant_info = get_variant_info;
   gene2gwas.results.bindings.map(d => {
-    if (! associations[d.assoc.value]){
-      associations[d.assoc.value] = d.assoc.value;
       res.push({
-        tgv_id: extract_data[d.rs_id.value] ? extract_data[d.rs_id.value].tgv_id : "",
-        tgv_link: extract_data[d.rs_id.value] ? base_url + "/variant/" + extract_data[d.rs_id.value].tgv_id : "",
+        tgv_id: variant_info[d.rs_id.value] ? variant_info[d.rs_id.value].tgv_id : "",
+        tgv_link: variant_info[d.rs_id.value] ? base_url + "/variant/" + variant_info[d.rs_id.value].tgv_id : "",
         variant_and_risk_allele: d.variant_and_risk_allele.value,
         rs_uri: "https://www.ebi.ac.uk/gwas/variants/" + d.rs_id.value,
-        position: extract_data[d.rs_id.value] ? extract_data[d.rs_id.value].position : "",
-        ref_alt: extract_data[d.rs_id.value] ? extract_data[d.rs_id.value].ref_alt : "",
-        alt_freq: extract_data[d.rs_id.value] ? extract_data[d.rs_id.value].alt_freq.frequency : "",
+        position: variant_info[d.rs_id.value] ? variant_info[d.rs_id.value].position : "",
+        ref_alt: variant_info[d.rs_id.value] ? variant_info[d.rs_id.value].ref_alt : "",
+        alt_freq: variant_info[d.rs_id.value] ? variant_info[d.rs_id.value].alt_freq_gem_j_wga : "",
         raf: d.raf.value != "NR" ? parseFloat(d.raf.value) : null,
         p_value: d.p_value.value != "NAN" ? parseFloat(d.p_value.value) : null,
         odds_ratio: d.odds_ratio.value != "NA" ? parseFloat(d.odds_ratio.value) : null,
@@ -214,7 +189,6 @@ async ({gene2gwas, trait_html, extract_data, base_url}) => {
         initial_sample_size: d.initial_sample_size.value,
         replication_sample_size: d.replication_sample_size.value
       });
-    }
   });
   return res;
 }
