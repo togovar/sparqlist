@@ -3,7 +3,7 @@
 ## Parameters
 
 * `ep` Endpoint
-  * default: https://togovar-dev.biosciencedbc.jp/sparql
+  * default: https://togovar.biosciencedbc.jp/sparql
 * `hgnc_id` HGNC Id
   * default: 404
 * `base_url` TogoVar URL
