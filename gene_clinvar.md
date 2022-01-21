@@ -38,7 +38,6 @@ WHERE {
 }
 ```
 
-
 ## `ensg2clinvar`
 
 ```sparql
@@ -47,7 +46,7 @@ PREFIX cvo:  <http://purl.jp/bio/10/clinvar/>
 PREFIX tgvo: <http://togovar.biosciencedbc.jp/vocabulary/>
 PREFIX dct: <http://purl.org/dc/terms/>
 
-SELECT DISTINCT ?tgv_id ?review_status ?interpretation ?last_evaluated ?condition ?medgen ?clinvar ?title ?vcv ?vcv_disp ?label
+SELECT DISTINCT ?tgv_id ?review_status ?interpretation ?last_evaluated ?condition ?medgen ?clinvar ?title ?vcv ?label
 
 WHERE {
   VALUES ?ens_gene { <{{ ensg_uri_string }}> }
@@ -68,8 +67,6 @@ WHERE {
       cvo:interpreted_record/cvo:review_status ?review_status ;
       cvo:interpreted_record/cvo:rcv_list/cvo:rcv_accession ?_rcv .
 
-    BIND (REPLACE (STR(?vcv), 'VCV0+', '') AS ?vcv_disp) .
-
     ?_rcv cvo:interpretation ?interpretation ;
       dct:identifier ?rcv ;
       cvo:date_last_evaluated ?last_evaluated ;
@@ -87,7 +84,6 @@ WHERE {
 }
 ORDER BY ?title ?review_status ?interpretation DESC(?last_evaluated) ?condition
 ```
-
 
 ## `clinical_significance_key`
 
@@ -198,7 +194,7 @@ ORDER BY ?title ?review_status ?interpretation DESC(?last_evaluated) ?condition
     tgv_link: base_url + "/variant/" + d.tgv_id.value,
     position: d.label.value.split("-")[0] + ":" + d.label.value.split("-")[1],
     title: d.title.value,
-    vcv: d.vcv_disp.value,
+    vcv: d.vcv.value.replace(/VCV0+/, ''),
     clinvar: d.clinvar.value,
     interpretation: clinical_significance_key[d.interpretation.value],
     review_status: review_status_stars[d.review_status.value],
