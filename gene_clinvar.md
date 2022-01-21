@@ -199,6 +199,7 @@ ORDER BY ?title ?review_status ?interpretation DESC(?last_evaluated) ?condition
     interpretation: clinical_significance_key[d.interpretation.value],
     review_status: review_status_stars[d.review_status.value],
     last_evaluated: d.last_evaluated.value,
+    medgen: (d.medgen ? "https://www.ncbi.nlm.nih.gov/medgen/" + d.medgen.value : ""),
     condition: d.condition.value
   }));
 }
