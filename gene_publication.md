@@ -186,7 +186,6 @@ WHERE {
   let pmids_info = Object.assign(shaping_pmidinfo, shaping_pmidinfo_litvar)
 
   for (let pmid in pmids_info){
-    console.log(pmids_info[pmid].year);
     let pubmed = "<a href=\"https://www.ncbi.nlm.nih.gov/pubmed/" + pmid + "\">" + pmid + "</a>";
     let pubtator = "<br>(<a href=\"https://www.ncbi.nlm.nih.gov/research/pubtator/?view=docsum&query=" + pmid + "\">PubTatorCentral</a>)";
     let litvar = "<br>(<a href=\"https://www.ncbi.nlm.nih.gov/CBBresearch/Lu/Demo/LitVar/#!?query="+ rs + "\">Litvar</a>)";
