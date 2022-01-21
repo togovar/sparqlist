@@ -138,23 +138,27 @@ WHERE{
        }
     };
     const request_uri = search_api.concat("?stat=0&quality=0&term=", rs_id);
-    await fetch(request_uri, options).then(res=>res.json()).then(json=> { 
-      json.data.forEach (d => {
-        let gem_j_freq = null;
-        d.frequencies.forEach (f => {
+    try {
+      await fetch(request_uri, options).then(res=>res.json()).then(json=> {
+        json.data.forEach (d => {
+          let gem_j_freq = null;
+          d.frequencies.forEach (f => {
           if(f.source === 'gem_j_wga' && typeof f.allele != 'undefined'){
             gem_j_freq = f.allele.frequency;
+         }
+        });
+          results[rs_id] = {
+            tgv_id: d.id,
+            position: d.chromosome + ":" + d.start,
+            ref_alt: '<div class="ref-alt"><span class="ref" data-sum="' + d.reference.length + '">' + d.reference + '</span><span class="arrow"></span><span class="alt" data-sum="' + d.alternative.length + '">' + d.alternative + '</span></div>',
+            alt_freq_gem_j_wga: gem_j_freq,
+            raf: d.raf
           }
         });
-        results[rs_id] = {
-          tgv_id: d.id,
-          position: d.chromosome + ":" + d.start,
-          ref_alt: '<div class="ref-alt"><span class="ref" data-sum="' + d.reference.length + '">' + d.reference + '</span><span class="arrow"></span><span class="alt" data-sum="' + d.alternative.length + '">' + d.alternative + '</span></div>',
-          alt_freq_gem_j_wga: gem_j_freq,
-          raf: d.raf
-        }
       });
-    });
+    }catch(e){
+      console.log("Error in TogoVar search API for rs_id=" + rs_id);
+    }
   }
 
   return results;
