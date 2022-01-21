@@ -76,11 +76,13 @@ WHERE {
       cvo:interpreted_condition_list/cvo:interpreted_condition ?_interpreted_condition .
 
     OPTIONAL {
-      ?_interpreted_condition dct:references ?medgen ;
-        dct:source ?db ;
-        rdfs:label ?condition .
-        FILTER (?db IN ("MedGen")) .
+      ?_interpreted_condition rdfs:label ?condition_label .
+      ?_interpreted_condition dct:source ?db ;
+                              dct:identifier ?medgen .
+      FILTER (?db IN ("MedGen"))
     }
+
+    BIND(IF(isLiteral(?_interpreted_condition), ?_interpreted_condition, ?condition_label) AS ?condition)
   }
 }
 ORDER BY ?title ?review_status ?interpretation DESC(?last_evaluated) ?condition
