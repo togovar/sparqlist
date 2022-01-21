@@ -3,7 +3,7 @@
 ## Parameters
 
 * `ep` Endpoint
-  * default: https://togovar.biosciencedbc.jp/sparql
+  * default: https://togovar-dev.biosciencedbc.jp/sparql
 * `hgnc_id` HGNC Id
   * default: 404
 * `base_url` TogoVar URL
@@ -41,12 +41,13 @@ WHERE {
 ## `ensg2clinvar`
 
 ```sparql
-PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX cvo:  <http://purl.jp/bio/10/clinvar/>
-PREFIX tgvo: <http://togovar.biosciencedbc.jp/vocabulary/>
+PREFIX cvo: <http://purl.jp/bio/10/clinvar/>
 PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX sio: <http://semanticscience.org/resource/>
+PREFIX tgvo: <http://togovar.biosciencedbc.jp/vocabulary/>
 
-SELECT DISTINCT ?tgv_id ?review_status ?interpretation ?last_evaluated ?condition ?medgen ?clinvar ?title ?vcv ?label
+SELECT DISTINCT ?tgv_id ?rs_id ?review_status ?interpretation ?last_evaluated ?condition ?medgen ?clinvar ?title ?vcv ?label
 
 WHERE {
   VALUES ?ens_gene { <{{ ensg_uri_string }}> }
@@ -65,7 +66,12 @@ WHERE {
       rdfs:label ?title ;
       cvo:accession ?vcv ;
       cvo:interpreted_record/cvo:review_status ?review_status ;
+      cvo:interpreted_record/sio:SIO_000628/dct:references ?dbsnp ;
       cvo:interpreted_record/cvo:rcv_list/cvo:rcv_accession ?_rcv .
+
+    ?dbsnp rdfs:seeAlso ?rs_id;
+      dct:source ?dbname.
+    FILTER(?dbname IN ("dbSNP")).
 
     ?_rcv cvo:interpretation ?interpretation ;
       dct:identifier ?rcv ;
@@ -192,6 +198,8 @@ ORDER BY ?title ?review_status ?interpretation DESC(?last_evaluated) ?condition
   return ensg2clinvar.results.bindings.map(d => ({
     tgv_id: d.tgv_id.value,
     tgv_link: base_url + "/variant/" + d.tgv_id.value,
+    rs_id: d.rs_id.value.replace("http://ncbi.nlm.nih.gov/snp/", ""),
+    rs_id_link: d.rs_id.value.replace("http://", "https://"),
     position: d.label.value.split("-")[0] + ":" + d.label.value.split("-")[1],
     title: d.title.value,
     vcv: d.vcv.value.replace(/VCV0+/, ''),
