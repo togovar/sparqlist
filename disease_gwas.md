@@ -2,18 +2,13 @@
 
 ## Parameters
 
-* `ep` Endpoint
-  * default: https://togovar.biosciencedbc.jp/sparql
 * `medgen_cid` MedGen CID
   * default: C0023467 
-  * example: C0023467(acute myeloid leukemia), C2675520(breast-ovarian cancer)
-* `base_url` TogoVar URL
-  * default: https://togovar.biosciencedbc.jp
-  
+  * example: C0023467(acute myeloid leukemia), C2675520(breast-ovarian cancer)  
   
 ## Endpoint
 
-{{ ep }}
+{{SPARQLIST_TOGOVAR_SPARQL}}
 
 
 ## `medgen2efo`
@@ -66,7 +61,7 @@ PREFIX mondo: <http://purl.obolibrary.org/obo/mondo#>
 PREFIX oboinowl: <http://www.geneontology.org/formats/oboInOwl#>
 PREFIX terms: <http://med2rdf.org/gwascatalog/terms/>
 
-SELECT ?assoc
+SELECT DISTINCT ?assoc
        ?variant_and_risk_allele
        ?raf
        ?p_value
@@ -116,60 +111,44 @@ WHERE {
    ?mapped_trait_uri rdfs:label ?mapped_trait.
  }
 }
-
 ```
 
 ## `rs2tgv`
 ```javascript
-async ({efo2gwas, base_url}) => {
-  let rs_uri = [];
-  const tmp = [];
-  const rs_array = {};
-  const tgv_tag = {};
-  let count = 0;
-  const variant_and_risk_allele ={};
+async ({SPARQLIST_TOGOVAR_SPARQLIST, efo2gwas}) => {
+  let rs_ids = [];
+  const num_of_rs_ids_per_fetch = 200;
+  let rs_ids_per_fetch = [];
+  let rs2tgv = {};
   
+  const api_options = {
+    method: 'GET',
+    headers: {
+      'Accept': 'application/json',
+    },
+  };
+
   efo2gwas.results.bindings.map(binding => {
-    variant_and_risk_allele[binding.variant_and_risk_allele.value] = binding.variant_and_risk_allele.value;
-    binding.variant_and_risk_allele.value.split("; ").forEach(rs => {
-      rs_uri.push("<http://identifiers.org/dbsnp/" + rs.split('-')[0] + ">");
+    return binding.variant_and_risk_allele.value.split("; ").forEach(rs => {
+      rs_ids.push(rs.split('-')[0]);
     });
   });
-  rs_uri = Array.from(new Set(rs_uri));
-  for (const elem of rs_uri) {
-    tmp.push(elem);
-    if (tmp.length == 100){
-      let api = "https://test43.biosciencedbc.jp/sparqlist/api/rs2tgvid";
-      rs_array[count] = api.concat("?ep=https://togovar-dev.biosciencedbc.jp/sparql&rs_uri=", tmp.join(" ")).toString();
-      count ++;
-      tmp.length = 0;
-    }
-    let api = "https://test43.biosciencedbc.jp/sparqlist/api/rs2tgvid";
-    rs_array[count] = api.concat("?ep=https://togovar-dev.biosciencedbc.jp/sparql&rs_uri=", tmp.join(" ")).toString();
-  };
-  for (let key in rs_array){
-    const tmp_res = await fetch(rs_array[key], {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-      },
-    });
-    const json = await tmp_res.json();
-    for (let binding of json.results.bindings){
-      const rs = binding.dbsnp.value.replace("http://identifiers.org/dbsnp/","");
-      tgv_tag[rs] = binding.tgv_id.value ? "(<a href='" + base_url + "/variant/" + binding.tgv_id.value + "'>" + binding.tgv_id.value +"</a>)" : "";
+  rs_ids = Array.from(new Set(rs_ids));
+
+  while(rs_ids.length > 1){
+    const api = SPARQLIST_TOGOVAR_SPARQLIST + "/api/rs2tgvid?rs_id=" + rs_ids.splice(1, num_of_rs_ids_per_fetch).join(",");  
+    try{
+      const json = await fetch(api, api_options).then(res => res.json()).then(json => {
+        for(const rs_id of Object.keys(json)){
+          rs2tgv[rs_id] = json[rs_id];
+        } 
+      });
+    }catch(e){
+      console.log("Error in rs2tgv:" + e);
     }
   }
-   for (let key in variant_and_risk_allele){
-     const val = variant_and_risk_allele[key];
-     const disp_rs = [];
-     val.split("; ").forEach(rs => {
-       const html = tgv_tag[rs.split('-')[0]] ? tgv_tag[rs.split('-')[0]] : "";
-      disp_rs.push("<a href='https://www.ebi.ac.uk/gwas/variants/" + rs.split('-')[0] + "'>" + rs + "</a>" + html );
-    });
-     variant_and_risk_allele[key] = disp_rs.join();
-   }
-  return variant_and_risk_allele;  
+
+  return rs2tgv;
 }
 ```
 
@@ -188,14 +167,21 @@ async ({efo2gwas, base_url}) => {
 ## `result`
 
 ```javascript
-async ({efo2gwas,rs2tgv,trait_html}) => {
-  const associations = {};
+({efo2gwas,rs2tgv,trait_html}) => {
   const res = [];
-  efo2gwas.results.bindings.map(d => {
-    if (! associations[d.assoc.value]){
-      associations[d.assoc.value] = d.assoc.value;
-      res.push({
-        variant_and_risk_allele: rs2tgv[d.variant_and_risk_allele.value],
+
+  efo2gwas.results.bindings.forEach(d => {
+    const variant_and_risk_allele = d.variant_and_risk_allele.value.split(/;\s+/).map(rs_allele => {
+      const rs_id = rs_allele.split('-')[0];
+      const tgv_id = rs2tgv[rs_id];
+      const link_to_gwas = "<a href='https://www.ebi.ac.uk/gwas/variants/" + rs_id + "'>" + rs_id + "</a>";
+      const link_to_tgv = "<a href='/variant/" + rs2tgv[rs_id] + "'>" + rs2tgv[rs_id] + "</a>";
+
+      return tgv_id ? link_to_gwas + "(" + link_to_tgv + ")" : link_to_gwas;
+    }).join('<br>');
+
+    res.push({
+        variant_and_risk_allele: variant_and_risk_allele,
         raf: d.raf.value,
         p_value: d.p_value.value,
         odds_ratio: d.odds_ratio.value,
@@ -209,8 +195,7 @@ async ({efo2gwas,rs2tgv,trait_html}) => {
         study: d.study.value,
         initial_sample_size: d.initial_sample_size.value,
         replication_sample_size: d.replication_sample_size.value
-      });
-    }
+    });
   });
   return res;
 }
