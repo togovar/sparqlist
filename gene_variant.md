@@ -4,13 +4,11 @@
 
 * `hgnc_id` HGNC ID
   * default: 404
-* `ep` Endpoint
-  * default: https://togovar.biosciencedbc.jp/sparql
 * `search_api` Search endpoint
   * default: https://togovar.biosciencedbc.jp/search
 
 ## Endpoint
-{{ ep }}
+{{SPARQLIST_TOGOVAR_SPARQL}}
 
 ## `id2symbol`
 ```sparql

@@ -4,17 +4,11 @@
 
 * `hgnc_id` HGNC ID
   * default: 404
-* `ep` Endpoint
-  * default: https://togovar.biosciencedbc.jp/sparql
-* `search_api` Search endpoint
-  * default: https://togovar.biosciencedbc.jp/search
-* `base_url` TogoVar URL
-  * default: https://togovar.biosciencedbc.jp
-  
   
 ## Endpoint
 
-{{ ep }}
+{{SPARQLIST_TOGOVAR_SPARQL}}
+
 
 ## `id2symbol`
 
@@ -122,7 +116,7 @@ WHERE{
 
 ## `get_variant_info`
 ```javascript
- async ({search_api, gene2gwas}) => {
+ async ({SPARQLIST_TOGOVAR_SEARCH_API, gene2gwas}) => {
   let results = {};
   let rs_ids = new Set();
 
@@ -137,7 +131,7 @@ WHERE{
          'Accept': 'application/json',
        }
     };
-    const request_uri = search_api.concat("?stat=0&quality=0&term=", rs_id);
+    const request_uri = SPARQLIST_TOGOVAR_SEARCH_API.concat("?stat=0&quality=0&term=", rs_id);
     try {
       await fetch(request_uri, options).then(res=>res.json()).then(json=> {
         json.data.forEach (d => {
@@ -167,13 +161,13 @@ WHERE{
 
 ## `result`
 ```javascript
-({gene2gwas, trait_html, get_variant_info, base_url}) => {
+({gene2gwas, trait_html, get_variant_info}) => {
   const res = [];
   const variant_info = get_variant_info;
   gene2gwas.results.bindings.map(d => {
       res.push({
         tgv_id: variant_info[d.rs_id.value] ? variant_info[d.rs_id.value].tgv_id : "",
-        tgv_link: variant_info[d.rs_id.value] ? base_url + "/variant/" + variant_info[d.rs_id.value].tgv_id : "",
+        tgv_link: variant_info[d.rs_id.value] ? "/variant/" + variant_info[d.rs_id.value].tgv_id : "",
         variant_and_risk_allele: d.variant_and_risk_allele.value,
         rs_uri: "https://www.ebi.ac.uk/gwas/variants/" + d.rs_id.value,
         position: variant_info[d.rs_id.value] ? variant_info[d.rs_id.value].position : "",

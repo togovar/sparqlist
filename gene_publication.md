@@ -5,12 +5,10 @@ Generate gene2pubmed table data by dbSNP ID
 
 * `hgnc_id`
   * default: 404
-* `ep` Endpoint
-  * default: https://togovar.biosciencedbc.jp/sparql
 
 ## Endpoint
 
-{{ ep }}
+{{SPARQLIST_TOGOVAR_SPARQL}}
 
 ## `gene2pmid` HGNC gene ID to PubMed Info by Pubtator and PubMed
 

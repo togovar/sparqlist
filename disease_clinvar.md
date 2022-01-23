@@ -2,8 +2,6 @@
 
 ## Parameters
 
-* `ep` Endpoint
-  * default: https://togovar.biosciencedbc.jp/sparql
 * `medgen_cid` MedGen CID 
   * default: C0023467
   * example: C0023467
@@ -12,7 +10,7 @@
 
 ## Endpoint
 
-{{ ep }}
+{{SPARQLIST_TOGOVAR_SPARQL}}
 
 ## `medgen_clinvar`
 
@@ -55,9 +53,6 @@ WHERE {
   GRAPH <http://togovar.biosciencedbc.jp/variant>{
     ?togovar dct:identifier ?tgv_id .
     ?togovar rdfs:label ?tgv_label
-  }
-  GRAPH <http://togovar.biosciencedbc.jp/variant/annotation/clinvar>{
-    ?togovar tgvo:condition / rdfs:seeAlso ?clinvar .
   }
 }
 ORDER BY ?title ?review_status ?interpretation DESC(?last_evaluated) ?condition
