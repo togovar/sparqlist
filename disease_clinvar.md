@@ -4,9 +4,7 @@
 
 * `medgen_cid` MedGen CID 
   * default: C0023467
-  * example: C0023467
-* `base_url` TogoVar URL
-  * default: https://togovar.biosciencedbc.jp
+  * example: C0678222
 
 ## Endpoint
 
@@ -161,10 +159,10 @@ ORDER BY ?title ?review_status ?interpretation DESC(?last_evaluated) ?condition
 ## `result`
 
 ```javascript
-({base_url, medgen_clinvar, clinical_significance_key, review_status_stars}) => {
+({medgen_clinvar, clinical_significance_key, review_status_stars}) => {
   return medgen_clinvar.results.bindings.map(d => ({
     tgv_id: d.tgv_id.value,
-    tgv_link: base_url + "/variant/" + d.tgv_id.value,
+    tgv_link: "/variant/" + d.tgv_id.value,
     position: d.tgv_label.value.split("-")[0] + ":" + d.tgv_label.value.split("-")[1],
     title: d.title.value,
     vcv: d.vcv_disp.value,

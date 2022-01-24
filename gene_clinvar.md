@@ -4,8 +4,6 @@
 
 * `hgnc_id` HGNC Id
   * default: 404
-* `base_url` TogoVar URL
-  * default: https://togovar.biosciencedbc.jp
 
 ## Endpoint
 
@@ -195,7 +193,7 @@ ORDER BY ?title ?review_status ?interpretation DESC(?last_evaluated) ?condition
 ({base_url, ensg2clinvar, clinical_significance_key, review_status_stars}) => {
   return ensg2clinvar.results.bindings.map(d => ({
     tgv_id: d.tgv_id.value,
-    tgv_link: base_url + "/variant/" + d.tgv_id.value,
+    tgv_link: "/variant/" + d.tgv_id.value,
     rs_id: d.rs_id.value.replace("http://ncbi.nlm.nih.gov/snp/", ""),
     rs_id_link: d.rs_id.value.replace("http://", "https://"),
     position: d.label.value.split("-")[0] + ":" + d.label.value.split("-")[1],
