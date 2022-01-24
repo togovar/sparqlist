@@ -173,11 +173,12 @@ async ({SPARQLIST_TOGOVAR_SPARQLIST, efo2gwas}) => {
   efo2gwas.results.bindings.forEach(d => {
     const variant_and_risk_allele = d.variant_and_risk_allele.value.split(/;\s+/).map(rs_allele => {
       const rs_id = rs_allele.split('-')[0];
+      const rs_risk_allele = rs_allele.split('-')[1];
       const tgv_id = rs2tgv[rs_id];
-      const link_to_gwas = "<a href='https://www.ebi.ac.uk/gwas/variants/" + rs_id + "'>" + rs_id + "</a>";
+      const link_to_gwas = "<a href='https://www.ebi.ac.uk/gwas/variants/" + rs_id + "'>" + rs_id + "-" + rs_risk_allele + "</a>";
       const link_to_tgv = "<a href='/variant/" + rs2tgv[rs_id] + "'>" + rs2tgv[rs_id] + "</a>";
 
-      return tgv_id ? link_to_gwas + "(" + link_to_tgv + ")" : link_to_gwas;
+      return tgv_id ? "<span style='display: inline-block;'>" + link_to_gwas + "</span>(" + link_to_tgv + ")" : link_to_gwas;
     }).join('<br>');
 
     res.push({
