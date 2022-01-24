@@ -1,9 +1,9 @@
-# Variant report / GWAS
+# Variant_GWAS
 
 ## Parameters
 
 * `ep` Endpoint
-  * default: https://togovar.biosciencedbc.jp/sparql
+  * default: https://togovar-dev.biosciencedbc.jp/sparql
 * `tgv_id` TogoVar ID
   * default: tgv47264307
 
@@ -11,99 +11,106 @@
 
 {{ ep }}
 
-## `tgv2rs`
-
+## `tgv2gwas`
 ```sparql
-PREFIX dct: <http://purl.org/dc/terms/>
+#DEFINE sql:select-option "order"
+
+#PREFIX tgv: <http://togovar.biosciencedbc.jp/variation/>
+PREFIX oban: <http://purl.org/oban/>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX gwas_terms: <http://rdf.ebi.ac.uk/terms/gwas/>
+PREFIX oboInOwl: <http://www.geneontology.org/formats/oboInOwl#>
 
-SELECT ?rs_uri
-FROM <http://togovar.biosciencedbc.jp/variation>
-WHERE {
-  VALUES ?tgv_id { "{{ tgv_id }}" }
+SELECT DISTINCT ?variant ?rs ?p_value ?trait_name ?rs_link ?efo_link
+#FROM <http://togovar.biosciencedbc.jp/variation>
+#FROM <http://togovar.biosciencedbc.jp/gwas-catalog>
+#FROM <http://togovar.biosciencedbc.jp/efo>
+WHERE {  
+  
+  GRAPH <http://togovar.biosciencedbc.jp/variation>{
+#  VALUES ?variant { tgv:{{tgv_id}} }
+#    ?variant rdfs:seeAlso ?dbsnp .
+    
+    VALUES ?variant { "{{tgv_id}}" }.
+    ?s rdfs:seeAlso ?dbsnp;
+      <http://purl.org/dc/terms/identifier> ?variant.
+    
+    FILTER STRSTARTS(STR(?dbsnp), 'http://identifiers.org/dbsnp/')
+    BIND (REPLACE(STR(?dbsnp),'http://identifiers.org/dbsnp/','') as ?rs)
+    BIND (STRDT(REPLACE(STR(?dbsnp),'http://identifiers.org/dbsnp/',''), xsd:string) as ?rs_uri) 
+    BIND (REPLACE(STR(?dbsnp),'http://identifiers.org/dbsnp/','https://www.ebi.ac.uk/gwas/variants/') as ?rs_link)
+  }
 
-  ?variation dct:identifier ?tgv_id ;
-    rdfs:seeAlso ?rs_uri .
-}
-```
+  GRAPH <http://togovar.biosciencedbc.jp/gwas-catalog>{
+    ?gwas_snp rdfs:label ?rs_uri;
+      oban:is_subject_of ?trackable.
+  }
+    
+    ?trackable oban:has_object ?efo_uri;
+      gwas_terms:has_p_value ?p_value;
+      gwas_terms:has_gwas_trait_name ?trait_name;
+      oban:has_object ?efo_uri.
+    ?efo_uri rdfs:label ?efo_label.
+    BIND (REPLACE(STR(?efo_uri),'http://www.ebi.ac.uk/efo/','https://www.ebi.ac.uk/gwas/efotraits/') as ?efo_link)
 
-## `rs_str`
+#    OPTIONAL { 
+#      ?efo_uri oboInOwl:hasDbXref ?dbxref.
+#      FILTER REGEX(?dbxref, "^MONDO:")
+#    }
+#  
+#    GRAPH <http://togovar.biosciencedbc.jp/mondo>{
+#      OPTIONAL {
+#        ?mondo oboInOwl:id ?dbxref;
+#          rdfs:label ?mondo_label.
+#      }
+#    }
+#    VALUES ?omim { {{omimid}} }
+#
+#    ?efo_uri ?p ?omim .
+#    ?trackable oban:has_object ?efo_uri;
+#       gwas_terms:has_p_value ?p_value;
+#       gwas_terms:has_gwas_trait_name ?trait_name;
+#       rdfs:label ?rs.
+#
+#    ?s1 ?p1 ?trackable.
+#    ?s1 ?p2 ?mondo.
+#    FILTER (REGEX (?mondo , "http://purl.obolibrary.org/obo/MONDO" )).
+  
+  BIND (STRDT(REPLACE(STR(?rs),'rs',''), xsd:integer) as ?sort_number).
 
-```javascript
-({tgv2rs}) => {
-  const prefix = "http://identifiers.org/dbsnp/";
-  return tgv2rs.results.bindings[0].rs_uri.value.replace(prefix, "");
-}
-```
-
-## `rs2gwas`
-
-```sparql
-PREFIX dct: <http://purl.org/dc/terms/>
-PREFIX gwas: <http://rdf.ebi.ac.uk/terms/gwas/>
-PREFIX terms: <http://med2rdf.org/gwascatalog/terms/>
-
-SELECT ?variant_and_risk_allele
-       ?raf
-       ?p_value
-       ?odds_ratio
-       ?ci_text
-       ?beta
-       ?mapped_trait
-       ?mapped_trait_uri
-       ?pubmed_id
-       ?pubmed as ?pubmed_uri
-       ?description as ?study_detail
-       ?study
-       ?initial_sample_size
-       ?replication_sample_size
-FROM <http://togovar.biosciencedbc.jp/gwas-catalog>
-WHERE {
-  VALUES ?rs_id  { "{{ rs_str }}" }
-
-  ?assoc a gwas:Association ;
-    terms:reported_genes ?reported_genes ;
-    terms:strongest_snp_risk_allele ?variant_and_risk_allele ;
-    terms:risk_allele_frequency ?raf ;
-    terms:snps ?rs_id ;
-    terms:p_value ?p_value ;
-    terms:odds_ratio ?odds_ratio ;
-    terms:beta ?beta ;
-    terms:ci_text ?ci_text ;
-    terms:mapped_trait ?mapped_trait ;
-    terms:mapped_trait_uri ?mapped_trait_uri ;
-    terms:study ?study ;
-    dct:date ?association_date ;
-    dct:references ?pubmed ;
-    gwas:has_pubmed_id ?pubmed_id .
-
-  ?study dct:identifier ?study_id ;
-    dct:description ?description ;
-    terms:initial_sample_size ?initial_sample_size ;
-    terms:replication_sample_size ?replication_sample_size .
-}
-ORDER BY ?p_value
+} ORDER BY ?sort_number
 ```
 
 ## `result`
-
 ```javascript
-({rs2gwas}) => {
-  return rs2gwas.results.bindings.map(d => ({
-    variant_and_risk_allele: d.variant_and_risk_allele.value,
-    raf: d.raf.value,
-    p_value: d.p_value.value,
-    odds_ratio: d.odds_ratio.value,
-    ci_text: d.ci_text.value,
-    beta: d.beta.value,
-    mapped_trait: d.mapped_trait.value,
-    mapped_trait_uri: d.mapped_trait_uri.value,
-    pubmed_id: d.pubmed_id.value,
-    pubmed_uri: d.pubmed_uri.value,
-    study_detail: d.study_detail.value,
-    study: d.study.value,
-    initial_sample_size: d.initial_sample_size.value,
-    replication_sample_size: d.replication_sample_size.value
-  }));
-}
+
+({
+  json({tgv2gwas}){
+    let gwas_data = {};
+    let id = 0;
+    tgv2gwas.results.bindings.map(x => {
+      id++;
+      gwas_data[id]={
+//        variant: x.variant.value,
+        disp_rs: "<a href=\"" + x.rs_link.value + "\">" + x.rs.value + "</a>",
+//        position: "",
+        p_value: x.p_value.value,
+        disp_trait_name: "<a href=\"" + x.efo_link.value + "\">" +  x.trait_name.value +  "</a>"
+      }
+    });
+
+    return {
+//      columns: [["tgvid"], ["rs"], ["variant_position"], ["p-value"], ["traitname"]],
+      columns: [["rs"], ["p-value"], ["traitname"]],
+      data: Object.keys(gwas_data).map(function(key){
+        let gwas = gwas_data[key];
+        return [gwas.disp_rs, gwas.p_value, gwas.disp_trait_name]
+      })
+    }
+  }
+})
 ```
+
+
+
