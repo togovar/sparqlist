@@ -47,8 +47,6 @@ SELECT DISTINCT ?assoc
        ?ci_text
        ?beta
        ?beta_unit
-       ?mapped_trait
-       ?mapped_trait_uri
        ?pubmed_id
        ?pubmed as ?pubmed_uri
        ?description as ?study_detail
@@ -68,8 +66,6 @@ WHERE {
     terms:beta ?beta ;
     terms:beta_unit ?beta_unit ;
     terms:ci_text ?ci_text ;
-    terms:mapped_trait ?mapped_trait ;
-    terms:mapped_trait_uri ?mapped_trait_uri ;
     terms:study ?study ;
     dct:date ?association_date ;
     dct:references ?pubmed ;
