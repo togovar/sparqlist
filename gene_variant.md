@@ -22,12 +22,12 @@ WHERE {
 ## `result`
 
 ```javascript
-async ({SPARQLIST_TOGOVAR_SEARCH_API, id2symbol}) => {
+async ({SPARQLIST_TOGOVAR_SEARCH, id2symbol}) => {
   let binding = id2symbol.results.bindings[0].symbol.value;
   const max_rows = 10000;
 
   if (binding) {
-    const first_res = await fetch(SPARQLIST_TOGOVAR_SEARCH_API.concat("?stat=0&quality=0&term=", binding), {
+    const first_res = await fetch(SPARQLIST_TOGOVAR_SEARCH.concat("?stat=0&quality=0&term=", binding), {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
@@ -42,7 +42,7 @@ async ({SPARQLIST_TOGOVAR_SEARCH_API, id2symbol}) => {
 
     for (let i = 1; i * 100 < data_count; i++) {
       let offset = i * 100;
-      let res = await fetch(SPARQLIST_TOGOVAR_SEARCH_API.concat("?stat=0&quality=0&term=", binding, "&offset=", offset), {
+      let res = await fetch(SPARQLIST_TOGOVAR_SEARCH.concat("?stat=0&quality=0&term=", binding, "&offset=", offset), {
         method: 'GET',
         headers: {
           'Accept': 'application/json',

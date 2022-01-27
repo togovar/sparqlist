@@ -116,7 +116,7 @@ WHERE{
 
 ## `get_variant_info`
 ```javascript
- async ({SPARQLIST_TOGOVAR_SEARCH_API, gene2gwas}) => {
+ async ({SPARQLIST_TOGOVAR_SEARCH, gene2gwas}) => {
   let results = {};
   let rs_ids = new Set();
 
@@ -131,7 +131,7 @@ WHERE{
          'Accept': 'application/json',
        }
     };
-    const request_uri = SPARQLIST_TOGOVAR_SEARCH_API.concat("?stat=0&quality=0&term=", rs_id);
+    const request_uri = SPARQLIST_TOGOVAR_SEARCH.concat("?stat=0&quality=0&term=", rs_id);
     try {
       await fetch(request_uri, options).then(res=>res.json()).then(json=> {
         json.data.forEach (d => {
