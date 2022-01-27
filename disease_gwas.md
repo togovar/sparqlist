@@ -69,8 +69,6 @@ SELECT DISTINCT ?assoc
        ?ci_text
        ?beta
        ?beta_unit
-       ?mapped_trait
-       ?mapped_trait_uri
        ?pubmed_id
        ?pubmed as ?pubmed_uri
        ?description as ?study_detail
@@ -80,7 +78,7 @@ SELECT DISTINCT ?assoc
 FROM <http://togovar.biosciencedbc.jp/efo>
 FROM <http://togovar.biosciencedbc.jp/gwas-catalog>
 WHERE {
- VALUES ?conditions { <{{ efo }}> }
+ VALUES ?conditions { {{#each efo}} <{{ this }}> {{/each}} }
 
  GRAPH <http://togovar.biosciencedbc.jp/gwas-catalog>{
     ?assoc a gwas:Association ;
@@ -100,7 +98,7 @@ WHERE {
       gwas:has_pubmed_id ?pubmed_id .
 
     OPTIONAL{
-       ?assoc terms:mapped_trait_uri ?mapped_trait_uri .
+      ?assoc terms:mapped_trait_uri ?mapped_trait_uri .
     }
     ?study dct:identifier ?study_id ;
       dct:description ?description ;
@@ -152,11 +150,30 @@ async ({SPARQLIST_TOGOVAR_SPARQLIST, efo2gwas}) => {
 }
 ```
 
+## `get_mapped_traits`
+```sparql
+PREFIX terms: <http://med2rdf.org/gwascatalog/terms/>
+PREFIX gwas: <http://rdf.ebi.ac.uk/terms/gwas/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT DISTINCT ?assoc ?mapped_trait ?mapped_trait_uri
+WHERE{
+  VALUES ?mapped_trait_uri { {{#each efo}} <{{ this }}> {{/each}} }
+  GRAPH <http://togovar.biosciencedbc.jp/gwas-catalog>{
+    ?assoc a gwas:Association ;
+      terms:mapped_trait_uri ?mapped_trait_uri.
+  }
+  GRAPH <http://togovar.biosciencedbc.jp/efo>{
+    ?mapped_trait_uri rdfs:label ?mapped_trait.
+  }
+}
+```
+
 ## `trait_html`
 ```javascript
-({efo2gwas})=>{
+({get_mapped_traits})=>{
   const traits = {};
-  efo2gwas.results.bindings.map(x=>{
+  get_mapped_traits.results.bindings.map(x=>{
     if (! traits[x.assoc.value]){ traits[x.assoc.value] = [] } 
     traits[x.assoc.value].push('<a href="' + x.mapped_trait_uri.value + '">' + x.mapped_trait.value + '</a>');
   })
@@ -183,11 +200,11 @@ async ({SPARQLIST_TOGOVAR_SPARQLIST, efo2gwas}) => {
 
     res.push({
         variant_and_risk_allele: variant_and_risk_allele,
-        raf: d.raf.value,
-        p_value: d.p_value.value,
-        odds_ratio: d.odds_ratio.value,
+        raf: d.raf.value != "NR" ? parseFloat(d.raf.value) : null,
+        p_value: d.p_value.value != "NAN" ? parseFloat(d.p_value.value) : null,
+        odds_ratio: d.odds_ratio.value != "NA" ? parseFloat(d.odds_ratio.value) : null,
         ci_text: d.ci_text.value,
-        beta: d.beta.value,
+        beta: d.beta.value != "NA" ? parseFloat(d.beta.value) : null,
         beta_unit: d.beta_unit.value,
         mapped_trait: trait_html[d.assoc.value].join(),
         pubmed_id: d.pubmed_id.value,
