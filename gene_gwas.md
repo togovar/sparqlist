@@ -175,7 +175,7 @@ WHERE{
         ci_text: d.ci_text.value,
         beta: d.beta.value != "NA" ? parseFloat(d.beta.value) : null,
         beta_unit: d.beta_unit.value,
-        mapped_trait: trait_html[d.assoc.value].join(),
+        mapped_trait: trait_html[d.assoc.value] ? trait_html[d.assoc.value].join() : "",
         pubmed_id: d.pubmed_id.value,
         pubmed_uri: d.pubmed_uri.value,
         study_detail: d.study.value.replace("http://www.ebi.ac.uk/gwas/studies/",""),
