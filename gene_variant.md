@@ -42,7 +42,7 @@ async ({SPARQLIST_TOGOVAR_SEARCH, id2symbol}) => {
     const data_count = first_json.statistics.filtered < max_rows ? first_json.statistics.filtered : max_rows;
 
     let tmp_res = [];
-    let counnt = 0;
+    let count = 0;
 
     for (let i = 1; i * 100 < data_count; i++) {
       let offset = i * 100;
