@@ -10,8 +10,8 @@
 
 {{SPARQLIST_TOGOVAR_SPARQL}}
 
-
 ## `tgv2rs`
+
 ```sparql
 PREFIX dct: <http://purl.org/dc/terms/>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -28,6 +28,7 @@ WHERE {
 ```
 
 ## `rs_str`
+
 ```javascript
 ({tgv2rs}) => {
   const prefix = "http://identifiers.org/dbsnp/";
@@ -36,6 +37,7 @@ WHERE {
 ```
 
 ## `rs2gwas`
+
 ```sparql
 
 PREFIX dct: <http://purl.org/dc/terms/>
@@ -83,6 +85,7 @@ WHERE {
 ```
 
 ## `rs2traits`
+
 ```sparql
 PREFIX gwas: <http://rdf.ebi.ac.uk/terms/gwas/>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -103,11 +106,14 @@ WHERE{
 ```
 
 ## `trait_html`
+
 ```javascript
-({rs2traits})=>{
+({rs2traits}) => {
   const traits = {};
-  rs2traits.results.bindings.map(x=>{
-    if (! traits[x.assoc.value]){ traits[x.assoc.value] = [] }
+  rs2traits.results.bindings.map(x => {
+    if (!traits[x.assoc.value]) {
+      traits[x.assoc.value] = []
+    }
     traits[x.assoc.value].push('<a href="' + x.mapped_trait_uri.value + '">' + x.mapped_trait.value + '</a>');
   })
   return traits;
@@ -115,9 +121,10 @@ WHERE{
 ```
 
 ## `result`
+
 ```javascript
-({rs2gwas, trait_html})=>{
-  return rs2gwas.results.bindings.map(d=>{
+({rs2gwas, trait_html}) => {
+  return rs2gwas.results.bindings.map(d => {
     return {
       variant_and_risk_allele: d.variant_and_risk_allele.value,
       rs_uri: "https://www.ebi.ac.uk/gwas/variants/" + d.rs_id.value,
@@ -130,7 +137,7 @@ WHERE{
       mapped_trait: trait_html[d.assoc.value].join(),
       pubmed_id: d.pubmed_id.value,
       pubmed_uri: d.pubmed_uri.value,
-      study_detail: d.study.value.replace("http://www.ebi.ac.uk/gwas/studies/",""),
+      study_detail: d.study.value.replace("http://www.ebi.ac.uk/gwas/studies/", ""),
       study: d.study.value,
       initial_sample_size: d.initial_sample_size.value,
       replication_sample_size: d.replication_sample_size.value
