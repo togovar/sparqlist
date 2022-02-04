@@ -6,16 +6,20 @@
   * default: 404
 
 ## Endpoint
+
 {{SPARQLIST_TOGOVAR_SPARQL}}
 
 ## `id2symbol`
+
 ```sparql
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
 SELECT DISTINCT ?symbol
 FROM <http://togovar.biosciencedbc.jp/hgnc>
 WHERE {
   VALUES ?hgnc_uri { <http://identifiers.org/hgnc/{{ hgnc_id }}> }
-  ?hgnc_uri rdfs:label ?symbol.
+
+  ?hgnc_uri rdfs:label ?symbol .
 }
 ```
 
@@ -53,12 +57,17 @@ async ({SPARQLIST_TOGOVAR_SEARCH, id2symbol}) => {
       count = i;
     }
 
-    for (let j = 1; j <count + 1; j++){
-     result_data = result_data.concat(tmp_res[j]);
+    for (let j = 1; j < count + 1; j++) {
+      result_data = result_data.concat(tmp_res[j]);
     }
-    return  { data: result_data };
+
+    return {
+      data: result_data
+    };
   } else {
-    return { data: [] };
+    return {
+      data: []
+    };
   }
 }
 ```

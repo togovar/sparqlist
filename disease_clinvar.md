@@ -2,7 +2,7 @@
 
 ## Parameters
 
-* `medgen_cid` MedGen CID 
+* `medgen_cid` MedGen CID
   * default: C0023467
   * example: C0678222
 
@@ -27,8 +27,8 @@ FROM <http://togovar.biosciencedbc.jp/variant>
 WHERE {
   VALUES ?medgen { medgen:{{ medgen_cid }} }
 
-  GRAPH <http://togovar.biosciencedbc.jp/clinvar>{
-    ?_interpreted_condition dct:references ?medgen;
+  GRAPH <http://togovar.biosciencedbc.jp/clinvar> {
+    ?_interpreted_condition dct:references ?medgen ;
         rdfs:label ?condition .
 
     ?_rcv cvo:interpretation ?interpretation ;
@@ -43,20 +43,20 @@ WHERE {
       cvo:interpreted_record/sio:SIO_000628/dct:references ?dbsnp ;
       cvo:interpreted_record/cvo:rcv_list/cvo:rcv_accession ?_rcv.
 
-    ?dbsnp rdfs:seeAlso ?rs_id;
-      dct:source ?dbname.
-    FILTER(?dbname IN ("dbSNP")).
+    ?dbsnp rdfs:seeAlso ?rs_id ;
+      dct:source ?dbname .
+    FILTER(?dbname IN ("dbSNP")) .
 
     BIND (REPLACE (STR(?vcv), 'VCV0+', '') AS ?vcv_disp)
   }
 
-  GRAPH <http://togovar.biosciencedbc.jp/variant/annotation/clinvar>{
+  GRAPH <http://togovar.biosciencedbc.jp/variant/annotation/clinvar> {
     ?togovar tgvo:condition / rdfs:seeAlso ?clinvar .
   }
 
-  GRAPH <http://togovar.biosciencedbc.jp/variant>{
+  GRAPH <http://togovar.biosciencedbc.jp/variant> {
     ?togovar dct:identifier ?tgv_id .
-    ?togovar rdfs:label ?tgv_label
+    ?togovar rdfs:label ?tgv_label .
   }
 }
 ORDER BY ?title ?review_status ?interpretation DESC(?last_evaluated) ?condition
@@ -69,7 +69,7 @@ ORDER BY ?title ?review_status ?interpretation DESC(?last_evaluated) ?condition
   let ref = {};
   let key;
   medgen_clinvar.results.bindings.forEach((x) => {
-    switch (x.interpretation.value.toLowerCase()){
+    switch (x.interpretation.value.toLowerCase()) {
       case "pathogenic":
         key = "P";
         break;
@@ -115,9 +115,10 @@ ORDER BY ?title ?review_status ?interpretation DESC(?last_evaluated) ?condition
       default:
         break;
     }
-    ref[x.interpretation.value] = '<span class="clinical-significance-full" data-sign="' +  key + '">' + x.interpretation.value + '</span>'
+    ref[x.interpretation.value] = '<span class="clinical-significance-full" data-sign="' + key + '">' + x.interpretation.value + '</span>'
   });
-  return ref
+
+  return ref;
 }
 ```
 
@@ -128,7 +129,7 @@ ORDER BY ?title ?review_status ?interpretation DESC(?last_evaluated) ?condition
   let ref = {};
   let stars;
   medgen_clinvar.results.bindings.forEach((x) => {
-    switch (x.review_status.value){
+    switch (x.review_status.value) {
       case "no assertion provided":
         stars = 0;
         break;
@@ -158,7 +159,8 @@ ORDER BY ?title ?review_status ?interpretation DESC(?last_evaluated) ?condition
     }
     ref[x.review_status.value] = '<span class="star-rating">' + '<span data-stars="' + stars + '"' + 'class="star-rating-item">' + '</span></span><br>' + '<span class="status-description">' + x.review_status.value + '</span>';
   });
-  return ref
+
+  return ref;
 }
 ```
 

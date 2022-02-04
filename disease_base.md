@@ -1,4 +1,4 @@
-# Disease report / Base 
+# Disease report / Base
 
 ## Parameters
 
@@ -14,11 +14,8 @@
 
 ```sparql
 PREFIX dct: <http://purl.org/dc/terms/>
-PREFIX efo: <http://www.ebi.ac.uk/efo/>
 PREFIX medgen: <http://www.ncbi.nlm.nih.gov/medgen/>
-PREFIX mesh: <http://id.nlm.nih.gov/mesh/>
 PREFIX mo: <http://med2rdf/ontology/medgen#>
-PREFIX mondo: <http://purl.obolibrary.org/obo/mondo#>
 PREFIX oboinowl: <http://www.geneontology.org/formats/oboInOwl#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
@@ -29,35 +26,35 @@ FROM <http://togovar.biosciencedbc.jp/mondo>
 WHERE {
   VALUES ?medgen { medgen:{{ medgen_cid }} }
 
-  GRAPH <http://togovar.biosciencedbc.jp/medgen>{
-    ?medgen a mo:ConceptID.
-    ?medgen dct:identifier ?medgen_cid.
-    ?medgen rdfs:label ?medgen_label.
-    ?medgen skos:definition ?medgen_definition.
+  GRAPH <http://togovar.biosciencedbc.jp/medgen> {
+    ?medgen a mo:ConceptID .
+    ?medgen dct:identifier ?medgen_cid .
+    ?medgen rdfs:label ?medgen_label .
+    ?medgen skos:definition ?medgen_definition .
 
     OPTIONAL {
       SELECT DISTINCT ?medgen ?mondo
       WHERE {
-        ?medgen mo:mgconso ?mgconso_mondo.
-        ?mgconso_mondo dct:source mo:MONDO.
-        ?mgconso_mondo rdfs:seeAlso ?mondo.
+        ?medgen mo:mgconso ?mgconso_mondo .
+        ?mgconso_mondo dct:source mo:MONDO .
+        ?mgconso_mondo rdfs:seeAlso ?mondo .
       }
     }
 
     OPTIONAL {
       GRAPH <http://togovar.biosciencedbc.jp/mondo> {
-        ?mondo oboinowl:hasDbXref ?dbxref.
-        FILTER(STRSTARTS(STR(?dbxref), "EFO:")).
-        BIND(IF(STRLEN(?dbxref) > 0, URI(CONCAT("http://www.ebi.ac.uk/efo/EFO_", SUBSTR(?dbxref,5))), URI("")) AS ?efo).
+        ?mondo oboinowl:hasDbXref ?dbxref .
+        FILTER(STRSTARTS(STR(?dbxref), "EFO:")) .
+        BIND(IF(STRLEN(?dbxref) > 0, URI(CONCAT("http://www.ebi.ac.uk/efo/EFO_", SUBSTR(?dbxref,5))), URI("")) AS ?efo) .
       }
     }
 
     OPTIONAL {
       SELECT DISTINCT ?medgen ?mesh
       WHERE {
-        ?medgen mo:mgconso ?mgconso_mesh.
-        ?mgconso_mesh dct:source mo:MSH.
-        ?mgconso_mesh rdfs:seeAlso ?mesh.
+        ?medgen mo:mgconso ?mgconso_mesh .
+        ?mgconso_mesh dct:source mo:MSH .
+        ?mgconso_mesh rdfs:seeAlso ?mesh .
       }
     }
   }

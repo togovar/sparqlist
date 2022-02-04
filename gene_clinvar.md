@@ -18,7 +18,7 @@ SELECT ?ens_gene_togovar
 WHERE {
   VALUES ?hgnc_uri { <http://identifiers.org/hgnc/{{ hgnc_id }}> }
 
-  GRAPH <http://togovar.biosciencedbc.jp/hgnc>{
+  GRAPH <http://togovar.biosciencedbc.jp/hgnc> {
     ?hgnc_uri rdfs:seeAlso ?ens_gene_hgnc .
     FILTER(CONTAINS(STR(?ens_gene_hgnc), "http://identifiers.org/ensembl/")) .
     BIND(IRI(REPLACE(STR(?ens_gene_hgnc), "http://identifiers.org/ensembl/","http://rdf.ebi.ac.uk/resource/ensembl/")) As ?ens_gene_togovar) .
@@ -44,20 +44,19 @@ PREFIX sio: <http://semanticscience.org/resource/>
 PREFIX tgvo: <http://togovar.biosciencedbc.jp/vocabulary/>
 
 SELECT DISTINCT ?tgv_id ?rs_id ?review_status ?interpretation ?last_evaluated ?condition ?medgen ?clinvar ?title ?vcv ?label
-
 WHERE {
   VALUES ?ens_gene { <{{ ensg_uri_string }}> }
 
-  GRAPH <http://togovar.biosciencedbc.jp/variant>{
-    ?togovar tgvo:hasConsequence / tgvo:gene ?ens_gene .
+  GRAPH <http://togovar.biosciencedbc.jp/variant> {
+    ?togovar tgvo:hasConsequence/tgvo:gene ?ens_gene .
     ?togovar dct:identifier ?tgv_id .
     ?togovar rdfs:label ?label
   }
-  GRAPH <http://togovar.biosciencedbc.jp/variant/annotation/clinvar>{
-    ?togovar tgvo:condition / rdfs:seeAlso ?clinvar .
+  GRAPH <http://togovar.biosciencedbc.jp/variant/annotation/clinvar> {
+    ?togovar tgvo:condition/rdfs:seeAlso ?clinvar .
   }
 
-  GRAPH <http://togovar.biosciencedbc.jp/clinvar>{
+  GRAPH <http://togovar.biosciencedbc.jp/clinvar> {
     ?clinvar a cvo:VariationArchiveType ;
       rdfs:label ?title ;
       cvo:accession ?vcv ;
@@ -65,9 +64,9 @@ WHERE {
       cvo:interpreted_record/sio:SIO_000628/dct:references ?dbsnp ;
       cvo:interpreted_record/cvo:rcv_list/cvo:rcv_accession ?_rcv .
 
-    ?dbsnp rdfs:seeAlso ?rs_id;
+    ?dbsnp rdfs:seeAlso ?rs_id ;
       dct:source ?dbname.
-    FILTER(?dbname IN ("dbSNP")).
+    FILTER(?dbname IN ("dbSNP")) .
 
     ?_rcv cvo:interpretation ?interpretation ;
       dct:identifier ?rcv ;
@@ -77,7 +76,7 @@ WHERE {
     OPTIONAL {
       ?_interpreted_condition rdfs:label ?condition_label .
       ?_interpreted_condition dct:source ?db ;
-                              dct:identifier ?medgen .
+        dct:identifier ?medgen .
       FILTER (?db IN ("MedGen"))
     }
 
@@ -94,7 +93,7 @@ ORDER BY ?title ?review_status ?interpretation DESC(?last_evaluated) ?condition
   let ref = {};
   let key;
   ensg2clinvar.results.bindings.forEach((x) => {
-    switch (x.interpretation.value.toLowerCase()){
+    switch (x.interpretation.value.toLowerCase()) {
       case "pathogenic":
         key = "P";
         break;
@@ -140,8 +139,9 @@ ORDER BY ?title ?review_status ?interpretation DESC(?last_evaluated) ?condition
       default:
         break;
     }
-    ref[x.interpretation.value] = '<span class="clinical-significance-full" data-sign="' +  key + '">' + x.interpretation.value + '</span>'
+    ref[x.interpretation.value] = '<span class="clinical-significance-full" data-sign="' + key + '">' + x.interpretation.value + '</span>'
   });
+
   return ref
 }
 ```
@@ -153,7 +153,7 @@ ORDER BY ?title ?review_status ?interpretation DESC(?last_evaluated) ?condition
   let ref = {};
   let stars;
   ensg2clinvar.results.bindings.forEach((x) => {
-    switch (x.review_status.value){
+    switch (x.review_status.value) {
       case "no assertion provided":
         stars = 0;
         break;
@@ -183,7 +183,8 @@ ORDER BY ?title ?review_status ?interpretation DESC(?last_evaluated) ?condition
     }
     ref[x.review_status.value] = '<span class="star-rating">' + '<span data-stars="' + stars + '"' + 'class="star-rating-item">' + '</span></span><br>' + '<span class="status-description">' + x.review_status.value + '</span>';
   });
-  return ref
+
+  return ref;
 }
 ```
 
