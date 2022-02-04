@@ -54,6 +54,8 @@ WHERE {
 ## `efo2gwas`
 
 ```sparql
+DEFINE sql:select-option "order"
+
 PREFIX dct: <http://purl.org/dc/terms/>
 PREFIX efo: <http://www.ebi.ac.uk/efo/>
 PREFIX gwas: <http://rdf.ebi.ac.uk/terms/gwas/>
@@ -100,6 +102,7 @@ WHERE {
     OPTIONAL{
       ?assoc terms:mapped_trait_uri ?mapped_trait_uri .
     }
+
     ?study dct:identifier ?study_id ;
       dct:description ?description ;
       terms:initial_sample_size ?initial_sample_size ;

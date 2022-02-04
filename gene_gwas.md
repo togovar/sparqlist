@@ -34,6 +34,8 @@ WHERE {
 ## `gene2gwas`
 
 ```sparql
+DEFINE sql:select-option "order"
+
 PREFIX dct: <http://purl.org/dc/terms/>
 PREFIX gwas: <http://rdf.ebi.ac.uk/terms/gwas/>
 PREFIX terms: <http://med2rdf.org/gwascatalog/terms/>
