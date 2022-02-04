@@ -55,18 +55,3 @@ WHERE {
   }
 }
 ```
-
-## `result`
-#```javascript
-#({variant_gene})=>{
-#  return variant_gene.results.bindings.map(d=>{
-#    return {
-#      variation: d.variation.value,
-#      gene: d.gene.value,
-#      symbol: d.symbol.value,
-#      approved_name: d.approved_name.value,
-#      synomym: d.synonym.value
-#    };
-#  });
-#}
-#```
