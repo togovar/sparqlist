@@ -45,10 +45,11 @@ LIMIT 1
 ## `result`
 
 ```sparql
-PREFIX cvo:  <http://purl.jp/bio/10/clinvar/>
-PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX cvo:   <http://purl.jp/bio/10/clinvar/>
+PREFIX dct:   <http://purl.org/dc/terms/>
 PREFIX faldo: <http://biohackathon.org/resource/faldo#>
-PREFIX gvo: <http://genome-variation.org/resource#>
+PREFIX gvo:   <http://genome-variation.org/resource#>
+PREFIX rdfs:  <http://www.w3.org/2000/01/rdf-schema#>
 
 SELECT ?title ?review_status ?interpretation ?last_evaluated ?condition ?medgen ?clinvar ?vcv
 WHERE {

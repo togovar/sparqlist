@@ -12,10 +12,10 @@
 ## `result`
 
 ```sparql
-PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX dct:   <http://purl.org/dc/terms/>
 PREFIX faldo: <http://biohackathon.org/resource/faldo#>
-PREFIX gvo: <http://genome-variation.org/resource#>
-PREFIX tgvo: <http://togovar.biosciencedbc.jp/vocabulary/>
+PREFIX gvo:   <http://genome-variation.org/resource#>
+PREFIX tgvo:  <http://togovar.biosciencedbc.jp/vocabulary/>
 
 SELECT DISTINCT ?tgv_id ?type ?variation ?reference ?ref ?alt ?hgvs
 FROM <http://togovar.biosciencedbc.jp/variant>

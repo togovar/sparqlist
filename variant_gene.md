@@ -12,10 +12,12 @@
 ## `result`
 
 ```sparql
-PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX dct:   <http://purl.org/dc/terms/>
 PREFIX faldo: <http://biohackathon.org/resource/faldo#>
-PREFIX gvo: <http://genome-variation.org/resource#>
-PREFIX tgvo: <http://togovar.biosciencedbc.jp/vocabulary/>
+PREFIX gvo:   <http://genome-variation.org/resource#>
+PREFIX tgvo:  <http://togovar.biosciencedbc.jp/vocabulary/>
+PREFIX rdfs:  <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX skos:  <http://www.w3.org/2004/02/skos/core#>
 
 SELECT DISTINCT ?variation ?gene ?hgnc ?symbol ?approved_name ?synonym
 WHERE {
@@ -27,13 +29,12 @@ WHERE {
 
         GRAPH <http://togovar.biosciencedbc.jp/variant> {
           ?variation dct:identifier ?tgv_id .
-          BIND(IRI(CONCAT("http://identifiers.org/hco/", REPLACE(STR(?variation), "-.*", ""), "/GRCh37#", REPLACE(STR(?variation), "^[^-]+-", ""))) AS ?hco)
         }
 
         GRAPH <http://togovar.biosciencedbc.jp/variant/annotation/ensembl> {
           OPTIONAL {
-            ?hco tgvo:hasConsequence/tgvo:gene ?gene .
-            ?hco tgvo:hasConsequence/tgvo:hgnc ?hgnc .
+            ?variation tgvo:hasConsequence/tgvo:gene ?gene ;
+                       tgvo:hasConsequence/tgvo:hgnc ?hgnc .
             FILTER STRSTARTS(STR(?gene), "http://rdf.ebi.ac.uk/resource/ensembl/ENSG")
           }
         }    

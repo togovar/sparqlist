@@ -49,9 +49,11 @@ LIMIT 1
 DEFINE sql:select-option "order"
 {{/unless}}
 
-PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX dct:   <http://purl.org/dc/terms/>
 PREFIX faldo: <http://biohackathon.org/resource/faldo#>
-PREFIX gvo: <http://genome-variation.org/resource#>
+PREFIX gvo:   <http://genome-variation.org/resource#>
+PREFIX rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs:  <http://www.w3.org/2000/01/rdf-schema#>
 
 SELECT ?source (GROUP_CONCAT(DISTINCT ?_filter ; separator = ", ") AS ?filter) ?quality ?info_label ?info_value
 WHERE {
