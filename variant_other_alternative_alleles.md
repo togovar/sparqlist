@@ -32,7 +32,8 @@ async ({SPARQLIST_TOGOVAR_SEARCH, label}) => {
   const binding = label.results.bindings[0];
 
   if (binding) {
-    const position = `${binding.label.value.split('-')[0]}:${binding.label.value.split('-')[1]}`;
+    const match = binding.label.value.match(/http:\/\/identifiers.org\/hco\/(.+)\/.+#(\d+)/);
+    const position = `${match[1]}:${match[2]}`;
     const res = await fetch(SPARQLIST_TOGOVAR_SEARCH.concat("?stat=0&quality=0&term=", position), {
       method: 'GET',
       headers: {
