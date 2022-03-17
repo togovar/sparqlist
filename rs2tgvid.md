@@ -17,29 +17,37 @@
 }
 ```
 
-## `rs2tgv`
+## `xref`
 
 ```sparql
 PREFIX dbsnp: <http://identifiers.org/dbsnp/>
 PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 SELECT ?dbsnp SAMPLE(?tgv_id) AS ?tgv_id
-FROM <http://togovar.biosciencedbc.jp/variant>
 WHERE {
-  VALUES ?dbsnp { {{#each rs_ids}} dbsnp:{{ this }} {{/each}} } 
+  VALUES ?dbsnp { {{#each rs_ids}} dbsnp:{{this}} {{/each}} }
 
-  ?variation dct:identifier ?tgv_id ;
-    rdfs:seeAlso ?dbsnp.
+  GRAPH <http://togovar.biosciencedbc.jp/variant/annotation/ensembl> {
+    ?variant rdfs:seeAlso ?dbsnp .
+  }
+
+  GRAPH <http://togovar.biosciencedbc.jp/variant> {
+    ?variant dct:identifier ?tgv_id .
+  }
 }
 ```
 
 ## `result`
 
 ```javascript
-({rs2tgv}) => {
+({xref}) => {
+  const prefix = "http://identifiers.org/dbsnp/";
+
   let result = {};
-  rs2tgv.results.bindings.forEach(d => {
-    result[d.dbsnp.value.replace("http://identifiers.org/dbsnp/","")] = d.tgv_id.value;
+
+  xref.results.bindings.forEach(x => {
+    result[x.dbsnp.value.replace(prefix, "")] = x.tgv_id.value;
   });
 
   return result;

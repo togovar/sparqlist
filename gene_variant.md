@@ -15,11 +15,12 @@
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 SELECT DISTINCT ?symbol
-FROM <http://togovar.biosciencedbc.jp/hgnc>
 WHERE {
-  VALUES ?hgnc_uri { <http://identifiers.org/hgnc/{{ hgnc_id }}> }
+  VALUES ?hgnc_uri { <http://identifiers.org/hgnc/{{hgnc_id}}> }
 
-  ?hgnc_uri rdfs:label ?symbol .
+  GRAPH <http://togovar.biosciencedbc.jp/hgnc> {
+    ?hgnc_uri rdfs:label ?symbol .
+  }
 }
 ```
 
@@ -27,47 +28,32 @@ WHERE {
 
 ```javascript
 async ({SPARQLIST_TOGOVAR_SEARCH, id2symbol}) => {
-  let binding = id2symbol.results.bindings[0].symbol.value;
+  const symbol = id2symbol.results.bindings[0]?.symbol?.value;
   const max_rows = 10000;
 
-  if (binding) {
-    const first_res = await fetch(SPARQLIST_TOGOVAR_SEARCH.concat("?stat=0&quality=0&term=", binding), {
+  if (symbol) {
+    const r = await fetch(SPARQLIST_TOGOVAR_SEARCH.concat(`?stat=0&quality=0&limit=0&term=${encodeURIComponent(symbol)}`), {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
       },
-    });
-    const first_json = await first_res.json();
-    let result_data = first_json.data;
-    const data_count = first_json.statistics.filtered < max_rows ? first_json.statistics.filtered : max_rows;
+    }).then(res => res.json());
 
-    let tmp_res = [];
-    let count = 0;
+    const total = r.statistics.filtered;
 
-    for (let i = 1; i * 100 < data_count; i++) {
-      let offset = i * 100;
-      let res = await fetch(SPARQLIST_TOGOVAR_SEARCH.concat("?stat=0&quality=0&term=", binding, "&offset=", offset), {
+    return await [...Array(Math.ceil(Math.min(total, max_rows) / 100)).keys()].reduce(async (previousValue, currentValue) => {
+      const prev = await previousValue;
+      const data = await fetch(SPARQLIST_TOGOVAR_SEARCH.concat(`?stat=0&quality=0&offset=${currentValue * 100}&term=${encodeURIComponent(symbol)}`), {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
         },
-      });
-      let json = await res.json();
-      tmp_res[i] = json.data;
-      count = i;
-    }
+      }).then(res => res.json()).then(json => json.data);
 
-    for (let j = 1; j < count + 1; j++) {
-      result_data = result_data.concat(tmp_res[j]);
-    }
-
-    return {
-      data: result_data
-    };
-  } else {
-    return {
-      data: []
-    };
+      return [...prev, data];
+    }, []);
   }
+
+  return [];
 }
 ```

@@ -11,38 +11,64 @@ Generate gene2pubmed table data by dbSNP ID
 
 {{SPARQLIST_TOGOVAR_SPARQL}}
 
+## `xref`
+
+```sparql
+PREFIX hgnc: <http://identifiers.org/hgnc/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT DISTINCT ?xref
+WHERE {
+  VALUES ?hgnc_uri { hgnc:{{hgnc_id}} }
+
+  GRAPH <http://togovar.biosciencedbc.jp/hgnc> {
+    ?hgnc_uri rdfs:seeAlso ?xref .    
+    FILTER STRSTARTS(STR(?xref), "http://identifiers.org/ensembl/")
+  }
+}
+```
+
+## `ensembl_gene`
+
+```javascript
+({xref}) => {
+  return xref.results.bindings.map(x => x.xref.value.replace("http://identifiers.org/ensembl/", ""));
+}
+```
+
 ## `gene2pmid` HGNC gene ID to PubMed Info by Pubtator and PubMed
 
 ```sparql
-PREFIX hgnc: <http://identifiers.org/hgnc/HGNC_>
-PREFIX tgvo: <http://togovar.biosciencedbc.jp/vocabulary/>
-PREFIX oa: <http://www.w3.org/ns/oa#>
+DEFINE sql:select-option "order"
+
 PREFIX bibo: <http://purl.org/ontology/bibo/>
-PREFIX dct: <http://purl.org/dc/terms/>
-PREFIX olo: <http://purl.org/ontology/olo/core#>
+PREFIX dct:  <http://purl.org/dc/terms/>
+PREFIX ensg: <http://rdf.ebi.ac.uk/resource/ensembl/>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX oa:   <http://www.w3.org/ns/oa#>
+PREFIX olo:  <http://purl.org/ontology/olo/core#>
+PREFIX tgvo: <http://togovar.biosciencedbc.jp/vocabulary/>
 
-SELECT DISTINCT ?rs_id ?pmid_uri  ?pmid ?title ?year ?author ?journal
+SELECT DISTINCT ?rs_id ?pmid_uri ?pmid ?title ?year ?author ?journal
 WHERE {
-  VALUES ?hgnc_uri { hgnc:{{ hgnc_id }} }
+  VALUES ?ens_gene { {{#each ensembl_gene}} ensg:{{this}} {{/each}} }
 
-  ?rs_id ^rdfs:seeAlso/tgvo:hasConsequence/tgvo:gene/rdfs:seeAlso ?hgnc_uri .
+  GRAPH <http://togovar.biosciencedbc.jp/variant/annotation/ensembl> {
+    ?ens_gene ^tgvo:gene/^tgvo:hasConsequence/rdfs:seeAlso ?rs_id . 
+  }
 
   GRAPH <http://togovar.biosciencedbc.jp/pubtator> {
-    ?pubtator_node a oa:Annotation ;
-      oa:hasTarget ?pmid_uri ;
-      oa:hasBody ?rs_id .
+    ?pubtator_node oa:hasBody ?rs_id ;
+      a oa:Annotation ;
+      oa:hasTarget ?pmid_uri .
   }
 
   GRAPH <http://togovar.biosciencedbc.jp/pubmed> {
     ?pmid_uri dct:source ?journal ;
-      dct:creator ?creator_node ;
       dct:title ?title ;
       dct:issued ?year ;
-      bibo:pmid ?pmid .
-    ?creator_node olo:slot ?slot .
-    ?slot olo:item ?item .
-    ?item foaf:name ?author .
+      bibo:pmid ?pmid ;
+      dct:creator/olo:slot/olo:item/foaf:name ?author .
   }
 }
 LIMIT 10000
@@ -52,13 +78,12 @@ LIMIT 10000
 
 ```javascript
 ({gene2pmid}) => {
-  const ref = {}
-  const check_array = {}
+  const ref = {};
+
   gene2pmid.results.bindings.forEach((x) => {
     if (ref[x.pmid.value]) {
-      check_array[x.pmid.value].push(x.author.value)
+      ref[x.pmid.value]["author"] = ref[x.pmid.value]["author"] + ", " + x.author.value
     } else {
-      check_array[x.pmid.value] = [x.author.value];
       ref[x.pmid.value] = {
         pmid_uri: x.pmid_uri.value,
         title: x.title.value,
@@ -68,9 +93,6 @@ LIMIT 10000
       }
     }
   })
-  for (let key in check_array) {
-    ref[key]["author"] = Array.from(new Set(check_array[key])).join()
-  }
 
   return ref;
 }
@@ -82,23 +104,18 @@ LIMIT 10000
 async ({gene2pmid}) => {
   const rsids = [...new Set(gene2pmid.results.bindings.map(x => x.rs_id.value.replace("http://identifiers.org/dbsnp/", "")))];
   const param = JSON.stringify({"rsids": rsids});
-  const options = {
-    method: 'POST',
-    headers: {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json'
-    },
-    body: param
-  };
 
   try {
-    const res = await fetch("https://www.ncbi.nlm.nih.gov/research/bionlp/litvar/api/v1/public/rsids2pmids", options).then(res => res.json());
-    let pmids = [];
-    for (let i = 0; i < res.length; i++) {
-      res[i]["pmids"].forEach(pmid => pmids.push(pmid.toString()))
-    }
+    const res = await fetch("https://www.ncbi.nlm.nih.gov/research/bionlp/litvar/api/v1/public/rsids2pmids", {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: param
+    }).then(res => res.json());
 
-    return pmids;
+    return res.map(x => x.pmids.toString());
   } catch (error) {
     console.log(error);
   }
@@ -109,7 +126,8 @@ async ({gene2pmid}) => {
 
 ```javascript
 ({rs2pmid_litvar, shaping_pmidinfo}) => {
-  let ret = rs2pmid_litvar.filter(i => Object.keys(shaping_pmidinfo).indexOf(i) == -1)
+  const ret = rs2pmid_litvar.filter(i => Object.keys(shaping_pmidinfo).indexOf(i) == -1)
+
   if (ret.length > 0) {
     return ret.map(x => x.replace(/^/, "pubmed:")).join(" ");
   } else {
@@ -122,9 +140,8 @@ async ({gene2pmid}) => {
 
 ```javascript
 ({rs2pmid_litvar, shaping_pmidinfo}) => {
-  let ret = rs2pmid_litvar.concat(Object.keys(shaping_pmidinfo)).filter(function (x, i, self) {
-    return self.indexOf(x) === i;
-  });
+  const ret = rs2pmid_litvar.concat(Object.keys(shaping_pmidinfo)).filter((x, i, self) => self.indexOf(x) === i);
+
   if (ret.length > 0) {
     return ret.map(pmid => '"' + pmid + '"').join(" ");
   } else {
@@ -136,24 +153,22 @@ async ({gene2pmid}) => {
 ## `litvar2pmidinfo` PMIDs to infomation
 
 ```sparql
-PREFIX bibo: <http://purl.org/ontology/bibo/>
-PREFIX dct: <http://purl.org/dc/terms/>
-PREFIX olo: <http://purl.org/ontology/olo/core#>
-PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX bibo:   <http://purl.org/ontology/bibo/>
+PREFIX dct:    <http://purl.org/dc/terms/>
+PREFIX olo:    <http://purl.org/ontology/olo/core#>
+PREFIX foaf:   <http://xmlns.com/foaf/0.1/>
 PREFIX pubmed: <http://rdf.ncbi.nlm.nih.gov/pubmed/>
 
 SELECT DISTINCT ?pmid_uri  ?pmid ?title ?year ?author ?journal
 WHERE {
-  VALUES ?pmid_uri  { {{dup_pmid_litvar}} }
-  GRAPH <http://togovar.biosciencedbc.jp/pubmed>{
-    ?pmid_uri dct:source ?journal ;
-    dct:creator ?creator_node ;
-    dct:title ?title ;
-    dct:issued ?year ;
-    bibo:pmid ?pmid .
-    ?creator_node olo:slot ?slot .
-    ?slot olo:item ?item .
-    ?item foaf:name ?author .
+  VALUES ?pmid_uri { {{dup_pmid_litvar}} }
+
+  GRAPH <http://togovar.biosciencedbc.jp/pubmed> {
+    ?pmid_uri bibo:pmid ?pmid ;
+      dct:title ?title ;
+      dct:issued ?year ;
+      dct:creator/olo:slot/olo:item/foaf:name ?author ;
+      dct:source ?journal .
   }
 }
 ```
@@ -165,18 +180,20 @@ http://colil.dbcls.jp/sparql
 ## `pmid2citation` PubMed IDs to citation count
 
 ```sparql
-PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX bibo: <http://purl.org/ontology/bibo/>
-PREFIX colil: <http://purl.jp/bio/10/colil/ontology/201303#>
+PREFIX bibo:   <http://purl.org/ontology/bibo/>
+PREFIX colil:  <http://purl.jp/bio/10/colil/ontology/201303#>
 PREFIX togows: <http://togows.dbcls.jp/ontology/ncbi-pubmed#>
+PREFIX rdfs:   <http://www.w3.org/2000/01/rdf-schema#>
 
 SELECT ?pmid (COUNT(?citation_paper) AS ?citation_count)
 WHERE {
   VALUES ?pmid { {{concat_pmids}} }
-  ?citation_paper bibo:cites ?reference_paper .
-  ?reference_paper rdfs:seeAlso ?dummy .
-  ?dummy a colil:PubMed ;
-    togows:pmid ?pmid .
+
+  GRAPH <http://purl.jp/bio/10/colil/core> {
+    ?pmid ^togows:pmid ?pubmed .
+    ?pubmed a colil:PubMed ;
+      ^rdfs:seeAlso/^bibo:cites ?citation_paper.
+  }
 }
 ```
 
@@ -184,8 +201,9 @@ WHERE {
 
 ```javascript
 ({litvar2pmidinfo}) => {
-  let ref = {}
-  litvar2pmidinfo.results.bindings.forEach((x) => {
+  const ref = {}
+
+  litvar2pmidinfo.results.bindings.forEach(x => {
     if (ref[x.pmid.value]) {
       ref[x.pmid.value]["author"] = ref[x.pmid.value]["author"] + ", " + x.author.value
     } else {
@@ -207,17 +225,17 @@ WHERE {
 
 ```javascript
 ({rs, rs2pmid_litvar, shaping_pmidinfo, shaping_pmidinfo_litvar, pmid2citation}) => {
-  let articles = {};
-  let mesh_lsd = {};
-  let ordered_pmids = Object.keys(shaping_pmidinfo).concat(Object.keys(shaping_pmidinfo_litvar)).sort()
-  let pubtator_pmids = Object.keys(shaping_pmidinfo)
-  let pmids_info = Object.assign(shaping_pmidinfo, shaping_pmidinfo_litvar)
+  const articles = {};
+  const ordered_pmids = Object.keys(shaping_pmidinfo).concat(Object.keys(shaping_pmidinfo_litvar)).sort()
+  const pubtator_pmids = Object.keys(shaping_pmidinfo)
+  const pmids_info = Object.assign(shaping_pmidinfo, shaping_pmidinfo_litvar)
 
   for (let pmid in pmids_info) {
-    let pubmed = "<a href=\"https://www.ncbi.nlm.nih.gov/pubmed/" + pmid + "\">" + pmid + "</a>";
-    let pubtator = "<br>(<a href=\"https://www.ncbi.nlm.nih.gov/research/pubtator/?view=docsum&query=" + pmid + "\">PubTatorCentral</a>)";
-    let litvar = "<br>(<a href=\"https://www.ncbi.nlm.nih.gov/CBBresearch/Lu/Demo/LitVar/#!?query=" + rs + "\">Litvar</a>)";
+    const pubmed = "<a href=\"https://www.ncbi.nlm.nih.gov/pubmed/" + pmid + "\">" + pmid + "</a>";
+    const pubtator = "<br>(<a href=\"https://www.ncbi.nlm.nih.gov/research/pubtator/?view=docsum&query=" + pmid + "\">PubTatorCentral</a>)";
+    const litvar = "<br>(<a href=\"https://www.ncbi.nlm.nih.gov/CBBresearch/Lu/Demo/LitVar/#!?query=" + rs + "\">Litvar</a>)";
     let pmid_info = pubmed;
+
     if (pubtator_pmids.includes(pmid)) {
       pmid_info += pubtator;
     }
@@ -241,7 +259,7 @@ WHERE {
   }
 
   pmid2citation.results.bindings.forEach(x => {
-    let pmid = x.pmid.value;
+    const pmid = x.pmid.value;
     if (articles[pmid]) {
       articles[pmid].citation = "<a href=\"http://colil.dbcls.jp/browse/papers/" + pmid + "/\">" + x.citation_count.value + "</a>";
     }
@@ -250,7 +268,7 @@ WHERE {
   return {
     columns: [["PMID"], ["Reference"], ["Year"], ["Cited by"]],
     data: ordered_pmids.map(x => {
-      let article = articles[x];
+      const article = articles[x];
 
       return [article.pmid, article.reference, article.year, article.citation];
     })
