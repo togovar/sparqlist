@@ -63,7 +63,7 @@ WHERE {
       terms:p_value ?p_value ;
       terms:odds_ratio ?odds_ratio ;
       terms:beta ?beta ;
-      # terms:beta_unit ?beta_unit ; # FIXME terms:beta_unit not found
+      terms:beta_unit ?beta_unit ;
       terms:ci_text ?ci_text ;
       terms:study ?study ;
       dct:date ?association_date ;
