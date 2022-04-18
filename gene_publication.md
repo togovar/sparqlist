@@ -116,7 +116,7 @@ async ({gene2pmid}) => {
       body: param
     }).then(res => res.json());
 
-    return res.map(x => x.pmids.toString());
+    return [...new Set(res.map(x => x.pmids.toString()).flatMap(x => x.split(',')))];
   } catch (error) {
     console.log(error);
   }
@@ -160,7 +160,7 @@ PREFIX olo:    <http://purl.org/ontology/olo/core#>
 PREFIX foaf:   <http://xmlns.com/foaf/0.1/>
 PREFIX pubmed: <http://rdf.ncbi.nlm.nih.gov/pubmed/>
 
-SELECT DISTINCT ?pmid_uri  ?pmid ?title ?year ?author ?journal
+SELECT DISTINCT ?pmid_uri ?pmid ?title ?year ?author ?journal
 WHERE {
   VALUES ?pmid_uri { {{dup_pmid_litvar}} }
 
