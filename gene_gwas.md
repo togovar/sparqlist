@@ -20,7 +20,7 @@ PREFIX rdfs:  <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX terms: <http://med2rdf.org/gwascatalog/terms/>
 
 SELECT DISTINCT ?assoc ?variant_and_risk_allele ?rs_id ?raf ?p_value ?odds_ratio ?ci_text ?beta ?beta_unit ?pubmed_id 
-                ?pubmed AS ?pubmed_uri ?description AS ?study_detail ?study ?initial_sample_size ?replication_sample_size
+                (?pubmed AS ?pubmed_uri) (?description AS ?study_detail) ?study ?initial_sample_size ?replication_sample_size
 WHERE {
   VALUES ?hgnc_uri { <http://identifiers.org/hgnc/{{hgnc_id}}> }
 

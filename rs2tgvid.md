@@ -24,7 +24,7 @@ PREFIX dbsnp: <http://identifiers.org/dbsnp/>
 PREFIX dct: <http://purl.org/dc/terms/>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-SELECT ?dbsnp SAMPLE(?tgv_id) AS ?tgv_id
+SELECT ?dbsnp (SAMPLE(?tgv_id) AS ?tgv_id)
 WHERE {
   VALUES ?dbsnp { {{#each rs_ids}} dbsnp:{{this}} {{/each}} }
 

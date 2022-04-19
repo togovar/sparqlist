@@ -58,7 +58,7 @@ PREFIX terms: <http://med2rdf.org/gwascatalog/terms/>
 PREFIX rdfs:  <http://www.w3.org/2000/01/rdf-schema#>
 
 SELECT DISTINCT ?assoc ?variant_and_risk_allele ?raf ?p_value ?odds_ratio ?ci_text ?beta ?beta_unit ?pubmed_id
-                ?pubmed AS ?pubmed_uri ?description AS ?study_detail ?study ?initial_sample_size ?replication_sample_size
+                (?pubmed AS ?pubmed_uri) (?description AS ?study_detail) ?study ?initial_sample_size ?replication_sample_size
 WHERE {
   VALUES ?conditions { {{#each efo}} <{{this}}> {{/each}} }
 
