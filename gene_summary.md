@@ -1,4 +1,4 @@
-# Gene report / Base
+# Gene report / Summary
 
 ## Parameters
 

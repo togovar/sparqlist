@@ -1,4 +1,4 @@
-# Disease report / Base
+# Disease report / Summary
 
 ## Parameters
 
