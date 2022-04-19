@@ -143,8 +143,8 @@ async ({SPARQLIST_TOGOVAR_SPARQLIST, efo2gwas}) => {
     traits[x.assoc.value].push('<a href="' + x.mapped_trait_uri.value + '">' + x.mapped_trait.value + '</a>');
   })
 
-  return efo2gwas.results.bindings.map(d => {
-    const variant_and_risk_allele = d.variant_and_risk_allele.value.split(/;\s+/).map(rs_allele => {
+  return efo2gwas.results.bindings.map(x => {
+    const variant_and_risk_allele = x.variant_and_risk_allele.value.split(/;\s+/).map(rs_allele => {
       const rs_id = rs_allele.split('-')[0];
       const rs_risk_allele = rs_allele.split('-')[1];
       const tgv_id = rs2tgv[rs_id];
@@ -154,21 +154,26 @@ async ({SPARQLIST_TOGOVAR_SPARQLIST, efo2gwas}) => {
       return tgv_id ? "<span style='display: inline-block;'>" + link_to_gwas + "</span>(" + link_to_tgv + ")" : link_to_gwas;
     }).join('<br>');
 
+    const raf = parseFloat(x.raf.value);
+    const p_value = parseFloat(x.p_value.value);
+    const odds_ratio = parseFloat(x.odds_ratio.value);
+    const beta = parseFloat(x.beta.value);
+
     return {
       variant_and_risk_allele: variant_and_risk_allele,
-      raf: d.raf.value != "NR" ? parseFloat(d.raf.value) : null,
-      p_value: d.p_value.value != "NAN" ? parseFloat(d.p_value.value) : null,
-      odds_ratio: d.odds_ratio.value != "NA" ? parseFloat(d.odds_ratio.value) : null,
-      ci_text: d.ci_text.value,
-      beta: d.beta.value != "NA" ? parseFloat(d.beta.value) : null,
-      beta_unit: d.beta_unit?.value,
-      mapped_trait: traits[d.assoc.value]?.join(),
-      pubmed_id: d.pubmed_id.value,
-      pubmed_uri: d.pubmed_uri.value,
-      study_detail: d.study.value.replace("http://www.ebi.ac.uk/gwas/studies/", ""),
-      study: d.study.value,
-      initial_sample_size: d.initial_sample_size.value,
-      replication_sample_size: d.replication_sample_size.value
+      raf: isNaN(raf) ? null : raf,
+      p_value: isNaN(p_value) ? null : p_value,
+      odds_ratio: isNaN(odds_ratio) ? null : odds_ratio,
+      ci_text: x.ci_text.value,
+      beta: isNaN(beta) ? null : beta,
+      beta_unit: x.beta_unit?.value,
+      mapped_trait: traits[x.assoc.value]?.join(),
+      pubmed_id: x.pubmed_id.value,
+      pubmed_uri: x.pubmed_uri.value,
+      study_detail: x.study.value.replace("http://www.ebi.ac.uk/gwas/studies/", ""),
+      study: x.study.value,
+      initial_sample_size: x.initial_sample_size.value,
+      replication_sample_size: x.replication_sample_size.value
     };
   });
 }

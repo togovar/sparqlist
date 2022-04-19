@@ -110,7 +110,7 @@ async ({SPARQLIST_TOGOVAR_SEARCH, gene2gwas, gene2traits}) => {
         result[rs] = {
           tgv_id: x.id,
           position: x.chromosome + ":" + x.start,
-          ref_alt: `<div class="ref-alt"><span class="ref" data-sum="${x.reference.length}">${x.reference}</span><span class="arrow"></span><span class="alt" data-sum="${x.alternative.length}">${x.alternative}</span></div>`,
+          ref_alt: `<div class="ref-alt"><span class="ref" data-sum="${x.reference?.length || 0}">${x.reference || ''}</span><span class="arrow"></span><span class="alt" data-sum="${x.alternative?.length || 0}">${x.alternative || ''}</span></div>`,
           alt_freq_gem_j_wga: x.frequencies?.filter(f => f.source === 'gem_j_wga')?.[0]?.allele?.frequency,
           raf: x.raf,
         };
@@ -120,27 +120,35 @@ async ({SPARQLIST_TOGOVAR_SEARCH, gene2gwas, gene2traits}) => {
     return result;
   });
 
-  return gene2gwas.results.bindings.map(x => ({
-    tgv_id: variant_info[x.rs_id.value]?.tgv_id,
-    tgv_link: variant_info[x.rs_id.value] ? `/variant/${variant_info[x.rs_id.value].tgv_id}` : "",
-    variant_and_risk_allele: x.variant_and_risk_allele.value,
-    rs_uri: "https://www.ebi.ac.uk/gwas/variants/" + x.rs_id.value,
-    position: variant_info[x.rs_id.value]?.position,
-    ref_alt: variant_info[x.rs_id.value]?.ref_alt,
-    alt_freq: variant_info[x.rs_id.value]?.alt_freq_gem_j_wga,
-    raf: x.raf.value != "NR" ? parseFloat(x.raf.value) : null,
-    p_value: x.p_value.value != "NAN" ? parseFloat(x.p_value.value) : null,
-    odds_ratio: x.odds_ratio.value != "NA" ? parseFloat(x.odds_ratio.value) : null,
-    ci_text: x.ci_text.value,
-    beta: x.beta.value != "NA" ? parseFloat(x.beta.value) : null,
-    beta_unit: x.beta_unit?.value,
-    mapped_trait: traits[x.assoc.value]?.join(),
-    pubmed_id: x.pubmed_id.value,
-    pubmed_uri: x.pubmed_uri.value,
-    study_detail: x.study.value.replace("http://www.ebi.ac.uk/gwas/studies/", ""),
-    study: x.study.value,
-    initial_sample_size: x.initial_sample_size.value,
-    replication_sample_size: x.replication_sample_size.value
-  }));
+  return gene2gwas.results.bindings.map(x => {
+    const alt_freq = parseFloat(variant_info[x.rs_id.value]?.alt_freq_gem_j_wga);
+    const raf = parseFloat(x.raf.value);
+    const p_value = parseFloat(x.p_value.value);
+    const odds_ratio = parseFloat(x.odds_ratio.value);
+    const beta = parseFloat(x.beta.value);
+
+    return {
+      tgv_id: variant_info[x.rs_id.value]?.tgv_id,
+      tgv_link: variant_info[x.rs_id.value] ? `/variant/${variant_info[x.rs_id.value].tgv_id}` : "",
+      variant_and_risk_allele: x.variant_and_risk_allele.value,
+      rs_uri: "https://www.ebi.ac.uk/gwas/variants/" + x.rs_id.value,
+      position: variant_info[x.rs_id.value]?.position,
+      ref_alt: variant_info[x.rs_id.value]?.ref_alt,
+      alt_freq: isNaN(alt_freq) ? null : alt_freq,
+      raf: isNaN(raf) ? null : raf,
+      p_value: isNaN(p_value) ? null : p_value,
+      odds_ratio: isNaN(odds_ratio) ? null : odds_ratio,
+      ci_text: x.ci_text.value,
+      beta: isNaN(beta) ? null : beta,
+      beta_unit: x.beta_unit?.value,
+      mapped_trait: traits[x.assoc.value]?.join(),
+      pubmed_id: x.pubmed_id.value,
+      pubmed_uri: x.pubmed_uri.value,
+      study_detail: x.study.value.replace("http://www.ebi.ac.uk/gwas/studies/", ""),
+      study: x.study.value,
+      initial_sample_size: x.initial_sample_size.value,
+      replication_sample_size: x.replication_sample_size.value
+    };
+  });
 }
 ```

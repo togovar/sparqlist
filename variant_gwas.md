@@ -3,7 +3,7 @@
 ## Parameters
 
 * `tgv_id` TogoVar ID
-  * default: tgv83272255
+  * default: tgv47264307
   * example: tgv6252547
 
 ## Endpoint
@@ -123,23 +123,28 @@ WHERE{
 
 ```javascript
 ({rs2gwas, trait_html}) => {
-  return rs2gwas.results.bindings.map(d => {
+  return rs2gwas.results.bindings.map(x => {
+    const raf = parseFloat(x.raf.value);
+    const p_value = parseFloat(x.p_value.value);
+    const odds_ratio = parseFloat(x.odds_ratio.value);
+    const beta = parseFloat(x.beta.value);
+
     return {
-      variant_and_risk_allele: d.variant_and_risk_allele.value,
-      rs_uri: "https://www.ebi.ac.uk/gwas/variants/" + d.rs.value,
-      raf: d.raf.value,
-      p_value: d.p_value.value,
-      odds_ratio: d.odds_ratio.value,
-      ci_text: d.ci_text.value,
-      beta: d.beta.value,
-      beta_unit: d.beta_unit?.value,
-      mapped_trait: trait_html[d.assoc.value]?.join(),
-      pubmed_id: d.pubmed_id.value,
-      pubmed_uri: d.pubmed_uri.value,
-      study_detail: d.study.value.replace("http://www.ebi.ac.uk/gwas/studies/", ""),
-      study: d.study.value,
-      initial_sample_size: d.initial_sample_size.value,
-      replication_sample_size: d.replication_sample_size.value,
+      variant_and_risk_allele: x.variant_and_risk_allele.value,
+      rs_uri: "https://www.ebi.ac.uk/gwas/variants/" + x.rs.value,
+      raf: isNaN(raf) ? null : raf,
+      p_value: isNaN(p_value) ? null : p_value,
+      odds_ratio: isNaN(odds_ratio) ? null : odds_ratio,
+      ci_text: x.ci_text.value,
+      beta: isNaN(beta) ? null : beta,
+      beta_unit: x.beta_unit?.value,
+      mapped_trait: trait_html[x.assoc.value]?.join(),
+      pubmed_id: x.pubmed_id.value,
+      pubmed_uri: x.pubmed_uri.value,
+      study_detail: x.study.value.replace("http://www.ebi.ac.uk/gwas/studies/", ""),
+      study: x.study.value,
+      initial_sample_size: x.initial_sample_size.value,
+      replication_sample_size: x.replication_sample_size.value,
     };
   });
 }
