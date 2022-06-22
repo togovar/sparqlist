@@ -155,19 +155,19 @@ ORDER BY ?title ?review_status ?interpretation DESC(?last_evaluated) ?condition
   };
 
   return ensg2clinvar.results.bindings.map(x => {
-    const position = x.variant.value.match(/http:\/\/identifiers.org\/hco\/(.+)\/GRCh3[78]#(\d+)/);
+    const position = x.variant?.value?.match(/http:\/\/identifiers.org\/hco\/(.+)\/GRCh3[78]#(\d+)/);
 
     return {
-      tgv_id: x.tgv_id.value,
-      tgv_link: "/variant/" + x.tgv_id.value,
-      rs_id: x.rs_id.value.replace("http://ncbi.nlm.nih.gov/snp/", ""),
-      rs_id_link: x.rs_id.value.replace("http://", "https://"),
-      position: position[1] + ":" + position[2],
-      title: x.title.value,
-      interpretation: `<span class="clinical-significance-full" data-sign="${clinical_significance_key(x.interpretation.value)}">${x.interpretation.value}</span>`,
-      review_status: `<span class="star-rating"><span data-stars="${review_status_stars(x.review_status.value)}" class="star-rating-item"></span></span><br><span class="status-description">${x.review_status.value}</span>`,
-      last_evaluated: x.last_evaluated.value,
-      condition: x.condition.value,
+      tgv_id: x.tgv_id?.value,
+      tgv_link: "/variant/" + x.tgv_id?.value,
+      rs_id: x.rs_id?.value?.replace("http://ncbi.nlm.nih.gov/snp/", ""),
+      rs_id_link: x.rs_id?.value?.replace("http://", "https://"),
+      position: position ? position[1] + ":" + position[2] : null,
+      title: x.title?.value,
+      interpretation: `<span class="clinical-significance-full" data-sign="${clinical_significance_key(x.interpretation?.value)}">${x.interpretation?.value}</span>`,
+      review_status: `<span class="star-rating"><span data-stars="${review_status_stars(x.review_status?.value)}" class="star-rating-item"></span></span><br><span class="status-description">${x.review_status?.value}</span>`,
+      last_evaluated: x.last_evaluated?.value,
+      condition: x.condition?.value,
       medgen: (x.medgen ? "https://www.ncbi.nlm.nih.gov/medgen/" + x.medgen.value : ""),
     };
   });
