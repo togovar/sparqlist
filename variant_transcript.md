@@ -17,17 +17,17 @@ PREFIX dc11: <http://purl.org/dc/elements/1.1/>
 PREFIX tgvo: <http://togovar.biosciencedbc.jp/vocabulary/>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-SELECT DISTINCT ?transcript ?enst_id ?gene_symbol ?gene_xref (GROUP_CONCAT(DISTINCT ?_consequence_label ; separator = ",") AS ?consequence_label) ?hgvs_p ?hgvs_c ?sift ?polyphen
+SELECT DISTINCT ?transcript ?enst_id ?gene_symbol ?gene_xref ?hgvs_p ?hgvs_c ?sift ?polyphen 
+                (GROUP_CONCAT(DISTINCT ?_consequence_label ; separator = ",") AS ?consequence_label)
 WHERE {
   VALUES ?tgv_id { "{{tgv_id}}" }
 
   GRAPH <http://togovar.biosciencedbc.jp/variant> {
-    ?variation dct:identifier ?tgv_id .
-    BIND(IRI(CONCAT("http://identifiers.org/hco/", REPLACE(STR(?variation), "-.*", ""), "/GRCh37#", REPLACE(STR(?variation), "^[^-]+-", ""))) AS ?hco)
+    ?variant dct:identifier ?tgv_id .
   }
 
   GRAPH <http://togovar.biosciencedbc.jp/variant/annotation/ensembl> {
-    ?hco tgvo:hasConsequence ?_consequence .
+    ?variant tgvo:hasConsequence ?_consequence .
     ?_consequence a ?_consequence_type .
 
     GRAPH <http://togovar.biosciencedbc.jp/so> {
@@ -47,7 +47,7 @@ WHERE {
       ?_consequence tgvo:transcript ?transcript .
       OPTIONAL {
         GRAPH <http://togovar.biosciencedbc.jp/ensembl> {
-          ?transcript dct:identifier|dc11:identifier ?enst_id . 
+          ?transcript dct:identifier|dc11:identifier ?enst_id .
         }
       }
     }

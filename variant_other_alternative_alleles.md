@@ -10,17 +10,47 @@
 
 {{SPARQLIST_TOGOVAR_SPARQL}}
 
-## `label`
-```sparql
-PREFIX dct: <http://purl.org/dc/terms/>
+## `result`
 
-SELECT ?label
+```sparql
+PREFIX dct:   <http://purl.org/dc/terms/>
+PREFIX faldo: <http://biohackathon.org/resource/faldo#>
+PREFIX gvo:   <http://genome-variation.org/resource#>
+
+SELECT ?reference ?start ?stop
 WHERE {
   VALUES ?tgv_id { "{{tgv_id}}" }
 
   GRAPH <http://togovar.biosciencedbc.jp/variant> {
-    ?variation dct:identifier ?tgv_id .
-    BIND(STR(?variation) AS ?label)
+    {
+      ?variant a gvo:SNV ;
+        dct:identifier ?tgv_id ;
+        faldo:location/faldo:reference ?reference ;
+        faldo:location/faldo:position ?start .
+    } UNION {
+      ?variant a gvo:Insertion ;
+        dct:identifier ?tgv_id ;
+        faldo:location/faldo:reference ?reference ;
+        faldo:location/faldo:before ?start .
+    } UNION {
+      ?variant a gvo:Deletion ;
+        dct:identifier ?tgv_id ;
+        faldo:location/faldo:begin/faldo:reference ?reference ;
+        faldo:location/faldo:begin/faldo:before ?start ;
+        faldo:location/faldo:end/faldo:after ?stop .
+    } UNION {
+      ?variant a gvo:Indel ;
+        dct:identifier ?tgv_id ;
+        faldo:location/faldo:begin/faldo:reference ?reference ;
+        faldo:location/faldo:begin/faldo:before ?start ;
+        faldo:location/faldo:end/faldo:after ?stop .
+    } UNION {
+      ?variant a gvo:MNV ;
+        dct:identifier ?tgv_id ;
+        faldo:location/faldo:reference ?reference ;
+        faldo:location/faldo:begin ?start ;
+        faldo:location/faldo:end ?stop .
+    }
   }
 }
 ```
@@ -28,21 +58,26 @@ WHERE {
 ## `result`
 
 ```javascript
-async ({SPARQLIST_TOGOVAR_SEARCH, label}) => {
-  const binding = label.results.bindings[0];
+async ({result, SPARQLIST_TOGOVAR_SEARCH}) => {
+  const binding = result.results.bindings[0];
 
   if (binding) {
-    const match = binding.label.value.match(/http:\/\/identifiers.org\/hco\/(.+)\/.+#(\d+)/);
-    const position = `${match[1]}:${match[2]}`;
-    const res = await fetch(SPARQLIST_TOGOVAR_SEARCH.concat("?stat=0&quality=0&term=", position), {
+    const match = binding.reference.value.match(/http:\/\/identifiers.org\/hco\/(.+)\//);
+    let region = `${match[1]}:${binding.start.value}`;
+    if (binding.stop) {
+      region += `-${binding.stop.value}`;
+    }
+
+    const res = await fetch(SPARQLIST_TOGOVAR_SEARCH.concat("?stat=0&quality=0&term=", encodeURIComponent(region)), {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
       },
     });
+
     return res.json();
   } else {
-    return { data: [] };
+    return {data: []};
   }
 }
 ```

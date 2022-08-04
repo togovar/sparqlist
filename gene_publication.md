@@ -1,35 +1,78 @@
-# TogoVar variant_publication stanza query
+# Gene report / Publication
 
-Generate rs2pubmed table data by dbSNP ID
+Generate gene2pubmed table data by dbSNP ID
 
 ## Parameters
 
-* `rs` dbSNP ID
-  * default: rs671
-  * example: rs671(hit both), rs797044836(pubTatorCentral only), rs112750067(no hits)
+* `hgnc_id`
+  * default: 404
 
 ## Endpoint
 
 {{SPARQLIST_TOGOVAR_SPARQL}}
 
-## `rs2pmid` dbSNP ID to PubMed Info by Pubtator and PubMed
+## `validated_hgnc_id`
+
+```javascript
+({hgnc_id}) => {
+  if (hgnc_id.match(/^\d+$/)) {
+    return hgnc_id
+  }
+}
+```
+
+## `xref`
+
+```sparql
+PREFIX hgnc: <http://identifiers.org/hgnc/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT DISTINCT ?xref
+WHERE {
+  {{#if validated_hgnc_id}}
+  VALUES ?hgnc_uri { hgnc:{{validated_hgnc_id}} }
+
+  GRAPH <http://togovar.biosciencedbc.jp/hgnc> {
+    ?hgnc_uri rdfs:seeAlso ?xref .    
+    FILTER STRSTARTS(STR(?xref), "http://identifiers.org/ensembl/")
+  }
+  {{/if}}
+}
+```
+
+## `ensembl_gene`
+
+```javascript
+({xref}) => {
+  return xref.results.bindings.map(x => x.xref.value.replace("http://identifiers.org/ensembl/", ""));
+}
+```
+
+## `gene2pmid` HGNC gene ID to PubMed Info by Pubtator and PubMed
 
 ```sparql
 DEFINE sql:select-option "order"
 
-PREFIX bibo:  <http://purl.org/ontology/bibo/>
-PREFIX dbsnp: <http://identifiers.org/dbsnp/>
-PREFIX dct:   <http://purl.org/dc/terms/>
-PREFIX foaf:  <http://xmlns.com/foaf/0.1/>
-PREFIX oa:    <http://www.w3.org/ns/oa#>
-PREFIX olo:   <http://purl.org/ontology/olo/core#>
+PREFIX bibo: <http://purl.org/ontology/bibo/>
+PREFIX dct:  <http://purl.org/dc/terms/>
+PREFIX ensg: <http://rdf.ebi.ac.uk/resource/ensembl/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX oa:   <http://www.w3.org/ns/oa#>
+PREFIX olo:  <http://purl.org/ontology/olo/core#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX tgvo: <http://togovar.biosciencedbc.jp/vocabulary/>
 
-SELECT DISTINCT ?pmid_uri ?pmid ?title ?year ?author ?journal
+SELECT DISTINCT ?rs_id ?pmid_uri ?pmid ?title ?year ?author ?journal
 WHERE {
-  GRAPH <http://togovar.biosciencedbc.jp/pubtator> {
-    dbsnp:{{rs}} ^oa:hasBody ?pubtator_node .
+  VALUES ?ens_gene { {{#each ensembl_gene}} ensg:{{this}} {{/each}} }
 
-    ?pubtator_node a oa:Annotation ;
+  GRAPH <http://togovar.biosciencedbc.jp/variant/annotation/ensembl> {
+    ?ens_gene ^tgvo:gene/^tgvo:hasConsequence/rdfs:seeAlso ?rs_id . 
+  }
+
+  GRAPH <http://togovar.biosciencedbc.jp/pubtator> {
+    ?pubtator_node oa:hasBody ?rs_id ;
+      a oa:Annotation ;
       oa:hasTarget ?pmid_uri .
   }
 
@@ -41,15 +84,16 @@ WHERE {
       dct:creator/olo:slot/olo:item/foaf:name ?author .
   }
 }
+LIMIT 10000
 ```
 
 ## `shaping_pmidinfo` Shaping pmid infomation
 
 ```javascript
-({rs2pmid}) => {
+({gene2pmid}) => {
   const ref = {};
 
-  rs2pmid.results.bindings.forEach(x => {
+  gene2pmid.results.bindings.forEach((x) => {
     if (ref[x.pmid.value]) {
       ref[x.pmid.value]["author"] = ref[x.pmid.value]["author"] + ", " + x.author.value
     } else {
@@ -63,26 +107,28 @@ WHERE {
     }
   })
 
-  return ref
+  return ref;
 }
 ```
 
 ## `rs2pmid_litvar` dbSNP ID to PubMed IDs by Litvar
 
 ```javascript
-async ({rs}) => {
-  const param = "?query=%5B%22litvar%40" + rs + "%23%23%22%5D";
+async ({gene2pmid}) => {
+  const rsids = [...new Set(gene2pmid.results.bindings.map(x => x.rs_id.value.replace("http://identifiers.org/dbsnp/", "")))];
+  const param = JSON.stringify({"rsids": rsids});
 
   try {
-    const res = await fetch("https://www.ncbi.nlm.nih.gov/research/bionlp/litvar/api/v1/public/pmids" + param, {
-      method: 'GET',
+    const res = await fetch("https://www.ncbi.nlm.nih.gov/research/bionlp/litvar/api/v1/public/rsids2pmids", {
+      method: 'POST',
       headers: {
         'Accept': 'application/json',
-        'Content-Type': 'application/x-www-form-urlencoded'
-      }
+        'Content-Type': 'application/json'
+      },
+      body: param
     }).then(res => res.json());
 
-    return res.map(x => x.pmid.toString());
+    return [...new Set(res.map(x => x.pmids.toString()).flatMap(x => x.split(',')))];
   } catch (error) {
     console.log(error);
   }
@@ -93,12 +139,16 @@ async ({rs}) => {
 
 ```javascript
 ({rs2pmid_litvar, shaping_pmidinfo}) => {
+  if (!rs2pmid_litvar) {
+    return "'nodata'";
+  }
+
   const ret = rs2pmid_litvar.filter(i => Object.keys(shaping_pmidinfo).indexOf(i) == -1)
 
   if (ret.length > 0) {
-    return ret.map(x => x.replace(/^/, "pubmed:")).join(" ")
+    return ret.map(x => x.replace(/^/, "pubmed:")).join(" ");
   } else {
-    return "'nodata'"
+    return "'nodata'";
   }
 }
 ```
@@ -110,9 +160,9 @@ async ({rs}) => {
   const ret = rs2pmid_litvar.concat(Object.keys(shaping_pmidinfo)).filter((x, i, self) => self.indexOf(x) === i);
 
   if (ret.length > 0) {
-    return ret.map(pmid => '"' + pmid + '"').join(" ")
+    return ret.map(pmid => '"' + pmid + '"').join(" ");
   } else {
-    return "'nodata'"
+    return "'nodata'";
   }
 }
 ```
@@ -147,8 +197,6 @@ http://colil.dbcls.jp/sparql
 ## `pmid2citation` PubMed IDs to citation count
 
 ```sparql
-DEFINE sql:select-option "order"
-
 PREFIX bibo:   <http://purl.org/ontology/bibo/>
 PREFIX colil:  <http://purl.jp/bio/10/colil/ontology/201303#>
 PREFIX togows: <http://togows.dbcls.jp/ontology/ncbi-pubmed#>
@@ -186,7 +234,7 @@ WHERE {
     }
   })
 
-  return ref
+  return ref;
 }
 ```
 
@@ -239,7 +287,7 @@ WHERE {
     data: ordered_pmids.map(x => {
       const article = articles[x];
 
-      return [article.pmid, article.reference, article.year, article.citation]
+      return [article.pmid, article.reference, article.year, article.citation];
     })
   };
 }

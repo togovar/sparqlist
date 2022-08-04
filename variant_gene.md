@@ -12,32 +12,30 @@
 ## `result`
 
 ```sparql
-PREFIX dct:   <http://purl.org/dc/terms/>
-PREFIX faldo: <http://biohackathon.org/resource/faldo#>
-PREFIX gvo:   <http://genome-variation.org/resource#>
-PREFIX tgvo:  <http://togovar.biosciencedbc.jp/vocabulary/>
-PREFIX rdfs:  <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX skos:  <http://www.w3.org/2004/02/skos/core#>
+PREFIX dct:  <http://purl.org/dc/terms/>
+PREFIX tgvo: <http://togovar.biosciencedbc.jp/vocabulary/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
 
-SELECT DISTINCT ?variation ?gene ?hgnc ?symbol ?approved_name ?synonym
+SELECT DISTINCT ?variant ?gene ?hgnc ?symbol ?approved_name ?synonym
 WHERE {
   GRAPH <http://togovar.biosciencedbc.jp/hgnc> {
     {
-      SELECT DISTINCT ?variation ?hco ?gene ?hgnc
+      SELECT DISTINCT ?variant ?hco ?gene ?hgnc
       WHERE {
         VALUES ?tgv_id { "{{tgv_id}}" }
 
         GRAPH <http://togovar.biosciencedbc.jp/variant> {
-          ?variation dct:identifier ?tgv_id .
+          ?variant dct:identifier ?tgv_id .
         }
 
         GRAPH <http://togovar.biosciencedbc.jp/variant/annotation/ensembl> {
           OPTIONAL {
-            ?variation tgvo:hasConsequence/tgvo:gene ?gene ;
-                       tgvo:hasConsequence/tgvo:hgnc ?hgnc .
+            ?variant tgvo:hasConsequence/tgvo:gene ?gene ;
+              tgvo:hasConsequence/tgvo:hgnc ?hgnc .
             FILTER STRSTARTS(STR(?gene), "http://rdf.ebi.ac.uk/resource/ensembl/ENSG")
           }
-        }    
+        }
       }
     }
 

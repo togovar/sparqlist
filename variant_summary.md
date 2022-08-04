@@ -17,24 +17,51 @@ PREFIX faldo: <http://biohackathon.org/resource/faldo#>
 PREFIX gvo:   <http://genome-variation.org/resource#>
 PREFIX tgvo:  <http://togovar.biosciencedbc.jp/vocabulary/>
 
-SELECT DISTINCT ?tgv_id ?type ?variation ?reference ?ref ?alt ?hgvs
-FROM <http://togovar.biosciencedbc.jp/variant>
-FROM <http://togovar.biosciencedbc.jp/variant/annotation/ensembl>
+SELECT DISTINCT ?type ?reference ?start ?stop ?ref ?alt ?hgvs
 WHERE {
   VALUES ?tgv_id { "{{tgv_id}}" }
 
-  ?variation dct:identifier ?tgv_id ;
-    a ?_type ;
-    faldo:location ?_loc ;
-    gvo:ref ?ref ;
-    gvo:alt ?alt ;
-    faldo:location/(faldo:end|faldo:after)?/faldo:reference ?reference .
+  GRAPH <http://togovar.biosciencedbc.jp/variant> {
+    {
+      ?variant a gvo:SNV ;
+        faldo:location/faldo:reference ?reference ;
+        faldo:location/faldo:position ?start .
+      BIND("SNV" AS ?type)
+    } UNION {
+      ?variant a gvo:Insertion ;
+        faldo:location/faldo:reference ?reference ;
+        faldo:location/faldo:after ?start ;
+        faldo:location/faldo:before ?stop .
+      BIND("Insertion" AS ?type)
+    } UNION {
+      ?variant a gvo:Deletion ;
+        faldo:location/faldo:begin/faldo:reference ?reference ;
+        faldo:location/faldo:begin/faldo:before ?start ;
+        faldo:location/faldo:end/faldo:after ?stop .
+      BIND("Deletion" AS ?type)
+    } UNION {
+      ?variant a gvo:Indel ;
+        faldo:location/faldo:begin/faldo:reference ?reference ;
+        faldo:location/faldo:begin/faldo:before ?start ;
+        faldo:location/faldo:end/faldo:after ?stop .
+      BIND("Indel" AS ?type)
+    } UNION {
+      ?variant a gvo:MNV ;
+        faldo:location/faldo:reference ?reference ;
+        faldo:location/faldo:begin ?start ;
+        faldo:location/faldo:end ?stop .
+      BIND("Substitution" AS ?type)
+    }
 
-    BIND(REPLACE(STR(?_type), "http://genome-variation.org/resource#", "") AS ?type)
-    BIND(IRI(CONCAT("http://identifiers.org/hco/", REPLACE(STR(?variation), "-.*", ""), "/GRCh37#", REPLACE(STR(?variation), "^[^-]+-", ""))) AS ?hco)
+    ?variant dct:identifier ?tgv_id ;
+      gvo:ref ?ref ;
+      gvo:alt ?alt .
+  }
 
-  OPTIONAL {
-    ?hco tgvo:hasConsequence/tgvo:hgvsg ?hgvs .
+  GRAPH <http://togovar.biosciencedbc.jp/variant/annotation/ensembl> {
+    OPTIONAL {
+      ?variant tgvo:hasConsequence/tgvo:hgvsg ?hgvs .
+    }
   }
 }
 ```
