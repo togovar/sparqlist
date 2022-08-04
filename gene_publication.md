@@ -11,6 +11,16 @@ Generate gene2pubmed table data by dbSNP ID
 
 {{SPARQLIST_TOGOVAR_SPARQL}}
 
+## `validated_hgnc_id`
+
+```javascript
+({hgnc_id}) => {
+  if (hgnc_id.match(/^\d+$/)) {
+    return hgnc_id
+  }
+}
+```
+
 ## `xref`
 
 ```sparql
@@ -19,12 +29,14 @@ PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 SELECT DISTINCT ?xref
 WHERE {
-  VALUES ?hgnc_uri { hgnc:{{hgnc_id}} }
+  {{#if validated_hgnc_id}}
+  VALUES ?hgnc_uri { hgnc:{{validated_hgnc_id}} }
 
   GRAPH <http://togovar.biosciencedbc.jp/hgnc> {
     ?hgnc_uri rdfs:seeAlso ?xref .    
     FILTER STRSTARTS(STR(?xref), "http://identifiers.org/ensembl/")
   }
+  {{/if}}
 }
 ```
 
@@ -127,6 +139,10 @@ async ({gene2pmid}) => {
 
 ```javascript
 ({rs2pmid_litvar, shaping_pmidinfo}) => {
+  if (!rs2pmid_litvar) {
+    return "'nodata'";
+  }
+
   const ret = rs2pmid_litvar.filter(i => Object.keys(shaping_pmidinfo).indexOf(i) == -1)
 
   if (ret.length > 0) {

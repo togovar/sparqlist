@@ -10,6 +10,16 @@
 
 {{SPARQLIST_TOGOVAR_SPARQL}}
 
+## `validated_medgen_cid`
+
+```javascript
+({medgen_cid}) => {
+  if (medgen_cid.match(/^CN?\d+$/)) {
+    return medgen_cid
+  }
+}
+```
+
 ## `result`
 
 ```sparql
@@ -18,10 +28,12 @@ PREFIX rdfs:   <http://www.w3.org/2000/01/rdf-schema#>
 
 SELECT DISTINCT ?approved_name
 WHERE {
-  VALUES ?medgen { medgen:{{medgen_cid}} }
+  {{#if validated_medgen_cid}}
+  VALUES ?medgen { medgen:{{validated_medgen_cid}} }
 
   GRAPH <http://togovar.biosciencedbc.jp/medgen> {
     ?medgen rdfs:label ?approved_name .
   }
+  {{/if}}
 }
 ```

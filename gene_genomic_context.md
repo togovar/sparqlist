@@ -9,6 +9,16 @@
 
 {{SPARQLIST_TOGOVAR_SPARQL}}
 
+## `validated_hgnc_id`
+
+```javascript
+({hgnc_id})=>{
+  if(hgnc_id.match(/^\d+$/)){
+    return hgnc_id
+  }
+}
+```
+
 ## `result`
 
 ```sparql
@@ -19,7 +29,8 @@ PREFIX rdfs:  <http://www.w3.org/2000/01/rdf-schema#>
 
 SELECT DISTINCT ?chromosome ?start ?stop
 WHERE {
-  VALUES ?hgnc { hgnc:{{ hgnc_id }} }
+  {{#if validated_hgnc_id}}
+  VALUES ?hgnc { hgnc:{{validated_hgnc_id}} }
 
   GRAPH <http://togovar.biosciencedbc.jp/hgnc> {
     ?hgnc rdfs:label ?symbol .
@@ -33,5 +44,6 @@ WHERE {
 
     BIND(REPLACE(REPLACE(STR(?reference), hco:, ""), "#.*", "") AS ?chromosome)
   }
+  {{/if}}
 }
 ```
