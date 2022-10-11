@@ -111,12 +111,23 @@ ORDER BY ?source
 
   return items.map(([name, suffix]) => {
     const hash = bindings.filter(x => x.source == name)
+    
+    const ac = hash.find(x => x.info_label == "AC" + suffix)?.info_value;
+    const an = hash.find(x => x.info_label == "AN" + suffix)?.info_value;
+    let af = hash.find(x => x.info_label == "AF" + suffix)?.info_value;
+    if (!af) {
+      if (ac && an) {
+        af = ac / an;
+      } else {
+        af = 0
+      }
+    }
 
     return {
       source: display_source[name + suffix],
-      num_alleles: hash.find(x => x.info_label == "AN" + suffix)?.info_value,
-      num_alt_alleles: hash.find(x => x.info_label == "AC" + suffix)?.info_value,
-      frequency: hash.find(x => x.info_label == "AF" + suffix)?.info_value,
+      num_alt_alleles: ac,
+      num_alleles: an,
+      frequency: af,
       num_genotype_ref_homo: hash.find(x => x.info_label == "RRC")?.info_value,
       num_genotype_hetero: hash.find(x => x.info_label == "ARC")?.info_value,
       num_genotype_alt_homo: hash.find(x => x.info_label == "AAC")?.info_value,
