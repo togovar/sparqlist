@@ -4,6 +4,8 @@
 
 * `query` {chromosome}:{start}:{end}
   * default: 12:112200000:112250000
+* `assembly` GRCh37 or GRCh38
+  * default: GRCh37
 
 ## Endpoint
 
@@ -35,7 +37,7 @@ FROM <http://togovar.biosciencedbc.jp/ensembl>
 WHERE {
   VALUES ?region_start { {{q.[1]}} }
   VALUES ?region_end { {{q.[2]}} }
-  VALUES ?chr_id { <http://identifiers.org/hco/{{q.[0]}}#GRCh38> }
+  VALUES ?chr_id { <http://identifiers.org/hco/{{q.[0]}}#{{assembly}}> }
 
   # gene
   BIND("gene" AS ?gene_type)
