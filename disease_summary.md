@@ -3,8 +3,8 @@
 ## Parameters
 
 * `medgen_cid` MedGen CID
-  * default: C0023467
-  * example: C2675520
+  * default:
+  * example: C0023467, C2675520, C2608086
 
 ## Endpoint
 
@@ -28,32 +28,28 @@ WHERE {
     ?medgen a mo:ConceptID .
     ?medgen dct:identifier ?medgen_cid .
     ?medgen rdfs:label ?medgen_label .
-    ?medgen skos:definition ?medgen_definition .
+    OPTIONAL {
+      ?medgen skos:definition ?medgen_definition .
+    }
 
     OPTIONAL {
-      SELECT DISTINCT ?medgen ?mondo
-      WHERE {
-        ?medgen mo:mgconso ?mgconso_mondo .
-        ?mgconso_mondo dct:source mo:MONDO .
-        ?mgconso_mondo rdfs:seeAlso ?mondo .
+      ?medgen mo:mgconso ?mgconso_mondo .
+      ?mgconso_mondo dct:source mo:MONDO .
+      ?mgconso_mondo rdfs:seeAlso ?mondo .
+
+      OPTIONAL {
+        GRAPH <http://togovar.biosciencedbc.jp/mondo> {
+          ?mondo oboinowl:hasDbXref ?dbxref .
+          FILTER STRSTARTS(STR(?dbxref), "EFO:")
+          BIND(IF(STRLEN(?dbxref) > 0, URI(CONCAT("http://www.ebi.ac.uk/efo/EFO_", SUBSTR(?dbxref,5))), URI("")) AS ?efo)
+        }
       }
     }
 
     OPTIONAL {
-      GRAPH <http://togovar.biosciencedbc.jp/mondo> {
-        ?mondo oboinowl:hasDbXref ?dbxref .
-        FILTER STRSTARTS(STR(?dbxref), "EFO:")
-        BIND(IF(STRLEN(?dbxref) > 0, URI(CONCAT("http://www.ebi.ac.uk/efo/EFO_", SUBSTR(?dbxref,5))), URI("")) AS ?efo)
-      }
-    }
-
-    OPTIONAL {
-      SELECT DISTINCT ?medgen ?mesh
-      WHERE {
-        ?medgen mo:mgconso ?mgconso_mesh .
-        ?mgconso_mesh dct:source mo:MSH .
-        ?mgconso_mesh rdfs:seeAlso ?mesh .
-      }
+      ?medgen mo:mgconso ?mgconso_mesh .
+      ?mgconso_mesh dct:source mo:MSH .
+      ?mgconso_mesh rdfs:seeAlso ?mesh .
     }
   }
 }
@@ -64,14 +60,15 @@ WHERE {
 ```javascript
 ({medgen}) => {
   const d = medgen.results.bindings[0];
-  const efo_link = d.efo ? `EFO:&ensp;<a href="${d.efo.value}">${d.efo.value.replace("http://www.ebi.ac.uk/efo/", "")}</a>` : "";
+  const medgen_definition = d.medgen_definition ? d.medgen_definition.value : ""
+  const efo_link = d.efo ? `EFO:&ensp;<a href="${d.efo.value}">${d.efo.value.replace("http://www.ebi.ac.uk/efo/", "")}</a>` : "EFO:&ensp;No Data";
   const medgen_link = d.medgen_cid ? `MedGen:&ensp;<a href="https://www.ncbi.nlm.nih.gov/medgen/${d.medgen_cid.value}">${d.medgen_cid.value}</a>` : ""
-  const mesh_link = d.mesh ? `MeSH:&ensp;<a href="${d.mesh.value}">${d.mesh.value.replace("http://id.nlm.nih.gov/mesh/", "")}</a>` : ""
-  const mondo_link = d.mondo ? `MONDO:&ensp;<a href="${d.mondo.value.replace("http://purl.obolibrary.org/obo/MONDO_", "https://monarchinitiative.org/disease/MONDO:")}">${d.mondo.value.replace("http://purl.obolibrary.org/obo/MONDO_", "MONDO:")}</a>` : "";
+  const mesh_link = d.mesh ? `MeSH:&ensp;<a href="${d.mesh.value}">${d.mesh.value.replace("http://id.nlm.nih.gov/mesh/", "")}</a>` : "MeSH:&ensp;No Data"
+  const mondo_link = d.mondo ? `MONDO:&ensp;<a href="${d.mondo.value.replace("http://purl.obolibrary.org/obo/MONDO_", "https://monarchinitiative.org/disease/MONDO:")}">${d.mondo.value.replace("http://purl.obolibrary.org/obo/MONDO_", "MONDO:")}</a>` : "MONDO:&ensp;No Data";
 
   return [{
     label: d.medgen_label.value,
-    definition: d.medgen_definition.value,
+    definition: medgen_definition,
     links: [efo_link, medgen_link, mesh_link, mondo_link].join("&emsp;"),
   }];
 }
