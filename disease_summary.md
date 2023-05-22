@@ -33,8 +33,8 @@ WHERE {
     }
 
     OPTIONAL {
-      ?medgen mo:mgconso ?mgconso_mondo ;
-        dct:source mo:MONDO ;
+      ?medgen mo:mgconso ?mgconso_mondo.
+      ?mgconso_mondo dct:source mo:MONDO ;
         rdfs:seeAlso ?mondo .
 
       OPTIONAL {
@@ -48,11 +48,11 @@ WHERE {
       OPTIONAL {
         GRAPH <http://togovar.biosciencedbc.jp/mondo> {
           ?mondo oboinowl:hasDbXref ?dbxref_mesh.
-          FILTER STRSTARTS(STR(?dbxref_mesh), "MESH")
+          FILTER STRSTARTS(STR(?dbxref_mesh), "MESH:")
           BIND(IF(STRLEN(?dbxref_mesh) > 0, URI(CONCAT("http://id.nlm.nih.gov/mesh/", SUBSTR(?dbxref_mesh,6))), URI("")) AS ?mesh)
         }
       }
-   }
+    }
   }
 }
 ```
