@@ -202,7 +202,7 @@ WHERE {
   for (let pmid in pmids_info) {
     const pubmed = "<a href=\"https://www.ncbi.nlm.nih.gov/pubmed/" + pmid + "\">" + pmid + "</a>";
     const pubtator = "<br>(<a href=\"https://www.ncbi.nlm.nih.gov/research/pubtator?view=docsum&query=" + pmid + "\">PubTatorCentral</a>)";
-    const litvar = "<br>(<a href=\"https://www.ncbi.nlm.nih.gov/CBBresearch/Lu/Demo/LitVar?query=" + rs + "\">Litvar</a>)";
+    const litvar = "<br>(<a href=\"https://www.ncbi.nlm.nih.gov/research/litvar2/docsum?variant=litvar@" + rs + "%23%23" + "\">Litvar</a>)";
     let pmid_info = pubmed;
 
     if (pubtator_pmids.includes(pmid)) {
