@@ -41,13 +41,10 @@ WHERE {
       cvo:date_last_evaluated ?last_evaluated ;
       cvo:interpreted_condition_list/cvo:interpreted_condition ?_interpreted_condition .
 
-    ?_interpreted_condition rdfs:label ?condition .
-
-    OPTIONAL {
-      ?_interpreted_condition dct:source ?db ;
-        dct:identifier ?medgen .
-      FILTER(?db IN ("MedGen"))
-    }
+    ?_interpreted_condition rdfs:label ?condition ;
+      dct:source ?db ;
+      dct:identifier ?medgen .
+    FILTER(?db IN ("MedGen"))
   }
 }
 ORDER BY ?title ?review_status ?interpretation DESC(?last_evaluated) ?condition
