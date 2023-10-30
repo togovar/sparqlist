@@ -21,18 +21,18 @@ SELECT ?source (GROUP_CONCAT(DISTINCT ?_filter ; separator = ", ") AS ?filter) ?
 WHERE {
   VALUES ?tgv_id { "{{tgv_id}}" }
 
-  GRAPH <http://togovar.biosciencedbc.jp/variant> {
+  GRAPH <http://togovar.org/variant> {
     ?variant dct:identifier ?tgv_id .
   }
 
   VALUES ?g {
-    <http://togovar.biosciencedbc.jp/variant/frequency/gem_j_wga>
-    <http://togovar.biosciencedbc.jp/variant/frequency/hgvd>
-    <http://togovar.biosciencedbc.jp/variant/frequency/jga_ngs>
-    <http://togovar.biosciencedbc.jp/variant/frequency/jga_snp>
-    <http://togovar.biosciencedbc.jp/variant/frequency/tommo>
-    <http://togovar.biosciencedbc.jp/variant/frequency/gnomad_genomes>
-    <http://togovar.biosciencedbc.jp/variant/frequency/gnomad_exomes>
+    <http://togovar.org/variant/frequency/gem_j_wga>
+    <http://togovar.org/variant/frequency/hgvd>
+    <http://togovar.org/variant/frequency/jga_ngs>
+    <http://togovar.org/variant/frequency/jga_snp>
+    <http://togovar.org/variant/frequency/tommo>
+    <http://togovar.org/variant/frequency/gnomad_genomes>
+    <http://togovar.org/variant/frequency/gnomad_exomes>
   }
 
   GRAPH ?g {

@@ -28,11 +28,11 @@ SELECT ?dbsnp (SAMPLE(?tgv_id) AS ?tgv_id)
 WHERE {
   VALUES ?dbsnp { {{#each rs_ids}} dbsnp:{{this}} {{/each}} }
 
-  GRAPH <http://togovar.biosciencedbc.jp/variant/annotation/ensembl> {
+  GRAPH <http://togovar.org/variant/annotation/ensembl> {
     ?variant rdfs:seeAlso ?dbsnp .
   }
 
-  GRAPH <http://togovar.biosciencedbc.jp/variant> {
+  GRAPH <http://togovar.org/variant> {
     ?variant dct:identifier ?tgv_id .
   }
 }

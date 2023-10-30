@@ -19,7 +19,7 @@ SELECT ?xref
 WHERE {
   VALUES ?gene { hgnc:{{hgnc_id}} }
 
-  GRAPH <http://togovar.biosciencedbc.jp/hgnc> {
+  GRAPH <http://togovar.org/hgnc> {
     ?gene rdfs:seeAlso ?xref .
     FILTER STRSTARTS(STR(?xref), "http://identifiers.org/ensembl/")
   }
@@ -50,21 +50,21 @@ SELECT DISTINCT ?tgv_id ?rs_id ?variant ?title ?interpretation ?review_status ?l
 WHERE {
   VALUES ?ens_gene { {{#each ensembl_gene}} ensg:{{this}} {{/each}} }
 
-  GRAPH <http://togovar.biosciencedbc.jp/variant/annotation/ensembl> {
+  GRAPH <http://togovar.org/variant/annotation/ensembl> {
     ?ens_gene ^tgvo:gene/^tgvo:hasConsequence ?variant .
   }
 
-  GRAPH <http://togovar.biosciencedbc.jp/variant> {
+  GRAPH <http://togovar.org/variant> {
     ?variant dct:identifier ?tgv_id .
   }
   
-  GRAPH <http://togovar.biosciencedbc.jp/variant/annotation/clinvar> {
+  GRAPH <http://togovar.org/variant/annotation/clinvar> {
     ?variant dct:identifier ?variation_id .
 
     BIND(IRI(CONCAT("http://ncbi.nlm.nih.gov/clinvar/variation/", ?variation_id)) AS ?clinvar)
   }
 
-  GRAPH <http://togovar.biosciencedbc.jp/clinvar> {
+  GRAPH <http://togovar.org/clinvar> {
     ?clinvar a cvo:VariationArchiveType ;
       rdfs:label ?title ;
       cvo:accession ?vcv ;

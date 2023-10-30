@@ -32,11 +32,11 @@ WHERE {
   {{#if validated_hgnc_id}}
   VALUES ?hgnc { hgnc:{{validated_hgnc_id}} }
 
-  GRAPH <http://togovar.biosciencedbc.jp/hgnc> {
+  GRAPH <http://togovar.org/hgnc> {
     ?hgnc rdfs:label ?symbol .
   }
 
-  GRAPH <http://togovar.biosciencedbc.jp/ensembl> {
+  GRAPH <http://togovar.org/ensembl> {
     ?ensg rdfs:label ?symbol ;
       faldo:location/faldo:begin/faldo:reference ?reference ;
       faldo:location/faldo:begin/faldo:position ?start ;

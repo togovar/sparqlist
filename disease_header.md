@@ -31,7 +31,7 @@ WHERE {
   {{#if validated_medgen_cid}}
   VALUES ?medgen { medgen:{{validated_medgen_cid}} }
 
-  GRAPH <http://togovar.biosciencedbc.jp/medgen> {
+  GRAPH <http://togovar.org/medgen> {
     ?medgen rdfs:label ?approved_name .
   }
   {{/if}}

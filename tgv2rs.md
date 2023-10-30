@@ -19,11 +19,11 @@ SELECT DISTINCT ?rs
 WHERE {
   VALUES ?tgv_id { "{{tgv_id}}" }
 
-  GRAPH <http://togovar.biosciencedbc.jp/variant> {
+  GRAPH <http://togovar.org/variant> {
     ?variant dct:identifier ?tgv_id .
   }
 
-  GRAPH <http://togovar.biosciencedbc.jp/variant/annotation/ensembl> {
+  GRAPH <http://togovar.org/variant/annotation/ensembl> {
     ?variant rdfs:seeAlso ?rs .
 
     FILTER STRSTARTS(STR(?rs), 'http://identifiers.org/dbsnp/rs')

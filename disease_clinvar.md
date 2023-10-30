@@ -26,7 +26,7 @@ SELECT DISTINCT ?tgv_id ?rs_id ?variant ?title ?interpretation ?review_status ?l
 WHERE {
   VALUES ?medgen { medgen:{{medgen_cid}} }
 
-  GRAPH <http://togovar.biosciencedbc.jp/clinvar> {
+  GRAPH <http://togovar.org/clinvar> {
     ?medgen ^dct:references ?_interpreted_condition .
 
     ?_interpreted_condition rdfs:label ?condition ;
@@ -51,11 +51,11 @@ WHERE {
     FILTER(?dbname IN ("dbSNP"))
   }
 
-  GRAPH <http://togovar.biosciencedbc.jp/variant/annotation/clinvar> {
+  GRAPH <http://togovar.org/variant/annotation/clinvar> {
     ?variant dct:identifier ?variation_id .
   }
 
-  GRAPH <http://togovar.biosciencedbc.jp/variant> {
+  GRAPH <http://togovar.org/variant> {
     ?variant dct:identifier ?tgv_id .
   }
 }

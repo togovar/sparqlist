@@ -19,7 +19,7 @@ SELECT DISTINCT ?xref ?approved_name
 WHERE {
   VALUES ?hgnc_uri { <http://identifiers.org/hgnc/{{hgnc_id}}> }
 
-  GRAPH <http://togovar.biosciencedbc.jp/hgnc> {
+  GRAPH <http://togovar.org/hgnc> {
     ?hgnc_uri rdfs:label ?xref;
       dct:description ?approved_name.
   }

@@ -21,7 +21,7 @@ SELECT ?hgnc_uri ?gene_symbol ?approved_name ?chromosomal_location ?alias ?ncbig
 WHERE {
   VALUES ?hgnc_uri { <http://identifiers.org/hgnc/{{hgnc_id}}> }
 
-  GRAPH <http://togovar.biosciencedbc.jp/hgnc> {
+  GRAPH <http://togovar.org/hgnc> {
     ?hgnc_uri rdfs:label ?gene_symbol ;
       dct:description ?approved_name ;
       obo:so_part_of ?chromosomal_location .

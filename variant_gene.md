@@ -19,17 +19,17 @@ PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
 
 SELECT DISTINCT ?variant ?gene ?hgnc ?symbol ?approved_name ?synonym
 WHERE {
-  GRAPH <http://togovar.biosciencedbc.jp/hgnc> {
+  GRAPH <http://togovar.org/hgnc> {
     {
       SELECT DISTINCT ?variant ?hco ?gene ?hgnc
       WHERE {
         VALUES ?tgv_id { "{{tgv_id}}" }
 
-        GRAPH <http://togovar.biosciencedbc.jp/variant> {
+        GRAPH <http://togovar.org/variant> {
           ?variant dct:identifier ?tgv_id .
         }
 
-        GRAPH <http://togovar.biosciencedbc.jp/variant/annotation/ensembl> {
+        GRAPH <http://togovar.org/variant/annotation/ensembl> {
           OPTIONAL {
             ?variant tgvo:hasConsequence/tgvo:gene ?gene ;
               tgvo:hasConsequence/tgvo:hgnc ?hgnc .

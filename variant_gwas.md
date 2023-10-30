@@ -20,11 +20,11 @@ SELECT DISTINCT ?xref
 WHERE {
   VALUES ?tgv_id { "{{tgv_id}}" }
 
-  GRAPH <http://togovar.biosciencedbc.jp/variant> {
+  GRAPH <http://togovar.org/variant> {
     ?variant dct:identifier ?tgv_id .
   }
 
-  GRAPH <http://togovar.biosciencedbc.jp/variant/annotation/ensembl> {
+  GRAPH <http://togovar.org/variant/annotation/ensembl> {
     ?variant rdfs:seeAlso ?xref .
   }
 }
@@ -54,7 +54,7 @@ SELECT ?assoc ?variant_and_risk_allele ?rs ?raf ?p_value ?odds_ratio ?ci_text ?b
 WHERE {
   VALUES ?rs { {{#each rs}} "{{this}}" {{/each}} }
 
-  GRAPH <http://togovar.biosciencedbc.jp/gwas-catalog> {
+  GRAPH <http://togovar.org/gwas-catalog> {
     ?assoc terms:snps ?rs ;
       a gwas:Association ;
       terms:reported_genes ?reported_genes ;
@@ -90,13 +90,13 @@ SELECT ?assoc ?mapped_trait ?mapped_trait_uri
 WHERE{
   VALUES ?rs { {{#each rs}} "{{this}}" {{/each}} }
 
-  GRAPH <http://togovar.biosciencedbc.jp/gwas-catalog> {
+  GRAPH <http://togovar.org/gwas-catalog> {
     ?assoc a gwas:Association ;
       terms:snps ?rs ;
       terms:mapped_trait_uri ?mapped_trait_uri .
   }
 
-  GRAPH <http://togovar.biosciencedbc.jp/efo> {
+  GRAPH <http://togovar.org/efo> {
     ?mapped_trait_uri rdfs:label ?mapped_trait .
   }
 }

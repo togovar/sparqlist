@@ -24,11 +24,11 @@ SELECT DISTINCT ?assoc ?variant_and_risk_allele ?rs_id ?raf ?p_value ?odds_ratio
 WHERE {
   VALUES ?hgnc_uri { <http://identifiers.org/hgnc/{{hgnc_id}}> }
 
-  GRAPH <http://togovar.biosciencedbc.jp/hgnc> {
+  GRAPH <http://togovar.org/hgnc> {
     ?hgnc_uri rdfs:label ?gene_symbol .
   }
 
-  GRAPH <http://togovar.biosciencedbc.jp/gwas-catalog> {
+  GRAPH <http://togovar.org/gwas-catalog> {
     ?assoc terms:reported_genes ?gene_symbol ;
       a gwas:Association ;
       terms:strongest_snp_risk_allele ?variant_and_risk_allele ;
@@ -63,17 +63,17 @@ SELECT DISTINCT ?assoc ?mapped_trait ?mapped_trait_uri
 WHERE {
   VALUES ?hgnc_uri { <http://identifiers.org/hgnc/{{hgnc_id}}> }
 
-  GRAPH <http://togovar.biosciencedbc.jp/hgnc> {
+  GRAPH <http://togovar.org/hgnc> {
     ?hgnc_uri rdfs:label ?gene_symbol .
   }
 
-  GRAPH <http://togovar.biosciencedbc.jp/gwas-catalog> {
+  GRAPH <http://togovar.org/gwas-catalog> {
     ?assoc terms:reported_genes ?gene_symbol ;
       a gwas:Association ;
       terms:mapped_trait_uri ?mapped_trait_uri .
   }
 
-  GRAPH <http://togovar.biosciencedbc.jp/efo> {
+  GRAPH <http://togovar.org/efo> {
     ?mapped_trait_uri rdfs:label ?mapped_trait .
   }
 }

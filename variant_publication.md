@@ -26,14 +26,14 @@ PREFIX olo:   <http://purl.org/ontology/olo/core#>
 
 SELECT DISTINCT ?pmid_uri ?pmid ?title ?year ?author ?journal
 WHERE {
-  GRAPH <http://togovar.biosciencedbc.jp/pubtator> {
+  GRAPH <http://togovar.org/pubtator> {
     dbsnp:{{rs}} ^oa:hasBody ?pubtator_node .
 
     ?pubtator_node a oa:Annotation ;
       oa:hasTarget ?pmid_uri .
   }
 
-  GRAPH <http://togovar.biosciencedbc.jp/pubmed> {
+  GRAPH <http://togovar.org/pubmed> {
     ?pmid_uri dct:source ?journal ;
       dct:title ?title ;
       dct:issued ?year ;
@@ -130,7 +130,7 @@ SELECT DISTINCT ?pmid_uri ?pmid ?title ?year ?author ?journal
 WHERE {
   VALUES ?pmid_uri { {{dup_pmid_litvar}} }
 
-  GRAPH <http://togovar.biosciencedbc.jp/pubmed> {
+  GRAPH <http://togovar.org/pubmed> {
     ?pmid_uri bibo:pmid ?pmid ;
       dct:title ?title ;
       dct:issued ?year ;

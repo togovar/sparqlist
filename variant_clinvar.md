@@ -20,17 +20,17 @@ SELECT ?title ?review_status ?interpretation ?last_evaluated ?condition ?medgen 
 WHERE {
   VALUES ?tgv_id { "{{tgv_id}}" }
 
-  GRAPH <http://togovar.biosciencedbc.jp/variant> {
+  GRAPH <http://togovar.org/variant> {
     ?variant dct:identifier ?tgv_id .
   }
 
-  GRAPH <http://togovar.biosciencedbc.jp/variant/annotation/clinvar> {
+  GRAPH <http://togovar.org/variant/annotation/clinvar> {
     ?variant dct:identifier ?variation_id .
 
     BIND(IRI(CONCAT("http://ncbi.nlm.nih.gov/clinvar/variation/", ?variation_id)) AS ?clinvar)
   }
 
-  GRAPH <http://togovar.biosciencedbc.jp/clinvar> {
+  GRAPH <http://togovar.org/clinvar> {
     ?clinvar a cvo:VariationArchiveType ;
       rdfs:label ?title ;
       cvo:accession ?vcv ;

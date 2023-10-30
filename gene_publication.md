@@ -32,7 +32,7 @@ WHERE {
   {{#if validated_hgnc_id}}
   VALUES ?hgnc_uri { hgnc:{{validated_hgnc_id}} }
 
-  GRAPH <http://togovar.biosciencedbc.jp/hgnc> {
+  GRAPH <http://togovar.org/hgnc> {
     ?hgnc_uri rdfs:seeAlso ?xref .    
     FILTER STRSTARTS(STR(?xref), "http://identifiers.org/ensembl/")
   }
@@ -66,17 +66,17 @@ SELECT DISTINCT ?rs_id ?pmid_uri ?pmid ?title ?year ?author ?journal
 WHERE {
   VALUES ?ens_gene { {{#each ensembl_gene}} ensg:{{this}} {{/each}} }
 
-  GRAPH <http://togovar.biosciencedbc.jp/variant/annotation/ensembl> {
+  GRAPH <http://togovar.org/variant/annotation/ensembl> {
     ?ens_gene ^tgvo:gene/^tgvo:hasConsequence/rdfs:seeAlso ?rs_id . 
   }
 
-  GRAPH <http://togovar.biosciencedbc.jp/pubtator> {
+  GRAPH <http://togovar.org/pubtator> {
     ?pubtator_node oa:hasBody ?rs_id ;
       a oa:Annotation ;
       oa:hasTarget ?pmid_uri .
   }
 
-  GRAPH <http://togovar.biosciencedbc.jp/pubmed> {
+  GRAPH <http://togovar.org/pubmed> {
     ?pmid_uri dct:source ?journal ;
       dct:title ?title ;
       dct:issued ?year ;
@@ -180,7 +180,7 @@ SELECT DISTINCT ?pmid_uri ?pmid ?title ?year ?author ?journal
 WHERE {
   VALUES ?pmid_uri { {{dup_pmid_litvar}} }
 
-  GRAPH <http://togovar.biosciencedbc.jp/pubmed> {
+  GRAPH <http://togovar.org/pubmed> {
     ?pmid_uri bibo:pmid ?pmid ;
       dct:title ?title ;
       dct:issued ?year ;

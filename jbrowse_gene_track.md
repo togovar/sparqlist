@@ -33,7 +33,7 @@ PREFIX so:    <http://purl.obolibrary.org/obo/so#>
 PREFIX rdfs:  <http://www.w3.org/2000/01/rdf-schema#>
 
 SELECT DISTINCT ?gene_id ?gene_type ?gene_start ?gene_end ?feat_id ?feat_type ?feat_start ?feat_end ?exon_id ?exon_type ?exon_start ?exon_end ?strand ?gene_name ?gene_description ?feat_name ?feat_description ?feat_class ?exon_name
-FROM <http://togovar.biosciencedbc.jp/ensembl>
+FROM <http://togovar.org/ensembl>
 WHERE {
   VALUES ?region_start { {{q.[1]}} }
   VALUES ?region_end { {{q.[2]}} }

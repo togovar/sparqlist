@@ -22,15 +22,15 @@ SELECT DISTINCT ?transcript ?enst_id ?gene_symbol ?gene_xref ?hgvs_p ?hgvs_c ?si
 WHERE {
   VALUES ?tgv_id { "{{tgv_id}}" }
 
-  GRAPH <http://togovar.biosciencedbc.jp/variant> {
+  GRAPH <http://togovar.org/variant> {
     ?variant dct:identifier ?tgv_id .
   }
 
-  GRAPH <http://togovar.biosciencedbc.jp/variant/annotation/ensembl> {
+  GRAPH <http://togovar.org/variant/annotation/ensembl> {
     ?variant tgvo:hasConsequence ?_consequence .
     ?_consequence a ?_consequence_type .
 
-    GRAPH <http://togovar.biosciencedbc.jp/so> {
+    GRAPH <http://togovar.org/so> {
       ?_consequence_type rdfs:label ?_consequence_label .
     }
     OPTIONAL { ?_consequence tgvo:sift ?sift . }
@@ -46,7 +46,7 @@ WHERE {
     OPTIONAL {
       ?_consequence tgvo:transcript ?transcript .
       OPTIONAL {
-        GRAPH <http://togovar.biosciencedbc.jp/ensembl> {
+        GRAPH <http://togovar.org/ensembl> {
           ?transcript dct:identifier|dc11:identifier ?enst_id .
         }
       }
@@ -57,7 +57,7 @@ WHERE {
       FILTER STRSTARTS(STR(?_gene), "http://rdf.ebi.ac.uk/resource/ensembl/ENSG")
 
       OPTIONAL {
-        GRAPH <http://togovar.biosciencedbc.jp/ensembl> {
+        GRAPH <http://togovar.org/ensembl> {
           ?_gene rdfs:label ?gene_symbol .
         }
       }

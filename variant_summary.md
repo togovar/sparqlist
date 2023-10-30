@@ -21,7 +21,7 @@ SELECT DISTINCT ?type ?reference ?start ?stop ?ref ?alt ?hgvs
 WHERE {
   VALUES ?tgv_id { "{{tgv_id}}" }
 
-  GRAPH <http://togovar.biosciencedbc.jp/variant> {
+  GRAPH <http://togovar.org/variant> {
     {
       ?variant a gvo:SNV ;
         faldo:location/faldo:reference ?reference ;
@@ -58,7 +58,7 @@ WHERE {
       gvo:alt ?alt .
   }
 
-  GRAPH <http://togovar.biosciencedbc.jp/variant/annotation/ensembl> {
+  GRAPH <http://togovar.org/variant/annotation/ensembl> {
     OPTIONAL {
       ?variant tgvo:hasConsequence/tgvo:hgvsg ?hgvs .
     }

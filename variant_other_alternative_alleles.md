@@ -21,7 +21,7 @@ SELECT ?reference ?start ?stop
 WHERE {
   VALUES ?tgv_id { "{{tgv_id}}" }
 
-  GRAPH <http://togovar.biosciencedbc.jp/variant> {
+  GRAPH <http://togovar.org/variant> {
     {
       ?variant a gvo:SNV ;
         dct:identifier ?tgv_id ;

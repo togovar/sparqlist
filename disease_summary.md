@@ -24,7 +24,7 @@ SELECT DISTINCT ?medgen_cid ?medgen_label ?medgen_definition ?mondo ?efo ?mesh
 WHERE {
   VALUES ?medgen { medgen:{{medgen_cid}} }
 
-  GRAPH <http://togovar.biosciencedbc.jp/medgen> {
+  GRAPH <http://togovar.org/medgen> {
     ?medgen a mo:ConceptID;
       dct:identifier ?medgen_cid;
       rdfs:label ?medgen_label .
@@ -38,7 +38,7 @@ WHERE {
         rdfs:seeAlso ?mondo .
 
       OPTIONAL {
-        GRAPH <http://togovar.biosciencedbc.jp/mondo> {
+        GRAPH <http://togovar.org/mondo> {
           ?mondo oboinowl:hasDbXref ?dbxref_efo .
           FILTER STRSTARTS(STR(?dbxref_efo), "EFO:")
           BIND(IF(STRLEN(?dbxref_efo) > 0, URI(CONCAT("http://www.ebi.ac.uk/efo/EFO_", SUBSTR(?dbxref_efo,5))), URI("")) AS ?efo)
@@ -46,7 +46,7 @@ WHERE {
       }
 
       OPTIONAL {
-        GRAPH <http://togovar.biosciencedbc.jp/mondo> {
+        GRAPH <http://togovar.org/mondo> {
           ?mondo oboinowl:hasDbXref ?dbxref_mesh.
           FILTER STRSTARTS(STR(?dbxref_mesh), "MESH:")
           BIND(IF(STRLEN(?dbxref_mesh) > 0, URI(CONCAT("http://id.nlm.nih.gov/mesh/", SUBSTR(?dbxref_mesh,6))), URI("")) AS ?mesh)

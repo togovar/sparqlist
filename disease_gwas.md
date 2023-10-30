@@ -23,7 +23,7 @@ SELECT DISTINCT ?efo
 WHERE {
   VALUES ?medgen { medgen:{{medgen_cid}} }
 
-  GRAPH <http://togovar.biosciencedbc.jp/medgen> {
+  GRAPH <http://togovar.org/medgen> {
     ?medgen a mo:ConceptID ;
       mo:mgconso ?mgconso .
 
@@ -31,7 +31,7 @@ WHERE {
       rdfs:seeAlso ?mondo .
   }
 
-  GRAPH <http://togovar.biosciencedbc.jp/mondo> {
+  GRAPH <http://togovar.org/mondo> {
     ?mondo oboinowl:hasDbXref ?dbxref .
     FILTER STRSTARTS(STR(?dbxref), "EFO:")
     BIND(URI(CONCAT("http://www.ebi.ac.uk/efo/EFO_", SUBSTR(?dbxref, 5))) AS ?efo)
@@ -62,7 +62,7 @@ SELECT DISTINCT ?assoc ?variant_and_risk_allele ?raf ?p_value ?odds_ratio ?ci_te
 WHERE {
   VALUES ?conditions { {{#each efo}} <{{this}}> {{/each}} }
 
-  GRAPH <http://togovar.biosciencedbc.jp/gwas-catalog> {
+  GRAPH <http://togovar.org/gwas-catalog> {
     ?conditions ^terms:mapped_trait_uri ?assoc .
 
     ?assoc a gwas:Association ;
@@ -95,12 +95,12 @@ SELECT DISTINCT ?assoc ?mapped_trait ?mapped_trait_uri
 WHERE {
   VALUES ?mapped_trait_uri { {{#each efo}} <{{this}}> {{/each}} }
 
-  GRAPH <http://togovar.biosciencedbc.jp/gwas-catalog> {
+  GRAPH <http://togovar.org/gwas-catalog> {
     ?assoc a gwas:Association ;
       terms:mapped_trait_uri ?mapped_trait_uri .
   }
 
-  GRAPH <http://togovar.biosciencedbc.jp/efo> {
+  GRAPH <http://togovar.org/efo> {
     ?mapped_trait_uri rdfs:label ?mapped_trait .
   }
 }
