@@ -12,6 +12,8 @@
 ## `result`
 
 ```sparql
+DEFINE sql:select-option "order"
+
 PREFIX cvo:  <http://purl.jp/bio/10/clinvar/>
 PREFIX dct:  <http://purl.org/dc/terms/>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
