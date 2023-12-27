@@ -2,10 +2,8 @@
 
 ## Parameters
 
-* `query` {chromosome}:{start}:{end}
-  * default: 12:112200000:112250000
-* `assembly` GRCh37 or GRCh38
-  * default: GRCh37
+* `query` {chromosome}:{start}:{end}:{assembly}
+  * default: 12:112200000:112250000:GRCh37
 
 ## Endpoint
 
@@ -16,7 +14,7 @@
 ```javascript
 ({
   json({query}) {
-    return query.match(/^([1-9]|1[0-9]|2[0-2]|X|Y|MT):(\d+):(\d+)/).slice(1, 4);
+    return query.match(/^([1-9]|1[0-9]|2[0-2]|X|Y|MT):(\d+):(\d+):(GRCh\d+)/).slice(1,5);
   }
 })
 ```
@@ -35,9 +33,9 @@ PREFIX rdfs:  <http://www.w3.org/2000/01/rdf-schema#>
 SELECT DISTINCT ?gene_id ?gene_type ?gene_start ?gene_end ?feat_id ?feat_type ?feat_start ?feat_end ?exon_id ?exon_type ?exon_start ?exon_end ?strand ?gene_name ?gene_description ?feat_name ?feat_description ?feat_class ?exon_name
 FROM <http://togovar.org/ensembl>
 WHERE {
-  VALUES ?region_start { {{q.[1]}} }
-  VALUES ?region_end { {{q.[2]}} }
-  VALUES ?chr_id { <http://identifiers.org/hco/{{q.[0]}}#{{assembly}}> }
+  VALUES ?region_start { {{q[1]}} }
+  VALUES ?region_end { {{q[2]}} }
+  VALUES ?chr_id { <http://identifiers.org/hco/{{q[0]}}#{{q[3]}}> }
 
   # gene
   BIND("gene" AS ?gene_type)
