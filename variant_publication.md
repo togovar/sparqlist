@@ -142,7 +142,7 @@ WHERE {
 
 ## Endpoint
 
-http://colil.dbcls.jp/sparql
+https://colil.dbcls.jp/sparql
 
 ## `pmid2citation` PubMed IDs to citation count
 
