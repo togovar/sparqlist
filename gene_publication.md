@@ -62,7 +62,7 @@ PREFIX olo:  <http://purl.org/ontology/olo/core#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX tgvo: <http://togovar.biosciencedbc.jp/vocabulary/>
 
-SELECT ?rs_id ?pmid ?title ?year ?author ?journal
+SELECT DISTINCT ?rs_id ?pmid ?title ?year ?author ?journal
 WHERE {
   VALUES ?ens_gene { {{#each ensembl_gene}} ensg:{{this}} {{/each}} }
 
@@ -84,7 +84,6 @@ WHERE {
       dct:creator/olo:slot/olo:item/foaf:name ?author .
   }
 }
-ORDER BY ?year
 ```
 
 ## `bib_pubtator` Concatenate authors from Pubtator 
@@ -115,7 +114,9 @@ ORDER BY ?year
 
 ```javascript
 async ({pubtator_sparql}) => {
+//  empty rsids to skip request to LitVar
   const rsids = [...new Set(pubtator_sparql.results.bindings.map(x => x.rs_id.value.replace("http://identifiers.org/dbsnp/", "")))];
+//  const rsids = [];
   const pmid2rsid = {} 
 
   for (const rsid of rsids) {
@@ -186,7 +187,6 @@ WHERE {
       dct:source ?journal .
   }
 }
-ORDER BY ?year
 ```
 
 ## `bib_litvar_only` Concatenate authors from LitVar 
