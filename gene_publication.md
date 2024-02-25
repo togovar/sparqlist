@@ -115,8 +115,8 @@ WHERE {
 ```javascript
 async ({pubtator_sparql}) => {
 //  empty rsids to skip request to LitVar
-  const rsids = [...new Set(pubtator_sparql.results.bindings.map(x => x.rs_id.value.replace("http://identifiers.org/dbsnp/", "")))];
-//  const rsids = [];
+//  const rsids = [...new Set(pubtator_sparql.results.bindings.map(x => x.rs_id.value.replace("http://identifiers.org/dbsnp/", "")))];
+  const rsids = [];
   const pmid2rsid = {} 
 
   for (const rsid of rsids) {
