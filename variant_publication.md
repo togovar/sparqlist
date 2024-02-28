@@ -208,7 +208,7 @@ WHERE {
 
   for (let pmid in pubtator_litvar) {
     const href_pubmed = "<a href=\"https://www.ncbi.nlm.nih.gov/pubmed/" + pmid + "\">" + pmid + "</a>";
-    const href_pubtator = "<br>(<a href=\"https://www.ncbi.nlm.nih.gov/research/pubtator?view=docsum&query=" + pmid + "\">PubTatorCentral</a>)";
+    const href_pubtator = "<br>(<a href=\"https://www.ncbi.nlm.nih.gov/research/pubtator?view=publication&pmid=" + pmid + "\">PubTatorCentral</a>)";
     const href_litvar = "<br>(<a href=\"https://www.ncbi.nlm.nih.gov/research/litvar2/publication/" + pmid + "?variant=litvar%40" + rs + "%23%23\">Litvar</a>)";
     let links = href_pubmed;
 
