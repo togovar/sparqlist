@@ -156,11 +156,7 @@ async ({pubtator_sparql}) => {
   if (!pmid2rsid_litvar) { return []; }
 
   pmids_pubtator = pubtator_sparql.results.bindings.map(x => x.pmid.value)
-
-  console.log("pmids from pubtator:" + Object.keys(pmids_pubtator).length)
-
   const pmids_litvar_only = Object.keys(pmid2rsid_litvar).filter(pmid => pmids_pubtator.indexOf(pmid) == -1)
-  console.log("pmids from litvar:" + Object.keys(pmids_litvar_only).length)
 
   return pmids_litvar_only
 }
