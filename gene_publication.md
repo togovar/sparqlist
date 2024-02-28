@@ -136,15 +136,15 @@ async ({pubtator_sparql}) => {
       }
       }).then(res => res.json());
 
-      if("pmids" in res == false){ continue; }
+      if ("pmids" in res == false){ continue; }
 
       for (let pmid of res.pmids){
-       pmid = pmid.toString();
-       if(pmid in pmid2rsid == false){
-         pmid2rsid[pmid] = [rsid]
-       } else {
-         pmid2rsid[pmid].push(rsid);
-       }
+        pmid = pmid.toString();
+        if (pmid in pmid2rsid == false){
+          pmid2rsid[pmid] = [rsid]
+        } else {
+          pmid2rsid[pmid].push(rsid);
+        }
       }
      } catch (error) {
        console.log(rsid)
@@ -224,7 +224,7 @@ WHERE {
  
   const pmids_all = [...new Set([...Object.keys(bib_litvar_only), ...Object.keys(bib_pubtator)])];
 
-  if(pmids_all.length == 0){
+  if (pmids_all.length == 0){
     pmids_all.push("no data");
   }
 
@@ -268,7 +268,7 @@ WHERE {
     const href_pubtator = pmid in bib_pubtator ? "<br>(<a href=\"https://www.ncbi.nlm.nih.gov/research/pubtator?view=publication&pmid=" + pmid + "\">PubTatorCentral</a>)" : "";
 
     let href_litvar = "";
-    if(pmid in pmid2rsid_litvar == true){
+    if (pmid in pmid2rsid_litvar == true){
       href_litvar = "(Litvar: ";
       href_litvar += pmid2rsid_litvar[pmid].map(
 	rsid => "<a href=\"https://www.ncbi.nlm.nih.gov/research/litvar2/publication/" + pmid + "?variant=litvar%40" + rsid + "%23%23\">" + rsid + "</a>"
