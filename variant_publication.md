@@ -105,6 +105,10 @@ async ({rs}) => {
   const pmids_pubtator = Object.keys(pubtator)
   const pmids_pubtator_union_litvar = pmids_pubtator.concat(pmids_litvar_minus_pubtator)
 
+  if(pmids_pubtator_union_litvar.length == 0){
+    pmids_pubtator_union_litvar.push("no data")
+  }
+
   return pmids_pubtator_union_litvar
 }
 ```
@@ -228,7 +232,7 @@ WHERE {
       links,
       html,
       pubtator_litvar[pmid].year.split(" ")[0],
-      "<a href=\"http://colil.dbcls.jp/browse/papers/" + pmid + "/\" >" + (colil[pmid] == undefined ? 0 : colil[pmid]) + "</a>"
+      "<a href=\"http://colil.dbcls.jp/browse/papers/" + pmid + "/\">" + (colil[pmid] == undefined ? 0 : colil[pmid]) + "</a>"
     ]);
   }
 
