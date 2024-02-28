@@ -6,6 +6,7 @@ Generate gene2pubmed table data by dbSNP ID
 
 * `hgnc_id`
   * default: 404
+  * example: 28706 (more than one rsids for one pmid), 555555 (no pmids are found)
 
 ## Endpoint
 
@@ -84,6 +85,7 @@ WHERE {
       dct:creator/olo:slot/olo:item/foaf:name ?author .
   }
 }
+ORDER BY ?pmid
 ```
 
 ## `bib_pubtator` Concatenate authors from Pubtator 
@@ -93,15 +95,20 @@ WHERE {
   const ref = {};
 
   pubtator_sparql.results.bindings.forEach((x) => {
-    if (ref[x.pmid.value]) {
-      ref[x.pmid.value]["author"] = ref[x.pmid.value]["author"] + ", " + x.author.value
-    } else {
+    if (x.pmid.value in ref == false){
       ref[x.pmid.value] = {
-        rs_id: x.rs_id.value,
+        rs_id: [x.rs_id.value],
         title: x.title.value,
         year: x.year.value,
-        author: x.author.value,
+        author: [x.author.value],
         journal: x.journal.value
+      };
+    } else{
+      if (ref[x.pmid.value]["rs_id"].includes(x.rs_id.value) == false){
+        ref[x.pmid.value]["rs_id"].push(x.rs_id.value);
+      }
+      if (ref[x.pmid.value]["author"].includes(x.author.value) == false){
+        ref[x.pmid.value]["author"].push(x.author.value);
       }
     }
   })
@@ -114,7 +121,7 @@ WHERE {
 
 ```javascript
 async ({pubtator_sparql}) => {
-//  empty rsids to skip request to LitVar
+//  Empty rsids to skip request to LitVar
 //  const rsids = [...new Set(pubtator_sparql.results.bindings.map(x => x.rs_id.value.replace("http://identifiers.org/dbsnp/", "")))];
   const rsids = [];
   const pmid2rsid = {} 
@@ -192,14 +199,16 @@ WHERE {
   const ref = {};
 
   litvar_only_sparql.results.bindings.forEach((x) => {
-    if (ref[x.pmid.value]) {
-      ref[x.pmid.value]["author"] = ref[x.pmid.value]["author"] + ", " + x.author.value
-    } else {
+    if (x.pmid.value in ref == false){
       ref[x.pmid.value] = {
         title: x.title.value,
         year: x.year.value,
-        author: x.author.value,
+        author: [x.author.value],
         journal: x.journal.value
+      };
+    } else{
+      if (ref[x.pmid.value]["author"].includes(x.author.value) == false){
+        ref[x.pmid.value]["author"].push(x.author.value);
       }
     }
   })
@@ -208,13 +217,18 @@ WHERE {
 }
 ```
 
-
 ## `pmids_all` Concat PMIDs from Pubtator and Litvar
 
 ```javascript
 ({bib_litvar_only, bib_pubtator}) => {
  
-  return [...new Set([...Object.keys(bib_litvar_only), ...Object.keys(bib_pubtator)])]; 
+  const pmids_all = [...new Set([...Object.keys(bib_litvar_only), ...Object.keys(bib_pubtator)])];
+
+  if(pmids_all.length == 0){
+    pmids_all.push("no data");
+  }
+
+  return pmids_all;
 }
 ```
 
@@ -259,7 +273,7 @@ WHERE {
       href_litvar += pmid2rsid_litvar[pmid].map(
 	rsid => "<a href=\"https://www.ncbi.nlm.nih.gov/research/litvar2/publication/" + pmid + "?variant=litvar%40" + rsid + "%23%23\">" + rsid + "</a>"
 	).join(' ,')
-      href_litvar +=")"
+      href_litvar +=")";
     }  
 
     let links = href_pubmed;
@@ -268,7 +282,7 @@ WHERE {
 
     let html = "";
     html += "<b>" + pubtator_litvar[pmid].title + "</b><br>\n";
-    html += pubtator_litvar[pmid].author + "<br>\n";
+    html += pubtator_litvar[pmid].author.join(" ,") + "<br>\n";
     html += "<i><b>" + pubtator_litvar[pmid].journal + "</b></i><br>\n";
 
     articles.push([
