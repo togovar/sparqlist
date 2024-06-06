@@ -202,10 +202,63 @@ WHERE {
 }
 ```
 
+## `snipet` generate snipet
+
+```javascript
+async({}) => {
+  //  const url = "https://pubannotation.org/projects/PubTator4TogoVar/docs/sourcedb/PubMed/sourceid/24886653/annotations.json";
+  const url = "https://raw.githubusercontent.com/mitsuhashi/togovar/pubannotation/24886653.json";
+  let snipet = "";
+
+  try {
+    // Fetch APIを使用してデータを取得
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+
+    // 取得したデータをJSON形式で解析
+    const jsonInput = await response.json();
+
+    // ここから元のコードロジックを実装
+    const mutationId = "rs140930963";
+    const text = jsonInput.text;
+    const denotations = jsonInput.denotations;
+    const margin = 40;
+
+    // Find the denotation object for the mutationId
+    const denotation = jsonInput.attributes.find(attr => attr.obj === mutationId);
+    if (denotation) {
+      const mutationSpan = denotations.find(d => d.id === denotation.subj).span;
+      // denotationsオブジェクトからbeginとendを取得
+      if (!denotations || denotations.length === 0) {
+        throw new Error('No denotations found');
+      }
+      const { begin, end } = denotations[0].span;
+
+      const before = text.substring(begin - margin, begin)
+      const keyword = text.substring(begin, end)
+      const after = text.substring(end, end + margin)
+      snipet = before + "<b>" + keyword + "</b>" + after;
+console.log("snipet-1:" + snipet);
+    } else {
+      console.log("Mutation ID not found in the attributes.");
+    }
+  } catch (error) {
+    console.log(error);
+    return []
+  }
+
+console.log("snipet-2:" + snipet);
+
+  return snipet;
+}
+```
+
 ## `result` Compile results
 
 ```javascript
-({rs, pmids_litvar, pubtator, litvar_only, colil}) => {
+({rs, pmids_litvar, pubtator, litvar_only, colil, snipet}) => {
   const articles = [];
   const pmids_pubtator = Object.keys(pubtator)
   const pubtator_litvar = Object.assign(pubtator, litvar_only)
@@ -227,6 +280,7 @@ WHERE {
     html += "<b>" + pubtator_litvar[pmid].title + "</b><br>\n";
     html += pubtator_litvar[pmid].author + "<br>\n";
     html += "<i><b>" + pubtator_litvar[pmid].journal + "</b></i><br>\n";
+    html += snipet + "</br>\n";
 
     articles.push([
       links,
