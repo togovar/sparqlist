@@ -5,7 +5,7 @@ Generate rs2pubmed table data by dbSNP ID
 ## Parameters
 
 * `rs` dbSNP ID
-  * default: rs671
+  * default: rs114202595
   * example: rs671(hit both), rs797044836(pubTatorCentral only), rs112750067(no hits)
 
 ## Endpoint
@@ -202,66 +202,108 @@ WHERE {
 }
 ```
 
-## `snipet` generate snipet
+## `snippets` Generate snippets
 
 ```javascript
-async({}) => {
-  //  const url = "https://pubannotation.org/projects/PubTator4TogoVar/docs/sourcedb/PubMed/sourceid/24886653/annotations.json";
-  const url = "https://raw.githubusercontent.com/mitsuhashi/togovar/pubannotation/24886653.json";
-  let snipet = "";
+function create_snippet(text, markup_ranges, max_length) {
+  // Regular expression to split sentences, considering abbreviations
+  const sentence_regex = /(?<!\b(?:Mr|Mrs|Ms|Dr|Prof|Sr|Jr)\.)(?<!\b\w\.\w\.\w\.)(?<![A-Z]\.)(?<!\b[a-z]\.)(?<!\betc\.)(?<!\b[A-Z]{2}\.)(?<=[.!?])\s+(?=[A-Z])/g;
 
-  try {
-    // Fetch APIを使用してデータを取得
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
+  // Apply <b></b> tags to the specified markup ranges
+  let marked_up_text = "";
+  let last_index = 0;
+
+  markup_ranges.forEach(({begin, end}) => {
+    marked_up_text += text.slice(last_index, begin) + "<b>" + text.slice(begin, end) + "</b>";
+    last_index = end;
+  });
+
+  marked_up_text += text.slice(last_index);
+
+  // Split the text into sentences
+  const sentences = marked_up_text.split(sentence_regex);
+
+  // Generate the snippet
+  let snippet = "";
+  let length = 0;
+  let is_first_sentence = true;
+  let previous_sentence_had_markup = false;
+
+  for (let i = 0; i < sentences.length; i++) {
+    const sentence = sentences[i];
+
+    // Skip sentences that don't contain any markup
+    if (!sentence.includes('<b>') && !sentence.includes('</b>')) {
+      previous_sentence_had_markup = false;
+      continue;
     }
 
-    // 取得したデータをJSON形式で解析
-    const jsonInput = await response.json();
-
-    // ここから元のコードロジックを実装
-    const mutationId = "rs140930963";
-    const text = jsonInput.text;
-    const denotations = jsonInput.denotations;
-    const margin = 40;
-
-    // Find the denotation object for the mutationId
-    const denotation = jsonInput.attributes.find(attr => attr.obj === mutationId);
-    if (denotation) {
-      const mutationSpan = denotations.find(d => d.id === denotation.subj).span;
-      // denotationsオブジェクトからbeginとendを取得
-      if (!denotations || denotations.length === 0) {
-        throw new Error('No denotations found');
+    // Check if adding this sentence exceeds max_length
+    if (length + sentence.length > max_length && !is_first_sentence) {
+      // Check if there are any remaining sentences with markup after this one
+      if (sentences.slice(i).some(s => s.includes('<b>'))) {
+        snippet += " ...";
       }
-      const { begin, end } = denotations[0].span;
-
-      const before = text.substring(begin - margin, begin)
-      const keyword = text.substring(begin, end)
-      const after = text.substring(end, end + margin)
-      snipet = before + "<b>" + keyword + "</b>" + after;
-console.log("snipet-1:" + snipet);
-    } else {
-      console.log("Mutation ID not found in the attributes.");
+      break;
     }
-  } catch (error) {
-    console.log(error);
-    return []
+
+    // If not the first sentence and the previous sentence did not have markup, add " ... "
+    if (!is_first_sentence && !previous_sentence_had_markup) {
+      snippet += " ... ";
+    }
+
+    snippet += sentence;
+    length += sentence.length;
+    is_first_sentence = false;
+    previous_sentence_had_markup = true;
   }
 
-console.log("snipet-2:" + snipet);
+  return snippet.trim();
+}
 
-  return snipet;
+async({rs, pubtator}) => {
+  const mutationId = rs;
+  const snippet_maxlength = 300;
+  const snippets = {};
+
+  for (const pmid in pubtator) {
+    const url = "https://pubannotation.org/projects/PubTator4TogoVar/docs/sourcedb/PubMed/sourceid/" + pmid + "/annotations.json";
+
+    try {
+      const response = await fetch(url);
+      if (!response.ok) { throw new Error("Failed to fetch from " + url); }
+
+      const jsonInput = await response.json();
+      const text = jsonInput.text;
+      const denotations = jsonInput.denotations;
+
+      // Find the denotation object for the mutationId
+      const denotations_incl_mutationId = jsonInput.attributes.filter(attr => attr.obj === mutationId);
+
+      // Get array of ranges for markup
+      const markup_ranges = denotations_incl_mutationId.map(denotation_incl_mutationId => {
+        return { begin, end } = denotations.find(d => d.id === denotation_incl_mutationId.subj).span;
+      });
+
+      // create snippet
+      snippet = create_snippet(text, markup_ranges, snippet_maxlength);
+      snippets[pmid] = snippet;
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  return snippets;
 }
 ```
 
 ## `result` Compile results
 
 ```javascript
-({rs, pmids_litvar, pubtator, litvar_only, colil, snipet}) => {
+({rs, pmids_litvar, pubtator, litvar_only, colil, snippets}) => {
   const articles = [];
-  const pmids_pubtator = Object.keys(pubtator)
-  const pubtator_litvar = Object.assign(pubtator, litvar_only)
+  const pmids_pubtator = Object.keys(pubtator);
+  const pubtator_litvar = Object.assign(pubtator, litvar_only);
 
   for (const pmid in pubtator_litvar) {
     const href_pubmed = "<a href=\"https://www.ncbi.nlm.nih.gov/pubmed/" + pmid + "\">" + pmid + "</a>";
@@ -269,7 +311,7 @@ console.log("snipet-2:" + snipet);
     const href_litvar = "<br>(<a href=\"https://www.ncbi.nlm.nih.gov/research/litvar2/publication/" + pmid + "?variant=litvar%40" + rs + "%23%23\">Litvar</a>)";
 
     let links = href_pubmed;
-    if (pmids_pubtator.includes(pmid)) {
+    if (pmid in pubtator) {
       links += href_pubtator;
     }
     if (pmids_litvar.includes(pmid)) {
@@ -280,7 +322,9 @@ console.log("snipet-2:" + snipet);
     html += "<b>" + pubtator_litvar[pmid].title + "</b><br>\n";
     html += pubtator_litvar[pmid].author + "<br>\n";
     html += "<i><b>" + pubtator_litvar[pmid].journal + "</b></i><br>\n";
-    html += snipet + "</br>\n";
+    if (pmid in snippets) {
+      html += snippets[pmid] + "</br>\n";
+    }
 
     articles.push([
       links,
