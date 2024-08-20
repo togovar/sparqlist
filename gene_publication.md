@@ -269,7 +269,7 @@ WHERE {
 
     let href_litvar = "";
     if (pmid in pmid2rsid_litvar == true){
-      href_litvar = "(Litvar: ";
+      href_litvar = "(LitVar2: ";
       href_litvar += pmid2rsid_litvar[pmid].map(
 	rsid => "<a href=\"https://www.ncbi.nlm.nih.gov/research/litvar2/publication/" + pmid + "?variant=litvar%40" + rsid + "%23%23\">" + rsid + "</a>"
 	).join(' ,')
