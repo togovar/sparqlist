@@ -265,7 +265,7 @@ WHERE {
 
   for (const pmid of Object.keys(pubtator_litvar)) {
     const href_pubmed = "<a href=\"https://www.ncbi.nlm.nih.gov/pubmed/" + pmid + "\">" + pmid + "</a>";
-    const href_pubtator = pmid in bib_pubtator ? "<br>(<a href=\"https://www.ncbi.nlm.nih.gov/research/pubtator3/publication/" + pmid + "\">PubTatorCentral</a>)" : "";
+    const href_pubtator = pmid in bib_pubtator ? "<br>(<a href=\"https://www.ncbi.nlm.nih.gov/research/pubtator3/publication/" + pmid + "\">PubTator3</a>)" : "";
 
     let href_litvar = "";
     if (pmid in pmid2rsid_litvar == true){
