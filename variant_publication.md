@@ -323,7 +323,7 @@ async({rs, pubtator}) => {
     html += pubtator_litvar[pmid].author + "<br>\n";
     html += "<i><b>" + pubtator_litvar[pmid].journal + "</b></i><br>\n";
     if (pmid in snippets) {
-      html += snippets[pmid] + "</br>\n";
+      html += "</br>" + snippets[pmid] + "</br>\n";
     }
 
     articles.push([
