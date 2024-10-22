@@ -79,7 +79,8 @@ WHERE {
     if (!d.enst.value.match(/mane-select/)) {
       return {id: d.ensp.value.replace(/.+ensembl\.protein\//, "").replace(/\.\d+$/, "")};
     }
-  }    
+  }
+  return {id: false};
 }
 ```
 
@@ -97,6 +98,7 @@ PREFIX dct: <http://purl.org/dc/terms/>
 PREFIX up: <http://purl.uniprot.org/uniprot/>
 SELECT DISTINCT ?pdb ?db_align_begin ?auth_align_begin ?auth_align_end ?resolution_high ?rfree ?rwork ?date (GROUP_CONCAT(DISTINCT ?chain_id ;  separator=',') AS ?chains)
 WHERE {
+{{#if ensp.id}}
   ?entry dct:identifier ?pdb ;
          pdbo:has_pdbx_audit_revision_historyCategory/pdbo:has_pdbx_audit_revision_history [
            pdbo:pdbx_audit_revision_history.ordinal "1" ;
@@ -131,6 +133,7 @@ WHERE {
   #   pdbo:refine.ls_R_factor_R_free ?rfree ;
   #   pdbo:refine.ls_R_factor_R_work ?rwork ;
   #   pdbo:refine.ls_R_factor_obs ?rfactor
+{{/if}}
 }
 ORDER BY DESC(?date) ?pdb ?auth_align_begin
 ```
@@ -143,11 +146,13 @@ PREFIX dct: <http://purl.org/dc/terms/>
 PREFIX up: <http://purl.uniprot.org/uniprot/>
 SELECT DISTINCT ?pdb ?auth_pos
 WHERE {
+{{#if ensp.id}}
   [] dct:identifier ?pdb ;
      pdbo:has_entityCategory/pdbo:has_entity [
        pdbo:referenced_by_struct_ref/pdbo:link_to_uniprot <{{uniprot.results.bindings.0.uniprot.value}}> ;
        pdbo:referenced_by_entity_poly/pdbo:referenced_by_entity_poly_seq/pdbo:referenced_by_pdbx_poly_seq_scheme/pdbo:pdbx_poly_seq_scheme.auth_seq_num ?auth_pos
      ] .
+{{/if}}
 }
 ORDER BY ?pdb ?auth_pos
 ```
@@ -166,6 +171,7 @@ PREFIX hgnc:  <http://identifiers.org/hgnc/>
 PREFIX cvo:  <http://purl.jp/bio/10/clinvar/>
 SELECT DISTINCT ?tgvid ?hgvs ?clin_sig
 WHERE {
+{{#if ensp.id}}
   VALUES ?hgnc { hgnc:{{hgnc_id}} }
 
   GRAPH <http://togovar.org/hgnc> {
@@ -188,12 +194,14 @@ WHERE {
     BIND(IRI(CONCAT("http://ncbi.nlm.nih.gov/clinvar/variation/", ?var_id)) AS ?clinvar)
     ?clinvar cvo:interpreted_record/cvo:rcv_list/cvo:rcv_accession/cvo:interpretation ?clin_sig.
   }
+{{/if}}
 }
 ```
 
 ## `return`
 ```javascript
 async ({hgnc_id, uniprot, ensp, pdb_align, pdb_str, variants})=>{
+  if (! ensp.id) return {structure: [], variant: []};
   const ensp_id = ensp.id;
 
   let res = {structure: [], variant: []};
@@ -231,6 +239,7 @@ async ({hgnc_id, uniprot, ensp, pdb_align, pdb_str, variants})=>{
   // PDB chain 3D position で、上記 alignment に入っているものだけに絞り込み
   for (const pdb of pdb_str.results.bindings) {
     const id = pdb.pdb.value;
+    if (! pdb_d[id]) continue;
     const d = pdb_d[id] - 1;
     for (const align of res.structure[d].aligns) {
       if (align.begin <= parseInt(pdb.auth_pos.value) && parseInt(pdb.auth_pos.value) <= align.end) {
