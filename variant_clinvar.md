@@ -36,14 +36,14 @@ WHERE {
     ?clinvar a cvo:VariationArchiveType ;
       rdfs:label ?title ;
       cvo:accession ?vcv ;
-      cvo:interpreted_record/cvo:review_status ?review_status ;
-      cvo:interpreted_record/cvo:rcv_list/cvo:rcv_accession ?_rcv .
+      cvo:classified_record/cvo:classifications/cvo:germline_classification/cvo:review_status ?review_status ;
+      cvo:classified_record/cvo:rcv_list/cvo:rcv_accession ?_rcv .
 
-    ?_rcv cvo:interpretation ?interpretation ;
-      cvo:date_last_evaluated ?last_evaluated ;
-      cvo:interpreted_condition_list/cvo:interpreted_condition ?_interpreted_condition .
+    ?_rcv cvo:rcv_classifications/cvo:germline_classification/cvo:description/cvo:description ?interpretation ;
+      cvo:rcv_classifications/cvo:germline_classification/cvo:description/cvo:date_last_evaluated ?last_evaluated ;
+      cvo:classified_condition_list/cvo:classified_condition ?_classified_condition .
 
-    ?_interpreted_condition rdfs:label ?condition ;
+    ?_classified_condition rdfs:label ?condition ;
       dct:source ?db ;
       dct:identifier ?medgen .
     FILTER(?db IN ("MedGen"))
