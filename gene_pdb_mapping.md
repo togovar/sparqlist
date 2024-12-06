@@ -192,7 +192,8 @@ WHERE {
       ?var dct:identifier ?var_id .
     }
     BIND(IRI(CONCAT("http://ncbi.nlm.nih.gov/clinvar/variation/", ?var_id)) AS ?clinvar)
-    ?clinvar cvo:interpreted_record/cvo:rcv_list/cvo:rcv_accession/cvo:interpretation ?clin_sig.
+    #?clinvar cvo:interpreted_record/cvo:rcv_list/cvo:rcv_accession/cvo:interpretation ?clin_sig.
+    ?clinvar cvo:classified_record/cvo:rcv_list/cvo:rcv_accession/cvo:rcv_classifications/cvo:germline_classification/cvo:description/cvo:description ?clin_sig.
   }
 {{/if}}
 }
