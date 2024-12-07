@@ -16,16 +16,21 @@
     * rfree: R-free
     * rwork: Rwork
   * varinat: TogoVar data
-    * tgvid: TogoVar ID
-    * label: Missense variant label
+    * id: TogoVar ID or dbSNP rs ID
+    * label: Missense variant label (HGVS_p)
     * position: UniProt position
-    * clinical_significance: Clinical significance from ClinVar
+    * sig: significance code
+    * sig_label: Clinical significance label
+    * color: cignificance color
+    * color_num: color score
+    
 
 ## Parameters
 
 * `hgnc_id`
   * default: 404
-
+* `togovar_api`
+  * default: https://stg-grch38.togovar.org/api/search/variant
 
 ## Endpoint
 
@@ -157,51 +162,9 @@ WHERE {
 ORDER BY ?pdb ?auth_pos
 ```
 
-## Endpoint
-
-{{SPARQLIST_TOGOVAR_SPARQL}}
-
-## `variants`
-* TogoVar からの遺伝子上の variant 情報
-```sparql
-PREFIX rdfs:  <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX dct: <http://purl.org/dc/terms/>
-PREFIX tgvo: <http://togovar.biosciencedbc.jp/vocabulary/>
-PREFIX hgnc:  <http://identifiers.org/hgnc/>
-PREFIX cvo:  <http://purl.jp/bio/10/clinvar/>
-SELECT DISTINCT ?tgvid ?hgvs ?clin_sig
-WHERE {
-{{#if ensp.id}}
-  VALUES ?hgnc { hgnc:{{hgnc_id}} }
-
-  GRAPH <http://togovar.org/hgnc> {
-    ?hgnc rdfs:label ?symbol .
-  }
-    
-  ?var tgvo:hasConsequence [
-    tgvo:hgvsp ?hgvs ;
-    tgvo:gene/rdfs:label ?symbol
-  ] .
-  FILTER (!REGEX (?hgvs, "=")) # filtering synonimous
-
-  GRAPH <http://togovar.org/variant>{
-    ?var dct:identifier ?tgvid.
-  }
-  OPTIONAL {
-    GRAPH <http://togovar.org/variant/annotation/clinvar> {
-      ?var dct:identifier ?var_id .
-    }
-    BIND(IRI(CONCAT("http://ncbi.nlm.nih.gov/clinvar/variation/", ?var_id)) AS ?clinvar)
-    #?clinvar cvo:interpreted_record/cvo:rcv_list/cvo:rcv_accession/cvo:interpretation ?clin_sig.
-    ?clinvar cvo:classified_record/cvo:rcv_list/cvo:rcv_accession/cvo:rcv_classifications/cvo:germline_classification/cvo:description/cvo:description ?clin_sig.
-  }
-{{/if}}
-}
-```
-
 ## `return`
 ```javascript
-async ({hgnc_id, uniprot, ensp, pdb_align, pdb_str, variants})=>{
+async ({hgnc_id, togovar_api, uniprot, ensp, pdb_align, pdb_str})=>{
   if (! ensp.id) return {structure: [], variant: []};
   const ensp_id = ensp.id;
 
@@ -258,22 +221,91 @@ async ({hgnc_id, uniprot, ensp, pdb_align, pdb_str, variants})=>{
       chains: ["A"]
     }
   );
-  
-  // Variant
-  for (const variant of variants.results.bindings) {
-    if (variant.hgvs.value.match(ensp_id)) {
-      const label = variant.hgvs.value.replace(/.+:p\./, "");
-      const position = label.match(/[^\d]+(\d+)/)[1];
-      res.variant.push(
-        {
-          tgvid: variant.tgvid.value,
-          label: label,
-          position: parseInt(position),
-          aa: label.match(/^[A-Z][a-z][a-z]/) ? label.match(/^([A-Z][a-z][a-z])/)[1].toUpperCase() : null,
-          clinical_significance: variant.clin_sig ? variant.clin_sig.value : null
+
+ // Variant
+  const sig2label = {
+    P: {label: "Pathogenic", score: 0, color: 0},
+    LP: {label: "Likely pathogenic", score: 1, color: 0},
+    PLP: {label: "Pathogenic Low penetrance", score: 2, color: 1},
+    LPLP: {label: "Likely pathogenic, Low penetrance", score: 3, color: 1},
+    ERA: {label: "Established risk allele", score: 4, color: 2},
+    LRA: {label: "Likely risk allele", score: 5, color: 2},
+    URA: {label: "Uncertain risk allele", score: 6, color: 2},
+    US: {label: "Uncertain significance", score: 7, color: 3},
+    LB: {label: "Likely benign", score: 8, color: 4},
+    B: {label: "Benign", score: 9, color: 5},
+    CI: {label: "Conflicting interpretations of pathogenicity", score: 10, color: 6},
+    DR: {label: "Drug response", score: 11, color: 7},
+    CS: {label: "Confers sensitivity", score: 12, color: 7},
+    RF: {label: "Risk factor", score: 13, colre: 7},
+    A: {label: "Association", score: 14, color: 7},
+    PR: {label: "Protective", score: 15, color: 7},
+    AF: {label: "Affects", score: 16, color: 7},
+    O: {label: "Other", score: 17, color: 8},
+    NP: {label: "Not provided", score: 18, color: 8},
+    AN: {label: "Association not found", score: 19, color: 8}
+  };
+  const num2color = ["255,90,84", "255,149,60", "255,174,0", "187,186,126", "157,207,58", "4,175,88", "198,84,255", "156,130,0", "148,146,141"];
+  const tgv_bdy = `{"offset":#offset,"limit":#limit,"query":{"and":[{"gene":{"relation":"eq","terms":[#hgncid]}},
+    {"consequence":{"relation":"eq","terms":["missense_variant","frameshift_variant"]}}]}}`;
+  let tgv_opt = {method: 'POST', headers: {'Accept': 'application/json', 'Content-Type': 'application/json'}}
+
+  let filtered = false;
+  const limit = 500;
+  let offset = 0;
+  while (!filtered || filtered > offset) {
+    tgv_opt.body = tgv_bdy.replace(/#hgncid/, hgnc_id).replace(/#offset/, offset).replace(/#limit/, limit);
+    const togovar = await fetch(togovar_api, tgv_opt).then(res => res.json());
+    filtered = togovar.statistics.filtered;
+    if (togovar.data) {
+	  for (const v of togovar.data) {
+        let id = "";
+        if (v.id) id = v.id;
+        else if (v.existing_variations) id = v.existing_variations[0];
+        if (!id || !v.transcripts) continue;
+        let pos, hgvs_p;
+        for (const t of v.transcripts) {
+          if (t.hgvs_p && t.hgvs_p.match(ensp_id)) {
+            if (t.hgvs_p.match(/:p\.[A-Z][a-z]{2}\d+.+/) && !t.hgvs_p.match(/=/)) {
+              [, hgvs_p, pos] = t.hgvs_p.match(/:p\.([A-Z][a-z]{2}(\d+).+)/);
+              break;
+            }
+          }
         }
-      )
+        if (!pos || !hgvs_p) break;
+
+        if (v.significance) {
+          let sig = "";
+          let min = 99;
+          for (const s of v.significance) {
+            if (sig2label[s.interpretations[0]].score < min) {
+              min = sig2label[s.interpretations[0]].score;
+              sig = s.interpretations[0];
+            }
+          }
+          res.variant.push(
+        	{
+              id: id,
+              position: parseInt(pos),
+              label: hgvs_p,
+              sig: sig,
+              sig_label: sig2label[sig].label,
+              color: num2color[sig2label[sig].color],
+              color_num: sig2label[sig].color
+            }
+          )
+        } else {
+          res.variant.push(
+        	{
+              id: id,
+              position: parseInt(pos),
+              label: hgvs_p
+            }
+          )
+        }
+      }
     }
+    offset += limit;
   }
   res.variant = res.variant.sort((a, b) => {
     return a.position > b.position ? 1 : -1;  
