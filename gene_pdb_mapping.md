@@ -256,16 +256,17 @@ async ({hgnc_id, togovar_api, uniprot, ensp, pdb_align, pdb_str})=>{
   while (!filtered || filtered > offset) {
     tgv_opt.body = tgv_bdy.replace(/#hgncid/, hgnc_id).replace(/#offset/, offset).replace(/#limit/, limit);
     const togovar = await fetch(togovar_api, tgv_opt).then(res => res.json());
-    filtered = togovar.statistics.filtered;
+    filtered = togovar.statistics?.filtered;
+    if (filtered == 0) break;
     if (togovar.data) {
-	  for (const v of togovar.data) {
+      for (const v of togovar.data) {
         let id = "";
         if (v.id) id = v.id;
         else if (v.existing_variations) id = v.existing_variations[0];
         if (!id || !v.transcripts) continue;
         let pos, hgvs_p;
         for (const t of v.transcripts) {
-          if (t.hgvs_p && t.hgvs_p.match(ensp_id)) {
+          if (t.hgvs_p?.match(ensp_id)) {
             if (t.hgvs_p.match(/:p\.[A-Z][a-z]{2}\d+.+/) && !t.hgvs_p.match(/=/)) {
               [, hgvs_p, pos] = t.hgvs_p.match(/:p\.([A-Z][a-z]{2}(\d+).+)/);
               break;
@@ -278,6 +279,7 @@ async ({hgnc_id, togovar_api, uniprot, ensp, pdb_align, pdb_str})=>{
           let sig = "";
           let min = 99;
           for (const s of v.significance) {
+	    if (!s.interpretations[0]) continue;
             if (sig2label[s.interpretations[0]].score < min) {
               min = sig2label[s.interpretations[0]].score;
               sig = s.interpretations[0];
