@@ -58,7 +58,7 @@ WHERE {
 ## `result`
 
 ```javascript
-async ({result, SPARQLIST_TOGOVAR_SEARCH}) => {
+async ({result, SPARQLIST_TOGOVAR_APP}) => {
   const binding = result.results.bindings[0];
 
   if (binding) {
@@ -68,7 +68,7 @@ async ({result, SPARQLIST_TOGOVAR_SEARCH}) => {
       region += `-${binding.stop.value}`;
     }
 
-    const res = await fetch(SPARQLIST_TOGOVAR_SEARCH.concat("?stat=0&quality=0&term=", encodeURIComponent(region)), {
+    const res = await fetch(SPARQLIST_TOGOVAR_APP.concat("/search?stat=0&quality=0&term=", encodeURIComponent(region)), {
       method: 'GET',
       headers: {
         'Accept': 'application/json',

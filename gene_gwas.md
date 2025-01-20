@@ -82,7 +82,7 @@ WHERE {
 ## `result`
 
 ```javascript
-async ({SPARQLIST_TOGOVAR_SEARCH, gene2gwas, gene2traits}) => {
+async ({SPARQLIST_TOGOVAR_APP, gene2gwas, gene2traits}) => {
   const traits = {};
 
   gene2traits.results.bindings.map(x => {
@@ -93,7 +93,7 @@ async ({SPARQLIST_TOGOVAR_SEARCH, gene2gwas, gene2traits}) => {
   })
 
   const rs = [...new Set(gene2gwas.results.bindings.map(x => x.rs_id.value))];
-  const variant_info = await fetch(SPARQLIST_TOGOVAR_SEARCH.concat("?stat=0&quality=0&term=", encodeURIComponent(rs.join(','))), {
+  const variant_info = await fetch(SPARQLIST_TOGOVAR_APP.concat("/search?stat=0&quality=0&term=", encodeURIComponent(rs.join(','))), {
     method: 'GET',
     headers: {
       'Accept': 'application/json',
