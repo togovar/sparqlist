@@ -1,4 +1,4 @@
-# protein browser for gene page (DICP omics)
+# Gene / Protein browser
 
 ## Parameters
 
