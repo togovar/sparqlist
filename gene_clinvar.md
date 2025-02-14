@@ -78,8 +78,11 @@ WHERE {
 
     ?_rcv cvo:rcv_classifications/cvo:germline_classification/cvo:description/cvo:description ?interpretation ;
       dct:identifier ?rcv ;
-      cvo:rcv_classifications/cvo:germline_classification/cvo:description/cvo:date_last_evaluated ?last_evaluated ;
       cvo:classified_condition_list/cvo:classified_condition ?_classified_condition .
+
+    OPTIONAL {
+      ?_rcv cvo:rcv_classifications/cvo:germline_classification/cvo:description/cvo:date_last_evaluated ?last_evaluated .
+    }
 
     ?_classified_condition rdfs:label ?condition ;
       dct:source ?db ;
