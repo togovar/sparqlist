@@ -253,7 +253,8 @@ async ({hgnc_id, togovar_api, uniprot, ensp, pdb_align, pdb_str})=>{
   let filtered = false;
   const limit = 500;
   let offset = 0;
-  while (!filtered || filtered > offset) {
+  let count = 0;
+  while (!filtered || filtered > count) {
     tgv_opt.body = tgv_bdy.replace(/#hgncid/, hgnc_id).replace(/#offset/, offset).replace(/#limit/, limit);
     const togovar = await fetch(togovar_api, tgv_opt).then(res => res.json());
     filtered = togovar.statistics?.filtered;
@@ -307,7 +308,8 @@ async ({hgnc_id, togovar_api, uniprot, ensp, pdb_align, pdb_str})=>{
         }
       }
     }
-    offset += limit;
+    offset = '["' + togovar.data[togovar.data.length - 1].chromosome + '","' + togovar.data[togovar.data.length - 1].vcf.position + '","' + togovar.data[togovar.data.length - 1].vcf.reference + '","' + togovar.data[togovar.data.length - 1].vcf.alternate + '"]';
+    count += limit;
   }
   res.variant = res.variant.sort((a, b) => {
     return a.position > b.position ? 1 : -1;  
