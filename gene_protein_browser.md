@@ -363,9 +363,10 @@ async ({hgnc_id, togovar_target, id, uniprot_ptm, uniprot_substitution, psm, pho
   let filtered = false;
   const limit = 500;
   let offset = 0;
+  let count = 0;
   let stat_off = "";
   let variant_data= [];
-  while (!filtered || filtered > offset) {
+  while (!filtered || filtered > count) {
     tgv_opt.body = tgv_bdy.replace(/#hgncid/, hgnc_id).replace(/#offset/, offset).replace(/#limit/, limit);
     const togovar = await fetch(togovar_api + stat_off, tgv_opt).then(res => res.json());
     if (!filtered) filtered = togovar.statistics.filtered;
@@ -422,7 +423,8 @@ async ({hgnc_id, togovar_target, id, uniprot_ptm, uniprot_substitution, psm, pho
         });
       }
     }
-    offset += limit;
+    offset = '["' + togovar.data[togovar.data.length - 1].chromosome + '","' + togovar.data[togovar.data.length - 1].vcf.position + '","' + togovar.data[togovar.data.length - 1].vcf.reference + '","' + togovar.data[togovar.data.length - 1].vcf.alternate + '"]';
+    count += limit;
     stat_off = "?stat=0";
   }
   variant_data.sort(function(a,b){
