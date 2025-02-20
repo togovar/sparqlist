@@ -3,7 +3,7 @@
 ## Parameters
 
 * `variant` VCF representation (CHROM-POS-REF-ALT)
-  * default: 16-89196249-G-A
+  * example: 16-89196249-G-A
 * `tgv_id` TogoVar ID
   * default:
   * example: tgv56616325
