@@ -67,7 +67,7 @@ WHERE {
 }
 ```
 
-## `pmids_litvar` Obtain PMID by dbSNP ID using Litvar
+## `pmids_litvar` Obtain PMID by dbSNP ID using LitVar
 
 ```javascript
 async ({rs}) => {
@@ -98,7 +98,7 @@ async ({rs}) => {
 }
 ```
 
-## `pmids_pubtator_union_litvar` Concat PMIDs from Pubtator and Litvar
+## `pmids_pubtator_union_litvar` Concat PMIDs from Pubtator and LitVar
 
 ```javascript
 ({pmids_litvar_minus_pubtator, pubtator}) => {
@@ -308,7 +308,7 @@ async({rs, pubtator}) => {
   for (const pmid in pubtator_litvar) {
     const href_pubmed = "<a href=\"https://www.ncbi.nlm.nih.gov/pubmed/" + pmid + "\">" + pmid + "</a>";
     const href_pubtator = "<br>(<a href=\"https://www.ncbi.nlm.nih.gov/research/pubtator3/publication/" + pmid + "\">PubTator3</a>)";
-    const href_litvar = "<br>(<a href=\"https://www.ncbi.nlm.nih.gov/research/litvar2/publication/" + pmid + "?variant=litvar%40" + rs + "%23%23\">Litvar2</a>)";
+    const href_litvar = "<br>(<a href=\"https://www.ncbi.nlm.nih.gov/research/litvar2/publication/" + pmid + "?variant=litvar%40" + rs + "%23%23\">LitVar2</a>)";
 
     let links = href_pubmed;
     if (pmid in pubtator) {

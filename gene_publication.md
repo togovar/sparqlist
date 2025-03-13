@@ -217,7 +217,7 @@ WHERE {
 }
 ```
 
-## `pmids_all` Concat PMIDs from Pubtator and Litvar
+## `pmids_all` Concat PMIDs from Pubtator and LitVar
 
 ```javascript
 ({bib_litvar_only, bib_pubtator}) => {
