@@ -33,9 +33,12 @@ WHERE {
       rdfs:label ?condition .
 
     ?_rcv cvo:rcv_classifications/cvo:germline_classification/cvo:description/cvo:description ?interpretation ;
-      cvo:rcv_classifications/cvo:germline_classification/cvo:description/cvo:date_last_evaluated ?last_evaluated ;
       ^cvo:rcv_accession/^cvo:rcv_list/^cvo:classified_record ?clinvar .
-      
+
+    OPTIONAL {
+      ?_rcv cvo:rcv_classifications/cvo:germline_classification/cvo:description/cvo:date_last_evaluated ?last_evaluated .
+    }
+
     ?clinvar a cvo:VariationArchiveType ;
       rdfs:label ?title ;
       cvo:accession ?vcv ;
@@ -133,7 +136,7 @@ ORDER BY ?title ?review_status ?interpretation DESC(?last_evaluated) ?condition
       title: x.title.value,
       interpretation: `<span class="clinical-significance-full" data-sign="${clinical_significance_key(x.interpretation.value)}">${x.interpretation.value}</span>`,
       review_status: `<span class="star-rating"><span data-stars="${review_status_stars(x.review_status.value)}" class="star-rating-item"></span></span><br><span class="status-description">${x.review_status.value}</span>`,
-      last_evaluated: x.last_evaluated.value,
+      last_evaluated: x.last_evaluated?.value
     };
   });
 }
