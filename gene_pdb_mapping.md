@@ -308,7 +308,7 @@ async ({hgnc_id, togovar_api, uniprot, ensp, pdb_align, pdb_str})=>{
         }
       }
     }
-    offset = '["' + togovar.data[togovar.data.length - 1].chromosome + '","' + togovar.data[togovar.data.length - 1].vcf.position + '","' + togovar.data[togovar.data.length - 1].vcf.reference + '","' + togovar.data[togovar.data.length - 1].vcf.alternate + '"]';
+    offset = '["' + togovar.data[togovar.data.length - 1].chromosome.replace("X", "23").replace("Y", "24").replace("MT", "25") + '","' + togovar.data[togovar.data.length - 1].vcf.position + '","' + togovar.data[togovar.data.length - 1].vcf.reference + '","' + togovar.data[togovar.data.length - 1].vcf.alternate + '"]';
     count += limit;
   }
   res.variant = res.variant.sort((a, b) => {
