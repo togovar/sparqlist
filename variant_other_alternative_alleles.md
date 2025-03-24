@@ -5,7 +5,6 @@
 * `variant` VCF representation (CHROM-POS-REF-ALT)
   * example: 7-127614533-G-A
 * `tgv_id` TogoVar ID
-  * default:
   * example: tgv30913364
 
 ## Endpoint
