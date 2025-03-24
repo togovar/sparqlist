@@ -4,10 +4,8 @@
 
 * `hgnc_id`
   * default: 2433
-* `togovar_target`
-  * default: stg-grch38
 * `jpost_endpoint`
-  * default: https://db-dev.jpostdb.org/proxy/sparql
+  * default: https://tools.jpostdb.org/proxy/sparql
 * `glycosmos_endpoint`
   * default: https://ts.glycosmos.org/sparql
 
@@ -194,7 +192,7 @@ ORDER BY ?pos
 ## `return`
 
 ```javascript
-async ({hgnc_id, togovar_target, id, uniprot_ptm, uniprot_substitution, psm, phospho, glyco}) => {
+async ({hgnc_id, id, uniprot_ptm, uniprot_substitution, psm, phospho, glyco}) => {
   const a3to1 = {Gly: "G", Ala: "A", Leu: "L", Met: "M", Phe: "F", Trp: "W", Lys: "K", 
               Gln: "Q", Glu: "E", Ser: "S", Pro: "P", Val: "V", Ile: "I", Cys: "C",
               Tyr: "Y", His: "H", Arg: "R", Asn: "N", Asp: "D", Thr: "T", Ter: "*",
@@ -359,7 +357,7 @@ async ({hgnc_id, togovar_target, id, uniprot_ptm, uniprot_substitution, psm, pho
     {"consequence":{"relation":"eq","terms":["missense_variant","frameshift_variant"]}}]}}`;
   let tgv_opt = {method: 'POST', headers: {'Accept': 'application/json', 'Content-Type': 'application/json'}}
   
-  const togovar_api = "https://" + togovar_target + ".togovar.org/api/search/variant";
+  const togovar_api = SPARQLIST_TOGOVAR_APP + "/api/search/variant";
   let filtered = false;
   const limit = 500;
   let offset = 0;
@@ -416,7 +414,7 @@ async ({hgnc_id, togovar_target, id, uniprot_ptm, uniprot_substitution, psm, pho
           alt: a3to1[alt],
           hgvs_p: hgvs_p,
           symbol: a3to1[alt],
-          link: "https://" + togovar_target + ".togovar.org/variant/" + v.id,
+          link: SPARQLIST_TOGOVAR_APP + "/variant/" + v.id,
           html: html,
           type: "sig_" + min_sig,
           sig_level: cln_sig[min_sig]
