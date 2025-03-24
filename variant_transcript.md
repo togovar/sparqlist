@@ -61,11 +61,9 @@ WHERE {
     OPTIONAL { ?_consequence tgvo:alphamissense ?alpha_missense . }
     OPTIONAL {
       ?_consequence tgvo:hgvsp ?hgvs_p .
-      FILTER STRSTARTS(?hgvs_p, 'ENSP')
     }
     OPTIONAL {
       ?_consequence tgvo:hgvsc ?hgvs_c .
-      FILTER STRSTARTS(?hgvs_c, 'ENST')
     }
     OPTIONAL {
       ?_consequence tgvo:transcript ?transcript .
@@ -76,15 +74,9 @@ WHERE {
       }
     }
     OPTIONAL {
-      ?_consequence tgvo:gene ?_gene .
-
-      FILTER STRSTARTS(STR(?_gene), "http://rdf.ebi.ac.uk/resource/ensembl/ENSG")
-
-      OPTIONAL {
-        GRAPH <http://togovar.org/ensembl> {
-          ?_gene rdfs:label ?gene_symbol .
-        }
-      }
+      ?_consequence tgvo:gene_symbol ?gene_symbol ;
+                    tgvo:gene_symbol_source ?_gene_symbol_source .
+      FILTER ( ?_gene_symbol_source IN ("HGNC", "EntrezGene") )
     }
     OPTIONAL {
       ?_consequence tgvo:hgnc ?gene_xref .
