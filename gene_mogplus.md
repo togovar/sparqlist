@@ -220,10 +220,10 @@ async ({hgnc, mogplus_ver, symbol, range})=>{
           ref_grcm39: mmu_var_pos[mmu_pos].ref,
           alt_grcm39: mmu_alt,
           alt_match: alt_match,
-          mouse_strains: mmu_var_pos[mmu_pos].strain[mmu_alt].join(","),
+          mouse_strains: mmu_var_pos[mmu_pos].strain[mmu_alt].join(",") /* ,
           mogplus_url: "https://molossinus.brc.riken.jp/" + mogplus_ver+ "/variantTable/?strainNoSlct=refGenome&strainNoSlct="
-          + mmu_var_pos[mmu_pos].strain[mmu_alt].join("&strainNoSlct=").replace("/"g, "_") + "&chrName=" + mmu_chr + mmu_var_pos[mmu_pos].region
-          + "&seqType=genome&chrName=5&geneNameSearchText=&index=submit&presentType=disp"
+          + mmu_var_pos[mmu_pos].strain[mmu_alt].join("&strainNoSlct=").replace(/\//g, "_") + "&chrName=" + mmu_chr + mmu_var_pos[mmu_pos].region
+          + "&seqType=genome&chrName=5&geneNameSearchText=&index=submit&presentType=disp" */
         })   
       }
     }

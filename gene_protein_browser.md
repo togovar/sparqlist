@@ -397,9 +397,13 @@ async ({hgnc_id, id, uniprot_ptm, uniprot_substitution, psm, phospho, glyco}) =>
             if (!s.interpretations[0]) continue;
             if (cln_sig[min_sig] > cln_sig[s.interpretations[0]]) min_sig = s.interpretations[0];
             const sig_ico = " <span class='clinical-significance ml-26' data-sign='" + s.interpretations[0] + "'></span> ";
-            for (const c of s.conditions) {
-	          sigs.push(sig_ico + c.name);
-	        }
+            if (s.conditions[0]) {
+              for (const c of s.conditions) {
+	        sigs.push(sig_ico + c.name);
+	      }
+            } else {
+              sigs.push(sig_ico + "others");
+            }
           }
         }
 
