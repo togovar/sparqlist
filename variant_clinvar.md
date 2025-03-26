@@ -33,13 +33,13 @@ async ({SPARQLIST_TOGOVAR_SPARQLIST, variant, tgv_id}) => {
 ## `result`
 
 ```sparql
-DEFINE sql:select-option "order"
+#DEFINE sql:select-option "order"
 
 PREFIX cvo:  <http://purl.jp/bio/10/clinvar/>
 PREFIX dct:  <http://purl.org/dc/terms/>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-SELECT ?title ?review_status ?interpretation ?last_evaluated ?condition ?medgen ?clinvar ?vcv
+SELECT ?title ?vcv_review_status ?rcv_review_status ?interpretation ?last_evaluated ?condition ?medgen ?clinvar ?vcv ?rcv
 WHERE {
   VALUES ?tgv_id { "{{tgv_id}}" }
 
@@ -57,11 +57,15 @@ WHERE {
     ?clinvar a cvo:VariationArchiveType ;
       rdfs:label ?title ;
       cvo:accession ?vcv ;
-      cvo:classified_record/cvo:classifications/cvo:germline_classification/cvo:review_status ?review_status ;
+      cvo:classified_record/cvo:classifications/cvo:germline_classification/cvo:review_status ?vcv_review_status ;
       cvo:classified_record/cvo:rcv_list/cvo:rcv_accession ?_rcv .
 
-    ?_rcv cvo:rcv_classifications/cvo:germline_classification/cvo:description/cvo:description ?interpretation ;
-      cvo:classified_condition_list/cvo:classified_condition ?_classified_condition .
+    ?_rcv cvo:accession ?rcv ;
+          cvo:rcv_classifications/cvo:germline_classification [ 
+            cvo:description/cvo:description ?interpretation ;
+            cvo:review_status ?rcv_review_status 
+          ] ;
+          cvo:classified_condition_list/cvo:classified_condition ?_classified_condition .
 
     OPTIONAL {
       ?_rcv cvo:rcv_classifications/cvo:germline_classification/cvo:description/cvo:date_last_evaluated ?last_evaluated .
