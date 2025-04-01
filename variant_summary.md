@@ -37,13 +37,7 @@ PREFIX dct:   <http://purl.org/dc/terms/>
 PREFIX faldo: <http://biohackathon.org/resource/faldo#>
 PREFIX gvo:   <http://genome-variation.org/resource#>
 
-SELECT DISTINCT 
-  ?type 
-  ?reference 
-  ?position 
-  ?ref 
-  ?alt
-  ?position as ?start # keep compatibility for stanza
+SELECT DISTINCT ?type ?reference ?position ?ref ?alt
 WHERE {
   VALUES ?tgv_id { "{{tgv_id}}" }
 
