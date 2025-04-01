@@ -36,53 +36,36 @@ async ({SPARQLIST_TOGOVAR_SPARQLIST, variant, tgv_id}) => {
 PREFIX dct:   <http://purl.org/dc/terms/>
 PREFIX faldo: <http://biohackathon.org/resource/faldo#>
 PREFIX gvo:   <http://genome-variation.org/resource#>
-PREFIX tgvo:  <http://togovar.biosciencedbc.jp/vocabulary/>
 
-SELECT DISTINCT ?type ?reference ?start ?stop ?ref ?alt ?hgvs
+SELECT DISTINCT 
+  ?type 
+  ?reference 
+  ?position 
+  ?ref 
+  ?alt
+  ?position as ?start # keep compatibility for stanza
 WHERE {
   VALUES ?tgv_id { "{{tgv_id}}" }
 
   GRAPH <http://togovar.org/variant> {
-    {
-      ?variant a gvo:SNV ;
-        faldo:location/faldo:reference ?reference ;
-        faldo:location/faldo:position ?start .
-      BIND("SNV" AS ?type)
-    } UNION {
-      ?variant a gvo:Insertion ;
-        faldo:location/faldo:reference ?reference ;
-        faldo:location/faldo:after ?start ;
-        faldo:location/faldo:before ?stop .
-      BIND("Insertion" AS ?type)
-    } UNION {
-      ?variant a gvo:Deletion ;
-        faldo:location/faldo:begin/faldo:reference ?reference ;
-        faldo:location/faldo:begin/faldo:before ?start ;
-        faldo:location/faldo:end/faldo:after ?stop .
-      BIND("Deletion" AS ?type)
-    } UNION {
-      ?variant a gvo:Indel ;
-        faldo:location/faldo:begin/faldo:reference ?reference ;
-        faldo:location/faldo:begin/faldo:before ?start ;
-        faldo:location/faldo:end/faldo:after ?stop .
-      BIND("Indel" AS ?type)
-    } UNION {
-      ?variant a gvo:MNV ;
-        faldo:location/faldo:reference ?reference ;
-        faldo:location/faldo:begin ?start ;
-        faldo:location/faldo:end ?stop .
-      BIND("Substitution" AS ?type)
-    }
+    ?variant a ?class ;
+      dct:identifier ?tgv_id ;
+      faldo:location/faldo:begin?/faldo:reference ?reference ;
+      gvo:pos_vcf ?position ;
+      gvo:ref_vcf ?ref ;
+      gvo:alt_vcf ?alt .
 
-    ?variant dct:identifier ?tgv_id ;
-      gvo:ref ?ref ;
-      gvo:alt ?alt .
-  }
-
-  GRAPH <http://togovar.org/variant/annotation/ensembl> {
-    OPTIONAL {
-      ?variant tgvo:hasConsequence/tgvo:hgvsg ?hgvs .
-    }
+    BIND (
+      IF(?class = gvo:SNV, "SNV", 
+        IF(?class = gvo:Insertion, "Insertion", 
+          IF(?class = gvo:Deletion, "Deletion", 
+            IF(?class = gvo:Indel, "Indel", 
+              IF(?class = gvo:MNV, "Substitution", "Unknown")
+            )
+          )
+        )
+      ) AS ?type
+    )
   }
 }
 ```
