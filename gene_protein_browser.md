@@ -192,7 +192,7 @@ ORDER BY ?pos
 ## `return`
 
 ```javascript
-async ({hgnc_id, id, uniprot_ptm, uniprot_substitution, psm, phospho, glyco}) => {
+async ({SPARQLIST_TOGOVAR_APP, hgnc_id, id, uniprot_ptm, uniprot_substitution, psm, phospho, glyco}) => {
   const a3to1 = {Gly: "G", Ala: "A", Leu: "L", Met: "M", Phe: "F", Trp: "W", Lys: "K", 
               Gln: "Q", Glu: "E", Ser: "S", Pro: "P", Val: "V", Ile: "I", Cys: "C",
               Tyr: "Y", His: "H", Arg: "R", Asn: "N", Asp: "D", Thr: "T", Ter: "*",
