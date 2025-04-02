@@ -425,7 +425,7 @@ async ({SPARQLIST_TOGOVAR_APP, hgnc_id, id, uniprot_ptm, uniprot_substitution, p
         });
       }
     }
-    offset = '["' + togovar.data[togovar.data.length - 1].chromosome.replace("X", "23").replace("Y", "24").replace("MT", "25") + '","' + togovar.data[togovar.data.length - 1].vcf.position + '","' + togovar.data[togovar.data.length - 1].vcf.reference + '","' + togovar.data[togovar.data.length - 1].vcf.alternate + '"]';
+    offset = '["' + togovar.data[togovar.data.length - 1].chromosome.replace("X", "23").replace("Y", "24").replace("MT", "25") + '","' + togovar.data[togovar.data.length - 1].position + '","' + togovar.data[togovar.data.length - 1].reference + '","' + togovar.data[togovar.data.length - 1].alternate + '"]';
     count += limit;
     stat_off = "?stat=0";
   }
