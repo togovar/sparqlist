@@ -2,12 +2,33 @@
 
 ## Parameters
 
+* `variant` VCF representation (CHROM-POS-REF-ALT)
+  * example: 1-6475089-A-G
 * `tgv_id` TogoVar ID
-  * default: tgv219804
+  * example: tgv219804
 
 ## Endpoint
 
 {{SPARQLIST_TOGOVAR_SPARQL}}
+
+## `tgv_id`
+
+```javascript
+async ({SPARQLIST_TOGOVAR_SPARQLIST, variant, tgv_id}) => {
+  if (variant.length > 0) {
+    const url = SPARQLIST_TOGOVAR_SPARQLIST.concat(`/api/variant2tgv?variant=${encodeURIComponent(variant)}`);
+    const res = await fetch(url);
+
+    return await res.text();
+  }
+
+  if (tgv_id.length > 0) {
+    return tgv_id
+  }
+
+  return 'not found'
+}
+```
 
 ## `result`
 
@@ -39,11 +60,9 @@ WHERE {
     OPTIONAL { ?_consequence tgvo:alphamissense ?alpha_missense . }
     OPTIONAL {
       ?_consequence tgvo:hgvsp ?hgvs_p .
-      FILTER STRSTARTS(?hgvs_p, 'ENSP')
     }
     OPTIONAL {
       ?_consequence tgvo:hgvsc ?hgvs_c .
-      FILTER STRSTARTS(?hgvs_c, 'ENST')
     }
     OPTIONAL {
       ?_consequence tgvo:transcript ?transcript .
@@ -54,15 +73,9 @@ WHERE {
       }
     }
     OPTIONAL {
-      ?_consequence tgvo:gene ?_gene .
-
-      FILTER STRSTARTS(STR(?_gene), "http://rdf.ebi.ac.uk/resource/ensembl/ENSG")
-
-      OPTIONAL {
-        GRAPH <http://togovar.org/ensembl> {
-          ?_gene rdfs:label ?gene_symbol .
-        }
-      }
+      ?_consequence tgvo:gene_symbol ?gene_symbol ;
+                    tgvo:gene_symbol_source ?_gene_symbol_source .
+      FILTER ( ?_gene_symbol_source IN ("HGNC", "EntrezGene") )
     }
     OPTIONAL {
       ?_consequence tgvo:hgnc ?gene_xref .

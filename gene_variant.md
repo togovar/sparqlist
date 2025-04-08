@@ -10,7 +10,7 @@
 ## `result`
 
 ```javascript
-async ({SPARQLIST_TOGOVAR_API, hgnc_id, offset}) => {
+async ({SPARQLIST_TOGOVAR_APP, hgnc_id, offset}) => {
   const RECORDS_PER_PAGE = 100;
   const OFFSET_MAX = 10000;
 
@@ -31,7 +31,7 @@ async ({SPARQLIST_TOGOVAR_API, hgnc_id, offset}) => {
       limit: RECORDS_PER_PAGE
     };
 
-    return await fetch(SPARQLIST_TOGOVAR_API.concat('/search/variant.json'), {
+    return await fetch(SPARQLIST_TOGOVAR_APP.concat('/api/search/variant.json'), {
       method: 'POST',
       headers: {
         Accept: 'application/json',

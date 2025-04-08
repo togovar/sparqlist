@@ -27,22 +27,24 @@ WHERE {
   VALUES ?medgen { medgen:{{medgen_cid}} }
 
   GRAPH <http://togovar.org/clinvar> {
-    ?medgen ^dct:references ?_interpreted_condition .
+    ?medgen ^dct:references ?_classified_condition .
 
-    ?_interpreted_condition rdfs:label ?condition ;
-      ^cvo:interpreted_condition/^cvo:interpreted_condition_list ?_rcv .
+    ?_classified_condition ^cvo:classified_condition/^cvo:classified_condition_list ?_rcv ;
+      rdfs:label ?condition .
 
-    ?_rcv dct:identifier ?rcv ;
-      cvo:date_last_evaluated ?last_evaluated ;
-      cvo:interpretation ?interpretation ;
-      ^cvo:rcv_accession/^cvo:rcv_list/^cvo:interpreted_record ?clinvar .
+    ?_rcv cvo:rcv_classifications/cvo:germline_classification/cvo:description/cvo:description ?interpretation ;
+      ^cvo:rcv_accession/^cvo:rcv_list/^cvo:classified_record ?clinvar .
+
+    OPTIONAL {
+      ?_rcv cvo:rcv_classifications/cvo:germline_classification/cvo:description/cvo:date_last_evaluated ?last_evaluated .
+    }
 
     ?clinvar a cvo:VariationArchiveType ;
       rdfs:label ?title ;
       cvo:accession ?vcv ;
       cvo:variation_id ?vid ;
-      cvo:interpreted_record/cvo:review_status ?review_status ;
-      cvo:interpreted_record/sio:SIO_000628/dct:references ?dbsnp .
+      cvo:classified_record/cvo:classifications/cvo:germline_classification/cvo:review_status ?review_status ;
+      cvo:classified_record/sio:SIO_000628/dct:references ?dbsnp .
 
     BIND(STR(?vid) AS ?variation_id)
 
@@ -134,7 +136,7 @@ ORDER BY ?title ?review_status ?interpretation DESC(?last_evaluated) ?condition
       title: x.title.value,
       interpretation: `<span class="clinical-significance-full" data-sign="${clinical_significance_key(x.interpretation.value)}">${x.interpretation.value}</span>`,
       review_status: `<span class="star-rating"><span data-stars="${review_status_stars(x.review_status.value)}" class="star-rating-item"></span></span><br><span class="status-description">${x.review_status.value}</span>`,
-      last_evaluated: x.last_evaluated.value,
+      last_evaluated: x.last_evaluated?.value
     };
   });
 }

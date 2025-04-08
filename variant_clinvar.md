@@ -2,12 +2,33 @@
 
 ## Parameters
 
+* `variant` VCF representation (CHROM-POS-REF-ALT)
+  * example: 1-6475089-A-G
 * `tgv_id` TogoVar ID
-  * default: tgv219804
+  * example: tgv219804
 
 ## Endpoint
 
 {{SPARQLIST_TOGOVAR_SPARQL}}
+
+## `tgv_id`
+
+```javascript
+async ({SPARQLIST_TOGOVAR_SPARQLIST, variant, tgv_id}) => {
+  if (variant.length > 0) {
+    const url = SPARQLIST_TOGOVAR_SPARQLIST.concat(`/api/variant2tgv?variant=${encodeURIComponent(variant)}`);
+    const res = await fetch(url);
+
+    return await res.text();
+  }
+
+  if (tgv_id.length > 0) {
+    return tgv_id
+  }
+
+  return 'not found'
+}
+```
 
 ## `result`
 
@@ -36,14 +57,17 @@ WHERE {
     ?clinvar a cvo:VariationArchiveType ;
       rdfs:label ?title ;
       cvo:accession ?vcv ;
-      cvo:interpreted_record/cvo:review_status ?review_status ;
-      cvo:interpreted_record/cvo:rcv_list/cvo:rcv_accession ?_rcv .
+      cvo:classified_record/cvo:classifications/cvo:germline_classification/cvo:review_status ?review_status ;
+      cvo:classified_record/cvo:rcv_list/cvo:rcv_accession ?_rcv .
 
-    ?_rcv cvo:interpretation ?interpretation ;
-      cvo:date_last_evaluated ?last_evaluated ;
-      cvo:interpreted_condition_list/cvo:interpreted_condition ?_interpreted_condition .
+    ?_rcv cvo:rcv_classifications/cvo:germline_classification/cvo:description/cvo:description ?interpretation ;
+      cvo:classified_condition_list/cvo:classified_condition ?_classified_condition .
 
-    ?_interpreted_condition rdfs:label ?condition ;
+    OPTIONAL {
+      ?_rcv cvo:rcv_classifications/cvo:germline_classification/cvo:description/cvo:date_last_evaluated ?last_evaluated .
+    }
+
+    ?_classified_condition rdfs:label ?condition ;
       dct:source ?db ;
       dct:identifier ?medgen .
     FILTER(?db IN ("MedGen"))

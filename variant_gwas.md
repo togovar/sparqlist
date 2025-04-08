@@ -2,13 +2,34 @@
 
 ## Parameters
 
+* `variant` VCF representation (CHROM-POS-REF-ALT)
+  * example: 12-111803962-G-A
 * `tgv_id` TogoVar ID
-  * default: tgv47264307
+  * example: tgv47264307
   * example: tgv6252547
 
 ## Endpoint
 
 {{SPARQLIST_TOGOVAR_SPARQL}}
+
+## `tgv_id`
+
+```javascript
+async ({SPARQLIST_TOGOVAR_SPARQLIST, variant, tgv_id}) => {
+  if (variant.length > 0) {
+    const url = SPARQLIST_TOGOVAR_SPARQLIST.concat(`/api/variant2tgv?variant=${encodeURIComponent(variant)}`);
+    const res = await fetch(url);
+
+    return await res.text();
+  }
+
+  if (tgv_id.length > 0) {
+    return tgv_id
+  }
+
+  return 'not found'
+}
+```
 
 ## `xref`
 
