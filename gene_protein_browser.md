@@ -245,9 +245,12 @@ async ({SPARQLIST_TOGOVAR_APP, hgnc_id, id, uniprot_ptm, uniprot_substitution, p
     });      
   }
   list = uniprot_substitution.results.bindings;
+  let var_pos_flag = {};
   for (const d of list) {
     y_flag[3] = true;
     const begin = parseInt(d.begin.value);
+    var_pos_flag[begin] = ++var_pos_flag[begin] || 0;
+    if (var_pos_flag[begin] > 0) continue;
     const end = parseInt(d.end.value);
     const alt = d.substitution.value;
     let symbol = alt;
@@ -286,6 +289,7 @@ async ({SPARQLIST_TOGOVAR_APP, hgnc_id, id, uniprot_ptm, uniprot_substitution, p
       if (!y_flag[j]) delta++;
     }
     if (delta > 0) uniprot_data[i].y -= delta;
+    if (uniprot_data[i].ref && var_pos_flag[uniprot_data[i].position] > 0) uniprot_data[i].html += "<br>... +" + (var_pos_flag[uniprot_data[i].position]) + " variants";
   }
   res.uniprot = uniprot_data;
   
