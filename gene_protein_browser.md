@@ -378,7 +378,7 @@ async ({SPARQLIST_TOGOVAR_APP, hgnc_id, id, uniprot_ptm, uniprot_substitution, p
             if (t.hgvs_p.match(/:p\.[A-Z][a-z]{2}\d+.+/)) {
               [, hgvs_p, ref, pos, tmp] = t.hgvs_p.match(/:p\.(([A-Z][a-z]{2})(\d+)(.+))/);
               if (tmp.match(/^[A-Z][a-z]{2}/)) alt = tmp.match(/^([A-Z][a-z]{2})/)[1];
-              else if(tmp.match(/^_[A-Z][a-z]{2}/)) alt = array[3].match(/^_([A-Z][a-z]{2})/)[1];
+              else if(tmp.match(/^_[A-Z][a-z]{2}/)) alt = tmp.match(/^_([A-Z][a-z]{2})/)[1];
               else if(tmp.match(/^_.+ins[A-Z][a-z]{2}/)) alt = tmp.match(/^_.+ins([A-Z][a-z]{2})/)[1];
               else if(tmp.match(/^delins[A-Z][a-z]{2}/)) alt = tmp.match(/^delins([A-Z][a-z]{2})/)[1];
               else if(tmp.match(/del$/)) alt = "del";
