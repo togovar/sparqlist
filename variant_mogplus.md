@@ -30,7 +30,7 @@
 
 ## `sequence`
 ```javascript
-async ({source, chr, pos, ref, alt, mogplus_ver, SPARQLIST_TOGOVAR_APP})=>{
+async ({SPARQLIST_TOGOVAR_SPARQLIST, source, chr, pos, ref, alt, mogplus_ver, SPARQLIST_TOGOVAR_APP})=>{
   let s = Date.now();
   // convert strand
   const conv_nt = (strand, nt) => {
@@ -88,21 +88,16 @@ async ({source, chr, pos, ref, alt, mogplus_ver, SPARQLIST_TOGOVAR_APP})=>{
     return {error: "No counterpart"};
   } else {
     // MoG+ GRCm39 variants
+    const options = {method: 'GET', headers: {'Accept': 'application/json'}};
+    const mmu_strains = await fetch(SPARQLIST_TOGOVAR_SPARQLIST + "/api/mouse_strain?strain_id=all", options).then(d => d.json());
+    let strain_ids = [];
+    for (const d of Object.keys(mmu_strains)) {
+      if ((mmu_strains[d].category == "mogplus3" && mogplus_ver == "mogplus21")
+          || (mmu_strains[d].category == "mogplus21" && mogplus_ver == "mogplus3")) continue;
+      strain_ids.push(encodeURIComponent(mmu_strains[d].id));
+    }
     let strains = [];
-    let ver_strain = "strainNoSlct=msmv4_sq&strainNoSlct=jf1v3&strainNoSlct=kjrv1&strainNoSlct=swnv1&strainNoSlct=chdv1&"
-     + "strainNoSlct=njlv1&strainNoSlct=blg2v1&strainNoSlct=hmiv1&strainNoSlct=bfmv1&strainNoSlct=pgn2v1&";
-    if (mogplus_ver == "mogplus3") ver_strain = "strainNoSlct=msmb39gatk&strainNoSlct=jf1b39gatk&";
-    const mog_body = "strainNoSlct=refGenome&" + ver_strain
-     + "strainNoSlct=129P2_OlaHsd&strainNoSlct=129S1_SvImJ&strainNoSlct=129S5SvEvBrd&strainNoSlct=A_J&"
-     + "strainNoSlct=AKR_J&strainNoSlct=B10.RIII&strainNoSlct=BALB_cByJ&strainNoSlct=BALB_cJ&strainNoSlct=BTBR_T%2B_Itpr3tf_J&"
-     + "strainNoSlct=BUB_BnJ&strainNoSlct=C3H_HeH&strainNoSlct=C3H_HeJ&strainNoSlct=C57BL_10J&strainNoSlct=C57BL_10SnJ&"
-     + "strainNoSlct=C57BL_6NJ&strainNoSlct=C57BR_cdJ&strainNoSlct=C57L_J&strainNoSlct=C58_J&strainNoSlct=CAST_EiJ&"
-     + "strainNoSlct=CBA_J&strainNoSlct=CE_J&strainNoSlct=CZECHII_EiJ&strainNoSlct=DBA_1J&strainNoSlct=DBA_2J&strainNoSlct=FVB_NJ&"
-     + "strainNoSlct=I_LnJ&strainNoSlct=JF1_MsJ&strainNoSlct=KK_HiJ&strainNoSlct=LEWES_EiJ&strainNoSlct=LG_J&strainNoSlct=LP_J&"
-     + "strainNoSlct=MA_MyJ&strainNoSlct=MOLF_EiJ&strainNoSlct=NOD_ShiLtJ&strainNoSlct=NON_LtJ&strainNoSlct=NZB_B1NJ&"
-     + "strainNoSlct=NZO_HlLtJ&strainNoSlct=NZW_LacJ&strainNoSlct=PL_J&strainNoSlct=PWK_PhJ&strainNoSlct=QSi3&strainNoSlct=QSi5&"
-     + "strainNoSlct=RF_J&strainNoSlct=RIIIS_J&strainNoSlct=SEA_GnJ&strainNoSlct=SJL_J&strainNoSlct=SM_J&strainNoSlct=SPRET_EiJ&"
-     + "strainNoSlct=ST_bJ&strainNoSlct=SWR_J&strainNoSlct=WSB_EiJ&strainNoSlct=ZALENDE_EiJ&"
+    const mog_body = "strainNoSlct=" + strain_ids.join("&strainNoSlct=") + "&"
      + "chrName=" + counter_chr + "&chrStart=" + counter_pos + "&chrEnd=" + counter_pos + "&"
      + "&seqType=genome&chrName=5&geneNameSearchText=&index=submit&presentType=dwnld";
     const mogp = await fetch("https://molossinus.brc.riken.jp/" + mogplus_ver + "/variantTable/?" + mog_body).then(d=>d.text());
