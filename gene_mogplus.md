@@ -56,7 +56,7 @@ WHERE {
 
 ## `sequence`
 ```javascript
-async ({hgnc, mogplus_ver, symbol, range})=>{
+async ({SPARQLIST_TOGOVAR_SPARQLIST, hgnc, mogplus_ver, symbol, range})=>{
   if (! symbol.results.bindings[0]) return "Symbol not found";
   if (! range.results.bindings[0]) return "Gneome position not found";
   const chr    = range.results.bindings[0].chr.value.replace("http://identifiers.org/hco/", "").replace("/GRCh38","");
@@ -122,28 +122,23 @@ async ({hgnc, mogplus_ver, symbol, range})=>{
   if (!mmu_start) return "Liftover position not found";
 
   // MoG+ GRCm389(mm39) variants
+  const options = {method: 'GET', headers: {'Accept': 'application/json'}};
+  const mmu_strains = await fetch(SPARQLIST_TOGOVAR_SPARQLIST + "/api/mouse_strain?strain_id=all", options).then(d => d.json());
+  let strain_ids = [];
+  for (const d of Object.keys(mmu_strains)) {
+    if ((mmu_strains[d].category == "mogplus3" && mogplus_ver == "mogplus21")
+        || (mmu_strains[d].category == "mogplus21" && mogplus_ver == "mogplus3")) continue;
+    strain_ids.push(encodeURIComponent(mmu_strains[d].id));
+  }
   if (mmu_end < mmu_start) {
     let tmp = mmu_end;
     mmu_end = mmu_start;
     mmu_start = tmp;
   }
-    let ver_strain = "strainNoSlct=msmv4_sq&strainNoSlct=jf1v3&strainNoSlct=kjrv1&strainNoSlct=swnv1&strainNoSlct=chdv1&"
-     + "strainNoSlct=njlv1&strainNoSlct=blg2v1&strainNoSlct=hmiv1&strainNoSlct=bfmv1&strainNoSlct=pgn2v1&";
-    if (mogplus_ver == "mogplus3") ver_strain = "strainNoSlct=msmb39gatk&strainNoSlct=jf1b39gatk&";
-    const mog_body = "strainNoSlct=refGenome&" + ver_strain
-     + "strainNoSlct=129P2_OlaHsd&strainNoSlct=129S1_SvImJ&strainNoSlct=129S5SvEvBrd&strainNoSlct=A_J&"
-     + "strainNoSlct=AKR_J&strainNoSlct=B10.RIII&strainNoSlct=BALB_cByJ&strainNoSlct=BALB_cJ&strainNoSlct=BTBR_T%2B_Itpr3tf_J&"
-     + "strainNoSlct=BUB_BnJ&strainNoSlct=C3H_HeH&strainNoSlct=C3H_HeJ&strainNoSlct=C57BL_10J&strainNoSlct=C57BL_10SnJ&"
-     + "strainNoSlct=C57BL_6NJ&strainNoSlct=C57BR_cdJ&strainNoSlct=C57L_J&strainNoSlct=C58_J&strainNoSlct=CAST_EiJ&"
-     + "strainNoSlct=CBA_J&strainNoSlct=CE_J&strainNoSlct=CZECHII_EiJ&strainNoSlct=DBA_1J&strainNoSlct=DBA_2J&strainNoSlct=FVB_NJ&"
-     + "strainNoSlct=I_LnJ&strainNoSlct=JF1_MsJ&strainNoSlct=KK_HiJ&strainNoSlct=LEWES_EiJ&strainNoSlct=LG_J&strainNoSlct=LP_J&"
-     + "strainNoSlct=MA_MyJ&strainNoSlct=MOLF_EiJ&strainNoSlct=NOD_ShiLtJ&strainNoSlct=NON_LtJ&strainNoSlct=NZB_B1NJ&"
-     + "strainNoSlct=NZO_HlLtJ&strainNoSlct=NZW_LacJ&strainNoSlct=PL_J&strainNoSlct=PWK_PhJ&strainNoSlct=QSi3&strainNoSlct=QSi5&"
-     + "strainNoSlct=RF_J&strainNoSlct=RIIIS_J&strainNoSlct=SEA_GnJ&strainNoSlct=SJL_J&strainNoSlct=SM_J&strainNoSlct=SPRET_EiJ&"
-     + "strainNoSlct=ST_bJ&strainNoSlct=SWR_J&strainNoSlct=WSB_EiJ&strainNoSlct=ZALENDE_EiJ&"
+  const mog_body = "strainNoSlct=" + strain_ids.join("&strainNoSlct=") + "&"
      + "chrName=" + mmu_chr + "&chrStart=" + mmu_start + "&chrEnd=" + mmu_end + "&"
      + "&seqType=genome&chrName=5&geneNameSearchText=&index=submit&presentType=dwnld";
-   console.log(mog_body);
+  // console.log(mog_body);
   const mogp = await fetch("https://molossinus.brc.riken.jp/" + mogplus_ver+ "/variantTable/?" + mog_body).then(d=>d.text());
   console.log(mogp);
   const mogp_res = mogp.split(/\n/);
