@@ -124,10 +124,10 @@ let id2strain =
     "category": "other",
     "source": "https://www.jax.org/strain/000648"
   },
-  "H2-T18b/(71NS)SnJ": {
-    "strain": "B10.RIII-H2r",
-    "id": "H2-T18b/(71NS)SnJ",
-    "category": "B10.RIII",
+  "B10.RIII-H2r H2-T18b/(71NS)SnJ": {
+    "strain": "B10.RIII-H2r H2-T18b/(71NS)SnJ",
+    "id": "B10.RIII",
+    "category": "other",
     "source": ""
   },
   "BALB_cByJ": {
