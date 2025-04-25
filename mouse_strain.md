@@ -14,8 +14,7 @@ Return attributes of a mouse strain for strain_id.
 ```javascript
 async ({strain_id, strain}) => {
 
-let id2strain = 
-{
+let id2strain = {
   "refGenome": {
     "strain": "C57BL/6J",
     "id": "refGenome",
