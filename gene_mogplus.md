@@ -2,8 +2,8 @@
 
 ## Parameters
 
-* `hgnc` : hgnc
-  * default: 404
+* `hgnc_id` : hgnc_id
+  * example: 404
 * `mogplus_ver` : version
   * default: mogplus21
   * example: mogplus3
@@ -21,8 +21,8 @@ PREFIX hgnc: <http://identifiers.org/hgnc/>
 PREFIX tgvo: <http://togovar.biosciencedbc.jp/vocabulary/>
 SELECT DISTINCT ?symbol
 WHERE {
-  VALUES ?hgnc_uri { hgnc:{{hgnc}} }
-  ?hgnc_uri dct:identifier ?hgnc ;
+  VALUES ?hgnc_uri { hgnc:{{hgnc_id}} }
+  ?hgnc_uri dct:identifier ?hgnc_id ;
             rdfs:label ?symbol .
 }
 ```
@@ -56,8 +56,8 @@ WHERE {
 
 ## `clinvar`
 ```javascript
-async ({SPARQLIST_TOGOVAR_SPARQLIST, SPARQLIST_TOGOVAR_APP, hgnc})=>{
-  const strain2id = await fetch("/sparqlist/api/gene_clinvar?hgnc_id=" + hgnc, {
+async ({SPARQLIST_TOGOVAR_SPARQLIST, SPARQLIST_TOGOVAR_APP, hgnc_id})=>{
+  const strain2id = await fetch("/sparqlist/api/gene_clinvar?hgnc_id=" + hgnc_id, {
     headers: {
       Accept: 'application/json',
       'Content-Type': 'application/json',
@@ -71,23 +71,22 @@ async ({SPARQLIST_TOGOVAR_SPARQLIST, SPARQLIST_TOGOVAR_APP, hgnc})=>{
 ```javascript
 function get_clinsig(rs, clinvar){
   for(const entry of clinvar){
+    let interpretation;
+    let condition;
+    let condition_link;
     if(entry.rs_id == rs){
-      interpretation = entry.interpretation ? entry.interpretation : "-"
-      if(entry.condition){
-        medgen_cid = entry.condition.replace("https://www.ncbi.nlm.nih.gov/medgen/","")
-        condition = entry.condition ?  "<a href='/disease/" + medgen_cid + "'>" + entry.condition + "</a>" : "-"
-      } else {
-        condition = "-"
+      if(entry.medgen){
+        condition_link = entry.medgen.replace("https://www.ncbi.nlm.nih.gov/medgen/","/disease/")
       }
-      ret = [interpretation, condition];
-      console.log("ret=" + ret)
+      ret = [entry.interpretation, entry.condition, condition_link];
       return ret;
     }
   }
-  return ["-","-"];
+
+  return [null, null, null];
 }
 
-async ({SPARQLIST_TOGOVAR_SPARQLIST, SPARQLIST_TOGOVAR_APP, hgnc, mogplus_ver, symbol, range, clinvar})=>{
+async ({SPARQLIST_TOGOVAR_SPARQLIST, SPARQLIST_TOGOVAR_APP, mogplus_ver, symbol, range, clinvar})=>{
   if (! symbol.results.bindings[0]) return "Gene symbol not found or invalid.";
   if (! range.results.bindings[0]) return "Genomic position not found for gene symbol " + symbol.results.bindings[0];
 
@@ -233,18 +232,18 @@ async ({SPARQLIST_TOGOVAR_SPARQLIST, SPARQLIST_TOGOVAR_APP, hgnc, mogplus_ver, s
           }
         }
 
-        const [clinsig, condition] = get_clinsig(rs, clinvar)
+        const [interpretation, condition, condition_link] = get_clinsig(rs, clinvar)
   
         r.push({
-          tgv_id: tgv_id, 
+          tgv_id: tgv_id == "-" ? "" : tgv_id,
           tgv_link: tgv_id == "-" ? "" : "/variant/" + tgv_id,
-          rs: rs,
+          rs: rs == "-" ? "" : rs,
           rs_link: rs == "-" ? "" : "https://www.ncbi.nlm.nih.gov/snp/" + rs,
           allele_grch38: chr + ":" + hsa_pos + "-" + hsa_ref + "-" + hsa_alt,
           consequence: consequence.replaceAll(",", "<br/>"),
-          clinsig: clinsig,
-          condition: condition,
-          condition_link: condition == "-" ? "" : "/disease/" + condition,
+          clinsig: interpretation ? interpretation : "",
+          condition: condition ? condition : "",
+          condition_link: condition_link ? condition_link : "",
           allele_grcm39: mmu_chr + ":" + mmu_pos + "-" + mmu_ref + "-" + mmu_alt,
           ref_grcm39: mmu_ref,
           alt_grcm39: mmu_alt,
