@@ -151,9 +151,6 @@ async ({SPARQLIST_TOGOVAR_SPARQLIST, SPARQLIST_TOGOVAR_APP, mogplus_ver, symbol,
     mmu_end = mmu_start;
     mmu_start = tmp;
   }
-  let ver_strain = "strainNoSlct=msmv4_sq&strainNoSlct=jf1v3&strainNoSlct=kjrv1&strainNoSlct=swnv1&strainNoSlct=chdv1&"
-    + "strainNoSlct=njlv1&strainNoSlct=blg2v1&strainNoSlct=hmiv1&strainNoSlct=bfmv1&strainNoSlct=pgn2v1&";
-  if (mogplus_ver == "mogplus3") ver_strain = "strainNoSlct=msmb39gatk&strainNoSlct=jf1b39gatk&";
   const mog_body = "strainNoSlct=" + strain_ids.join("&strainNoSlct=") + "&"
     + "chrName=" + mmu_chr + "&chrStart=" + mmu_start + "&chrEnd=" + mmu_end + "&"
     + "&seqType=genome&chrName=5&geneNameSearchText=&index=submit&presentType=dwnld";
