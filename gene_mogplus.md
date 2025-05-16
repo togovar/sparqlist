@@ -210,8 +210,10 @@ async ({SPARQLIST_TOGOVAR_SPARQLIST, SPARQLIST_TOGOVAR_APP, mogplus_ver, symbol,
         let alt_match = false;
         if (hsa_alt == conv_nt(mmu_strand, mmu_alt)) alt_match = true;
         let mouse_strains = [];
+	let mouse_ids = [];
         for (let strain_name of mmu_var_pos[mmu_pos].strain[mmu_alt]){
           // console.log("strain_name="+ strain_name + ",source=" + JSON.stringify(strain2id))
+	  mouse_ids.push(strain2id[strain_name]);
           if(strain2id[strain_name]?.source){
             mouse_strains.push("<a href=" + strain2id[strain_name].source + ">" + strain_name + "</a>");
           }else{
@@ -237,7 +239,7 @@ async ({SPARQLIST_TOGOVAR_SPARQLIST, SPARQLIST_TOGOVAR_APP, mogplus_ver, symbol,
           alt_match: alt_match,
           mouse_strains: mouse_strains.join("<br/>"),
           mogplus_url: "https://molossinus.brc.riken.jp/" + mogplus_ver+ "/variantTable/?strainNoSlct=refGenome&strainNoSlct="
-          + mmu_var_pos[mmu_pos].strain[mmu_alt].join("&strainNoSlct=").replace(/\//g, "_") + "&chrName=" + mmu_chr + mmu_var_pos[mmu_pos].region
+          + mouse_ids.join("&strainNoSlct=").replace(/\//g, "_") + "&chrName=" + mmu_chr + mmu_var_pos[mmu_pos].region
           + "&seqType=genome&chrName=5&geneNameSearchText=&index=submit&presentType=disp"
         })
       }
