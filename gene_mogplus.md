@@ -213,7 +213,7 @@ async ({SPARQLIST_TOGOVAR_SPARQLIST, SPARQLIST_TOGOVAR_APP, mogplus_ver, symbol,
 	let mouse_ids = [];
         for (let strain_name of mmu_var_pos[mmu_pos].strain[mmu_alt]){
           // console.log("strain_name="+ strain_name + ",source=" + JSON.stringify(strain2id))
-	  mouse_ids.push(strain2id[strain_name]);
+	  mouse_ids.push(strain2id[strain_name].id);
           if(strain2id[strain_name]?.source){
             mouse_strains.push("<a href=" + strain2id[strain_name].source + ">" + strain_name + "</a>");
           }else{
