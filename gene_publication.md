@@ -232,27 +232,28 @@ WHERE {
 }
 ```
 
-## Endpoint
+## `colil` PubMed IDs to their citation count
 
-https://colil.dbcls.jp/sparql
+```javascript
+async ({SPARQLIST_TOGOVAR_APP, pmids_all}) => {
+  let pmids = pmids_all;
+  const PMIDS_PER_REQUEST = 300;
 
-## `colil` PubMed IDs to citation count
+  let results = {};
 
-```sparql
-PREFIX bibo:   <http://purl.org/ontology/bibo/>
-PREFIX colil:  <http://purl.jp/bio/10/colil/ontology/201303#>
-PREFIX togows: <http://togows.dbcls.jp/ontology/ncbi-pubmed#>
-PREFIX rdfs:   <http://www.w3.org/2000/01/rdf-schema#>
+  return results;
 
-SELECT ?pmid (COUNT(?citation_paper) AS ?citation_count)
-WHERE {
-  VALUES ?pmid { {{#each pmids_all}}'{{this}}' {{/each}} }
+  while(pmids.length > 0){
+    let pmids_per_request =
+      encodeURIComponent(pmids.splice(0, Math.min(PMIDS_PER_REQUEST, pmids.length)).map(num => String(num)).join(','));
 
-  GRAPH <http://purl.jp/bio/10/colil/core> {
-    ?pmid ^togows:pmid ?pubmed .
-    ?pubmed a colil:PubMed ;
-      ^rdfs:seeAlso/^bibo:cites ?citation_paper.
+    const sparqlist = ("/sparqlist/api/colil?pmids=").concat(pmids_per_request);
+    const res = await fetch(sparqlist, {method: "get", headers: {"Accept": "application/json"}}).then(res => res.json());
+
+    results = { ...results, ...res };
   }
+
+  return results;
 }
 ```
 
