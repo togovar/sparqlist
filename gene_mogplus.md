@@ -3,7 +3,7 @@
 ## Parameters
 
 * `hgnc_id` : hgnc_id
-  * example: 404
+  * example: 404 1101 1102 8618
 * `mogplus_ver` : version
   * default: mogplus21
   * example: mogplus3
@@ -57,33 +57,36 @@ WHERE {
 ## `clinvar`
 ```javascript
 async ({SPARQLIST_TOGOVAR_SPARQLIST, SPARQLIST_TOGOVAR_APP, hgnc_id})=>{
-  const strain2id = await fetch("/sparqlist/api/gene_clinvar?hgnc_id=" + hgnc_id, {
+  const clinvar = await fetch("/sparqlist/api/gene_clinvar?hgnc_id=" + hgnc_id, {
     headers: {
       Accept: 'application/json',
       'Content-Type': 'application/json',
     },
   }).then(res => res.json());
-  return strain2id;
+  return clinvar;
 }
 ```
 
 ## `sequence`
 ```javascript
-function get_clinsig(rs, clinvar){
-  for(const entry of clinvar){
-    let interpretation;
-    let condition;
-    let condition_link;
+function get_clinvar(rs, clinvar){
+  const interpretations = [];
+  const conditions = [];
+  for(let entry of clinvar){
+    let condtion = "";
     if(entry.rs_id == rs){
       if(entry.medgen){
-        condition_link = entry.medgen.replace("https://www.ncbi.nlm.nih.gov/medgen/","/disease/")
+        condition = "<a href='/disease/"
+          + entry.medgen.replace("https://www.ncbi.nlm.nih.gov/medgen/","")
+          + "'>" + entry.condition + "</a>";
+      }else{
+        condition = entry.condition;
       }
-      ret = [entry.interpretation, entry.condition, condition_link];
-      return ret;
+      interpretations.push(entry.interpretation);
+      conditions.push(condition);
     }
   }
-
-  return [null, null, null];
+  return [interpretations.join("<br/>"), conditions.join("<br/>")];
 }
 
 async ({SPARQLIST_TOGOVAR_SPARQLIST, SPARQLIST_TOGOVAR_APP, mogplus_ver, symbol, range, clinvar})=>{
@@ -139,7 +142,7 @@ async ({SPARQLIST_TOGOVAR_SPARQLIST, SPARQLIST_TOGOVAR_APP, mogplus_ver, symbol,
 
   // MoG+ GRCm389(mm39) variants
   const options = {method: 'GET', headers: {'Accept': 'application/json'}};
-  const mmu_strains = await fetch(SPARQLIST_TOGOVAR_SPARQLIST + "/api/mouse_strain?strain_id=all", options).then(d => d.json());
+  const mmu_strains = await fetch("/sparqlist/api/mouse_strain?strain_id=all", options).then(d => d.json());
   let strain_ids = [];
   for (const d of Object.keys(mmu_strains)) {
     if ((mmu_strains[d].category == "mogplus3" && mogplus_ver == "mogplus21")
@@ -154,13 +157,13 @@ async ({SPARQLIST_TOGOVAR_SPARQLIST, SPARQLIST_TOGOVAR_APP, mogplus_ver, symbol,
   const mog_body = "strainNoSlct=" + strain_ids.join("&strainNoSlct=") + "&"
     + "chrName=" + mmu_chr + "&chrStart=" + mmu_start + "&chrEnd=" + mmu_end + "&"
     + "&seqType=genome&chrName=5&geneNameSearchText=&index=submit&presentType=dwnld";
-  console.log(mog_body);
+//  console.log("mog_body=" + mog_body);
   const mogp = await fetch("https://molossinus.brc.riken.jp/" + mogplus_ver+ "/variantTable/?" + mog_body).then(d=>d.text());
-  console.log(mogp);
+//  console.log("mogp=" + mogp);
   const mogp_res = mogp.split(/\n/);
   let pos_list = mogp_res[0].split(/\t/);
   let var_list = mogp_res[1].split(/\t/);
-  console.log(pos_list);
+//  console.log(pos_list);
   if (!pos_list[1]) return "MoG+ variant not found";
 
   let mmu_var_pos = {};
@@ -221,8 +224,8 @@ async ({SPARQLIST_TOGOVAR_SPARQLIST, SPARQLIST_TOGOVAR_APP, mogplus_ver, symbol,
           }
         }
 
-        const [interpretation, condition, condition_link] = get_clinsig(rs, clinvar)
-  
+        const [interpretation, condition] = get_clinvar(rs, clinvar)
+
         r.push({
           tgv_id: tgv_id == "-" ? "" : tgv_id,
           tgv_link: tgv_id == "-" ? "" : "/variant/" + tgv_id,
@@ -232,7 +235,6 @@ async ({SPARQLIST_TOGOVAR_SPARQLIST, SPARQLIST_TOGOVAR_APP, mogplus_ver, symbol,
           consequence: consequence.replaceAll(",", "<br/>"),
           clinsig: interpretation ? interpretation : "",
           condition: condition ? condition : "",
-          condition_link: condition_link ? condition_link : "",
           allele_grcm39: mmu_chr + ":" + mmu_pos + "-" + mmu_ref + "-" + mmu_alt,
           ref_grcm39: mmu_ref,
           alt_grcm39: mmu_alt,
@@ -249,6 +251,13 @@ async ({SPARQLIST_TOGOVAR_SPARQLIST, SPARQLIST_TOGOVAR_APP, mogplus_ver, symbol,
                        "consequence", "sift_qualitative_prediction", "sift_score", "polyphen2_qualitative_prediction",
                        "polyphen2_score", "alphamissense_pathogenicity", "alphamissense_score", "chr_grcm39", "position_grcm39", "ref_grcm39", "alt_grcm39", "alt_match", "mouse_strains"].join("\t")); */
   //return r.join("\n");
+
+  r.sort((a, b) => {
+    if (a.clinsig === "" && b.clinsig !== "") return 1;
+    if (a.clinsig !== "" && b.clinsig === "") return -1;
+    return b.clinsig.localeCompare(a.clinsig);
+  });
+
   return r;
 }
 ```
