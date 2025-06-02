@@ -180,7 +180,7 @@ ORDER BY ?title ?review_status ?interpretation DESC(?last_evaluated) ?condition
     get: (target, name) => name in target ? target[name] : 99
   });
 
-  return ensg2clinvar.results.bindings.map(x => {
+  r =  ensg2clinvar.results.bindings.map(x => {
     const position = x.variant?.value?.match(/http:\/\/identifiers.org\/hco\/(.+)\/GRCh3[78]#(\d+)/);
 
     return {
@@ -198,5 +198,11 @@ ORDER BY ?title ?review_status ?interpretation DESC(?last_evaluated) ?condition
       medgen: (x.medgen ? "https://www.ncbi.nlm.nih.gov/medgen/" + x.medgen.value : ""),
     };
   });
+
+  r.sort((a, b) => {
+    return a.interpretation_order - b.interpretation_order;
+  });
+
+  return r;
 }
 ```
