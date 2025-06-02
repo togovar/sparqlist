@@ -3,7 +3,7 @@
 ## Parameters
 
 * `hgnc_id` : hgnc_id
-  * example: 404 1101 1102 8618
+  * example: 404 1101 1102 11998
 * `mogplus_ver` : version
   * default: mogplus21
   * example: mogplus3
@@ -69,24 +69,96 @@ async ({SPARQLIST_TOGOVAR_SPARQLIST, SPARQLIST_TOGOVAR_APP, hgnc_id})=>{
 
 ## `sequence`
 ```javascript
-function get_clinvar(rs, clinvar){
-  const interpretations = [];
-  const conditions = [];
-  for(let entry of clinvar){
-    let condtion = "";
-    if(entry.rs_id == rs){
-      if(entry.medgen){
+function sort_consequences(consequence_str) {
+  const consequence_order = [
+    "transcript_ablation",
+    "splice_acceptor_variant",
+    "splice_donor_variant",
+    "stop_gained",
+    "frameshift_variant",
+    "stop_lost",
+    "start_lost",
+    "transcript_amplification",
+    "feature_elongation",
+    "feature_truncation",
+    "inframe_insertion",
+    "inframe_deletion",
+    "missense_variant",
+    "protein_altering_variant",
+    "splice_donor_5th_base_variant",
+    "splice_region_variant",
+    "splice_donor_region_variant",
+    "splice_polypyrimidine_tract_variant",
+    "incomplete_terminal_codon_variant",
+    "start_retained_variant",
+    "stop_retained_variant",
+    "synonymous_variant",
+    "coding_sequence_variant",
+    "mature_miRNA_variant",
+    "5_prime_UTR_variant",
+    "3_prime_UTR_variant",
+    "non_coding_transcript_exon_variant",
+    "intron_variant",
+    "NMD_transcript_variant",
+    "non_coding_transcript_variant",
+    "coding_transcript_variant",
+    "upstream_gene_variant",
+    "downstream_gene_variant",
+    "TFBS_ablation",
+    "TFBS_amplification",
+    "TF_binding_site_variant",
+    "regulatory_region_ablation",
+    "regulatory_region_amplification",
+    "regulatory_region_variant",
+    "intergenic_variant",
+    "sequence_variant"
+  ];
+
+  return consequence_str
+    .split(',')
+    .map(s => s.trim())
+    .sort((a, b) => {
+      const index_a = consequence_order.indexOf(a);
+      const index_b = consequence_order.indexOf(b);
+      return index_a - index_b;
+    })
+    .join('<br/>');
+}
+
+function get_clinvar(tgv_id, rs_id, clinvars_by_gene) {
+  let clinvars_by_rs_id = [];
+
+  for (let entry of clinvars_by_gene) {
+    if (entry.tgv_id == tgv_id ||
+        entry.tgv_id == "" && entry.rs_id == rs_id) {
+      let condition = "";
+      if (entry.medgen) {
         condition = "<a href='/disease/"
-          + entry.medgen.replace("https://www.ncbi.nlm.nih.gov/medgen/","")
+          + entry.medgen.replace("https://www.ncbi.nlm.nih.gov/medgen/", "")
           + "'>" + entry.condition + "</a>";
-      }else{
+      } else {
         condition = entry.condition;
       }
-      interpretations.push(entry.interpretation);
-      conditions.push(condition);
+
+      clinvars_by_rs_id.push({
+        interpretation_order: entry.interpretation_order,
+        interpretation: entry.interpretation,
+        condition: condition
+      });
     }
   }
-  return [interpretations.join("<br/>"), conditions.join("<br/>")];
+
+  clinvars_by_rs_id.sort((a, b) => {
+    const order_a = a.interpretation_order;
+    const order_b = b.interpretation_order;
+    return order_a - order_b;
+  });
+
+  const most_sig_interpretation = Math.min(...clinvars_by_rs_id.map(e => e.interpretation_order));
+  const interpretations = clinvars_by_rs_id.map(e => e.interpretation).join("<br/>");
+  const conditions = clinvars_by_rs_id.map(e => e.condition).join("<br/>");
+
+  return [interpretations, most_sig_interpretation, conditions];
 }
 
 async ({SPARQLIST_TOGOVAR_SPARQLIST, SPARQLIST_TOGOVAR_APP, mogplus_ver, symbol, range, clinvar})=>{
@@ -224,7 +296,7 @@ async ({SPARQLIST_TOGOVAR_SPARQLIST, SPARQLIST_TOGOVAR_APP, mogplus_ver, symbol,
           }
         }
 
-        const [interpretation, condition] = get_clinvar(rs, clinvar)
+        const [interpretation, most_sig_interpretation, condition] = get_clinvar(tgv_id, rs, clinvar)
 
         r.push({
           tgv_id: tgv_id == "-" ? "" : tgv_id,
@@ -232,7 +304,8 @@ async ({SPARQLIST_TOGOVAR_SPARQLIST, SPARQLIST_TOGOVAR_APP, mogplus_ver, symbol,
           rs: rs == "-" ? "" : rs,
           rs_link: rs == "-" ? "" : "https://www.ncbi.nlm.nih.gov/snp/" + rs,
           allele_grch38: chr + ":" + hsa_pos + "-" + hsa_ref + "-" + hsa_alt,
-          consequence: consequence.replaceAll(",", "<br/>"),
+          consequence: sort_consequences(consequence),
+          most_sig_interpretation: most_sig_interpretation,
           clinsig: interpretation ? interpretation : "",
           condition: condition ? condition : "",
           allele_grcm39: mmu_chr + ":" + mmu_pos + "-" + mmu_ref + "-" + mmu_alt,
@@ -255,7 +328,7 @@ async ({SPARQLIST_TOGOVAR_SPARQLIST, SPARQLIST_TOGOVAR_APP, mogplus_ver, symbol,
   r.sort((a, b) => {
     if (a.clinsig === "" && b.clinsig !== "") return 1;
     if (a.clinsig !== "" && b.clinsig === "") return -1;
-    return b.clinsig.localeCompare(a.clinsig);
+    return a.most_sig_interpretation - b.most_sig_interpretation;
   });
 
   return r;
