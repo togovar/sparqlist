@@ -29,7 +29,6 @@
 ## `sequence`
 ```javascript
 async ({chr, pos, ref, alt, mogplus_ver, ignore_alt_mismatch, SPARQLIST_TOGOVAR_APP})=>{
-  let s = Date.now();
   // convert strand
   const conv_nt = (strand, nt) => {
     if (strand == "+") return nt;
@@ -60,8 +59,6 @@ async ({chr, pos, ref, alt, mogplus_ver, ignore_alt_mismatch, SPARQLIST_TOGOVAR_
       break;
     }
   }
-  console.log([counter_chr, strand ,counter_pos, chr_len]);
-  console.log(Date.now() - s);
   
   // TogoVar
   const togovar_api = SPARQLIST_TOGOVAR_APP + "/api/search/variant";
@@ -94,11 +91,8 @@ async ({chr, pos, ref, alt, mogplus_ver, ignore_alt_mismatch, SPARQLIST_TOGOVAR_
 
   const json = await fetch(togovar_api, options).then(d=>d.json());
 
- console.log(json.data)
-
   let r = [];
   for (const d of json.data) {
-    console.log(ignore_alt_mismatch + ":" + strand + ":" + ref + ">" + alt + ":" + conv_nt(strand, d.reference) + ">" + conv_nt(strand, d.alternate));
     if (alt == conv_nt(strand, d.alternate) || ignore_alt_mismatch == "true"){
       r.push({
         togovar_url: "https://grch38.togovar.org/variant/" 
