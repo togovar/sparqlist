@@ -188,7 +188,6 @@ async ({SPARQLIST_TOGOVAR_SPARQLIST, SPARQLIST_TOGOVAR_APP, mogplus_ver, symbol,
 
   let api = "https://sparql-support.dbcls.jp/api/getTogoVarGeneAnn?q=";
   let position = chr + ":" + begin + "-" + end;
-  console.log(position);
   const togovar = await fetch(api + position).then(d=>d.text());
 
   // GRCh38 => GRCm39(mm39)  
@@ -229,13 +228,10 @@ async ({SPARQLIST_TOGOVAR_SPARQLIST, SPARQLIST_TOGOVAR_APP, mogplus_ver, symbol,
   const mog_body = "strainNoSlct=" + strain_ids.join("&strainNoSlct=") + "&"
     + "chrName=" + mmu_chr + "&chrStart=" + mmu_start + "&chrEnd=" + mmu_end + "&"
     + "&seqType=genome&chrName=5&geneNameSearchText=&index=submit&presentType=dwnld";
-//  console.log("mog_body=" + mog_body);
   const mogp = await fetch("https://molossinus.brc.riken.jp/" + mogplus_ver+ "/variantTable/?" + mog_body).then(d=>d.text());
-//  console.log("mogp=" + mogp);
   const mogp_res = mogp.split(/\n/);
   let pos_list = mogp_res[0].split(/\t/);
   let var_list = mogp_res[1].split(/\t/);
-//  console.log(pos_list);
   if (!pos_list[1]) return "MoG+ variant not found";
 
   let mmu_var_pos = {};
@@ -285,10 +281,9 @@ async ({SPARQLIST_TOGOVAR_SPARQLIST, SPARQLIST_TOGOVAR_APP, mogplus_ver, symbol,
         let alt_match = false;
         if (hsa_alt == conv_nt(mmu_strand, mmu_alt)) alt_match = true;
         let mouse_strains = [];
-	let mouse_ids = [];
+	      let mouse_ids = [];
         for (let strain_name of mmu_var_pos[mmu_pos].strain[mmu_alt]){
-          // console.log("strain_name="+ strain_name + ",source=" + JSON.stringify(strain2id))
-	  mouse_ids.push(strain2id[strain_name].id);
+	        mouse_ids.push(strain2id[strain_name].id);
           if(strain2id[strain_name]?.source){
             mouse_strains.push("<a href=" + strain2id[strain_name].source + ">" + strain_name + "</a>");
           }else{
@@ -308,10 +303,11 @@ async ({SPARQLIST_TOGOVAR_SPARQLIST, SPARQLIST_TOGOVAR_APP, mogplus_ver, symbol,
           most_sig_interpretation: most_sig_interpretation,
           clinsig: interpretation ? interpretation : "",
           condition: condition ? condition : "",
+          mmu_strand: mmu_strand,
           allele_grcm39: mmu_chr + ":" + mmu_pos + "-" + mmu_ref + "-" + mmu_alt,
           ref_grcm39: mmu_ref,
           alt_grcm39: mmu_alt,
-          alt_match: alt_match,
+          alt_match: alt_match == true ? "Yes" : "No",
           mouse_strains: mouse_strains.join("<br/>"),
           mogplus_url: "https://molossinus.brc.riken.jp/" + mogplus_ver+ "/variantTable/?strainNoSlct=refGenome&strainNoSlct="
           + mouse_ids.join("&strainNoSlct=").replace(/\//g, "_") + "&chrName=" + mmu_chr + mmu_var_pos[mmu_pos].region
@@ -320,10 +316,6 @@ async ({SPARQLIST_TOGOVAR_SPARQLIST, SPARQLIST_TOGOVAR_APP, mogplus_ver, symbol,
       }
     }
   });
-  /*if (r[0]) r.unshift(["tgv_id", "rs", "chr", "position_grch38", "ref", "alt", "symbol", "transcript_id", 
-                       "consequence", "sift_qualitative_prediction", "sift_score", "polyphen2_qualitative_prediction",
-                       "polyphen2_score", "alphamissense_pathogenicity", "alphamissense_score", "chr_grcm39", "position_grcm39", "ref_grcm39", "alt_grcm39", "alt_match", "mouse_strains"].join("\t")); */
-  //return r.join("\n");
 
   r.sort((a, b) => {
     if (a.clinsig === "" && b.clinsig !== "") return 1;
