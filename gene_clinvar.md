@@ -153,6 +153,33 @@ ORDER BY ?title ?review_status ?interpretation DESC(?last_evaluated) ?condition
     }
   };
 
+  const interpretation_order = new Proxy({
+    "Pathogenic": 1,
+    "Pathogenic/Likely pathogenic": 1.5,
+    "Likely pathogenic": 2,
+    "Pathogenic, Low penetrance": 3,
+    "Likely pathogenic, Low penetrance": 4,
+    "Established risk allele": 5,
+    "Likely risk allele": 6,
+    "Uncertain risk allele": 7,
+    "Likely benign": 9,
+    "Benign": 10,
+    "Conflicting interpretations of pathogenicity": 11,
+    "Drug response": 12,
+    "Confers sensitivity": 13,
+    "Risk factor": 14,
+    "Association": 15,
+    "Protective": 16,
+    "Affects": 17,
+    "Other": 18,
+    "Uncertain significance": 19,
+    "Not provided": 20,
+    "Association not found": 21,
+    "": 99
+  }, {
+    get: (target, name) => name in target ? target[name] : 99
+  });
+
   return ensg2clinvar.results.bindings.map(x => {
     const position = x.variant?.value?.match(/http:\/\/identifiers.org\/hco\/(.+)\/GRCh3[78]#(\d+)/);
 
@@ -163,6 +190,7 @@ ORDER BY ?title ?review_status ?interpretation DESC(?last_evaluated) ?condition
       rs_id_link: x.rs_id?.value?.replace("http://", "https://"),
       position: position ? position[1] + ":" + position[2] : null,
       title: x.title?.value,
+      interpretation_order: interpretation_order[x.interpretation?.value],
       interpretation: `<span class="clinical-significance-full" data-sign="${clinical_significance_key(x.interpretation?.value)}">${x.interpretation?.value}</span>`,
       review_status: `<span class="star-rating"><span data-stars="${review_status_stars(x.review_status?.value)}" class="star-rating-item"></span></span><br><span class="status-description">${x.review_status?.value}</span>`,
       last_evaluated: x.last_evaluated?.value,
