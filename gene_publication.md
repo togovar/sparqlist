@@ -6,7 +6,7 @@ Generate gene2pubmed table data by dbSNP ID
 
 * `hgnc_id`
   * default: 404
-  * example: 28706 (more than one rsids for one pmid), 555555 (no pmids are found)
+  * example: 28706 (SAMD11, more than one rsids for one pmid), 555555 (no pmids are found), 1102 (BRCA2, 2,533 entries), 11998 (TP53, 12,167 entries)
 
 ## Endpoint
 
@@ -52,8 +52,6 @@ WHERE {
 ## `pubtator_sparql` Get bibliography from PubMed for articles identified by PubTator 
 
 ```sparql
-DEFINE sql:select-option "order"
-
 PREFIX bibo: <http://purl.org/ontology/bibo/>
 PREFIX dct:  <http://purl.org/dc/terms/>
 PREFIX ensg: <http://rdf.ebi.ac.uk/resource/ensembl/>
@@ -63,29 +61,40 @@ PREFIX olo:  <http://purl.org/ontology/olo/core#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX tgvo: <http://togovar.biosciencedbc.jp/vocabulary/>
 
-SELECT DISTINCT ?rs_id ?pmid ?title ?year ?author ?journal
+SELECT DISTINCT ?rs_id ?pmid ?title ?year ?authors ?journal
 WHERE {
   VALUES ?ens_gene { {{#each ensembl_gene}} ensg:{{this}} {{/each}} }
 
   GRAPH <http://togovar.org/variant/annotation/ensembl> {
-    ?ens_gene ^tgvo:gene/^tgvo:hasConsequence/rdfs:seeAlso ?rs_id . 
+    ?ens_gene ^tgvo:gene/^tgvo:hasConsequence/rdfs:seeAlso ?rs_id.
   }
 
   GRAPH <http://togovar.org/pubtator> {
-    ?pubtator_node oa:hasBody ?rs_id ;
-      a oa:Annotation ;
-      oa:hasTarget ?pmid_uri .
+    ?pubtator_node oa:hasBody ?rs_id;
+                   a oa:Annotation;
+                   oa:hasTarget ?pmid_uri.
   }
 
   GRAPH <http://togovar.org/pubmed> {
-    ?pmid_uri dct:source ?journal ;
-      dct:title ?title ;
-      dct:issued ?year ;
-      bibo:pmid ?pmid ;
-      dct:creator/olo:slot/olo:item/foaf:name ?author .
+    ?pmid_uri dct:source ?journal;
+              dct:title ?title;
+              dct:issued ?year;
+              bibo:pmid ?pmid;
+              dct:creator ?creatorList.
+
+    ?creatorList a olo:OrderedList;
+                 olo:length ?length;
+                 olo:slot ?slot.
+
+    ?slot olo:index 1;
+          olo:item ?person.
+
+    ?person foaf:name ?author.
+
+    BIND(IF(?length > 1, CONCAT(?author, " et al."), ?author) AS ?authors)
   }
 }
-ORDER BY ?pmid
+ORDER BY DESC(?year)
 ```
 
 ## `bib_pubtator` Concatenate authors from Pubtator 
@@ -100,15 +109,12 @@ ORDER BY ?pmid
         rs_id: [x.rs_id.value],
         title: x.title.value,
         year: x.year.value,
-        author: [x.author.value],
+        author: x.authors.value,
         journal: x.journal.value
       };
-    } else{
+    }else{
       if (ref[x.pmid.value]["rs_id"].includes(x.rs_id.value) == false){
         ref[x.pmid.value]["rs_id"].push(x.rs_id.value);
-      }
-      if (ref[x.pmid.value]["author"].includes(x.author.value) == false){
-        ref[x.pmid.value]["author"].push(x.author.value);
       }
     }
   })
@@ -121,8 +127,6 @@ ORDER BY ?pmid
 
 ```javascript
 async ({pubtator_sparql}) => {
-//  Empty rsids to skip request to LitVar
-//  const rsids = [...new Set(pubtator_sparql.results.bindings.map(x => x.rs_id.value.replace("http://identifiers.org/dbsnp/", "")))];
   const rsids = [];
   const pmid2rsid = {} 
 
@@ -178,7 +182,7 @@ PREFIX olo:    <http://purl.org/ontology/olo/core#>
 PREFIX foaf:   <http://xmlns.com/foaf/0.1/>
 PREFIX pubmed: <http://rdf.ncbi.nlm.nih.gov/pubmed/>
 
-SELECT DISTINCT ?pmid_uri ?pmid ?title ?year ?author ?journal
+SELECT DISTINCT ?pmid_uri ?pmid ?title ?year ?authors  ?journal
 WHERE {
   VALUES ?pmid { {{#each pmids_litvar_only}}'{{this}}' {{/each}} }
 
@@ -186,8 +190,20 @@ WHERE {
     ?pmid_uri bibo:pmid ?pmid ;
       dct:title ?title ;
       dct:issued ?year ;
-      dct:creator/olo:slot/olo:item/foaf:name ?author ;
-      dct:source ?journal .
+      dct:source ?journal;
+      dct:creator ?creatorList.
+
+    ?creatorList a olo:OrderedList;
+          olo:length ?length;
+          olo:slot ?slot.
+
+    ?slot olo:index 1;
+          olo:item ?person.
+
+    ?person foaf:name ?author.
+
+    # et al. の付与
+    BIND(IF(?length > 1, CONCAT(?author, " et al."), ?author) AS ?authors)
   }
 }
 ```
@@ -203,13 +219,9 @@ WHERE {
       ref[x.pmid.value] = {
         title: x.title.value,
         year: x.year.value,
-        author: [x.author.value],
+        author: x.authors.value,
         journal: x.journal.value
       };
-    } else{
-      if (ref[x.pmid.value]["author"].includes(x.author.value) == false){
-        ref[x.pmid.value]["author"].push(x.author.value);
-      }
     }
   })
 
@@ -283,7 +295,7 @@ async ({SPARQLIST_TOGOVAR_APP, pmids_all}) => {
 
     let html = "";
     html += "<b>" + pubtator_litvar[pmid].title + "</b><br>\n";
-    html += pubtator_litvar[pmid].author.join(" ,") + "<br>\n";
+    html += pubtator_litvar[pmid].author + "<br>\n";
     html += "<i><b>" + pubtator_litvar[pmid].journal + "</b></i><br>\n";
 
     articles.push([
