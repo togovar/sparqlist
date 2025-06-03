@@ -5,8 +5,8 @@ Generate gene2pubmed table data by dbSNP ID
 ## Parameters
 
 * `hgnc_id`
-  * default: 404
-  * example: 28706 (SAMD11, more than one rsids for one pmid), 555555 (no pmids are found), 1102 (BRCA2, 2,533 entries), 11998 (TP53, 12,167 entries)
+  * default:
+  * example: 404 (ALDH2, 1,176 entries), 1101 (BRCA2, 2,533 entries), 11998 (TP53, 12,167 entries), 555555 (no pmids are found),
 
 ## Endpoint
 
@@ -123,118 +123,12 @@ ORDER BY DESC(?year)
 }
 ```
 
-## `pmid2rsid_litvar` Get relationships from rsID to PubMed IDs identified by LitVar
+## `pmids_all` Concat PMIDs from Pubtator
 
 ```javascript
-async ({pubtator_sparql}) => {
-  const rsids = [];
-  const pmid2rsid = {} 
-
-  for (const rsid of rsids) {
-    try {
-      const res = await fetch("https://www.ncbi.nlm.nih.gov/research/litvar2-api/variant/get/litvar%40" + rsid + "%23%23/publications?format=json", {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/x-www-form-urlencoded'
-      }
-      }).then(res => res.json());
-
-      if ("pmids" in res == false){ continue; }
-
-      for (let pmid of res.pmids){
-        pmid = pmid.toString();
-        if (pmid in pmid2rsid == false){
-          pmid2rsid[pmid] = [rsid]
-        } else {
-          pmid2rsid[pmid].push(rsid);
-        }
-      }
-     } catch (error) {
-       console.log(rsid)
-       console.log(error);
-     }
-  }
-
-  return pmid2rsid;
-};
-```
-
-## `pmids_litvar_only` Get PMID from LitVar not from PubTator
-
-```javascript
-({pubtator_sparql, pmid2rsid_litvar}) => {
-  if (!pmid2rsid_litvar) { return []; }
-
-  pmids_pubtator = pubtator_sparql.results.bindings.map(x => x.pmid.value)
-  const pmids_litvar_only = Object.keys(pmid2rsid_litvar).filter(pmid => pmids_pubtator.indexOf(pmid) == -1)
-
-  return pmids_litvar_only
-}
-```
-
-## `litvar_only_sparql` Get bibliography from PubMed for articles identified by LitVar
-
-```sparql
-PREFIX bibo:   <http://purl.org/ontology/bibo/>
-PREFIX dct:    <http://purl.org/dc/terms/>
-PREFIX olo:    <http://purl.org/ontology/olo/core#>
-PREFIX foaf:   <http://xmlns.com/foaf/0.1/>
-PREFIX pubmed: <http://rdf.ncbi.nlm.nih.gov/pubmed/>
-
-SELECT DISTINCT ?pmid_uri ?pmid ?title ?year ?authors  ?journal
-WHERE {
-  VALUES ?pmid { {{#each pmids_litvar_only}}'{{this}}' {{/each}} }
-
-  GRAPH <http://togovar.org/pubmed> {
-    ?pmid_uri bibo:pmid ?pmid ;
-      dct:title ?title ;
-      dct:issued ?year ;
-      dct:source ?journal;
-      dct:creator ?creatorList.
-
-    ?creatorList a olo:OrderedList;
-          olo:length ?length;
-          olo:slot ?slot.
-
-    ?slot olo:index 1;
-          olo:item ?person.
-
-    ?person foaf:name ?author.
-
-    # et al. の付与
-    BIND(IF(?length > 1, CONCAT(?author, " et al."), ?author) AS ?authors)
-  }
-}
-```
-
-## `bib_litvar_only` Concatenate authors from LitVar 
-
-```javascript
-({litvar_only_sparql}) => {
-  const ref = {};
-
-  litvar_only_sparql.results.bindings.forEach((x) => {
-    if (x.pmid.value in ref == false){
-      ref[x.pmid.value] = {
-        title: x.title.value,
-        year: x.year.value,
-        author: x.authors.value,
-        journal: x.journal.value
-      };
-    }
-  })
-
-  return ref;
-}
-```
-
-## `pmids_all` Concat PMIDs from Pubtator and LitVar
-
-```javascript
-({bib_litvar_only, bib_pubtator}) => {
+({bib_pubtator}) => {
  
-  const pmids_all = [...new Set([...Object.keys(bib_litvar_only), ...Object.keys(bib_pubtator)])];
+  const pmids_all = [...new Set([...Object.keys(bib_pubtator)])];
 
   if (pmids_all.length == 0){
     pmids_all.push("no data");
@@ -272,36 +166,25 @@ async ({SPARQLIST_TOGOVAR_APP, pmids_all}) => {
 ## `result` Compile results
 
 ```javascript
-({pmids_all, pmid2rsid_litvar, bib_pubtator, bib_litvar_only, colil}) => {
+({pmids_all, pmid2rsid_litvar, bib_pubtator, colil}) => {
   const articles = [];
-  const pubtator_litvar = Object.assign(bib_pubtator, bib_litvar_only)
 
-  for (const pmid of Object.keys(pubtator_litvar)) {
+  for (const pmid of Object.keys(bib_pubtator)) {
     const href_pubmed = "<a href=\"https://www.ncbi.nlm.nih.gov/pubmed/" + pmid + "\">" + pmid + "</a>";
     const href_pubtator = pmid in bib_pubtator ? "<br>(<a href=\"https://www.ncbi.nlm.nih.gov/research/pubtator3/publication/" + pmid + "\">PubTator3</a>)" : "";
 
-    let href_litvar = "";
-    if (pmid in pmid2rsid_litvar == true){
-      href_litvar = "(LitVar2: ";
-      href_litvar += pmid2rsid_litvar[pmid].map(
-	rsid => "<a href=\"https://www.ncbi.nlm.nih.gov/research/litvar2/publication/" + pmid + "?variant=litvar%40" + rsid + "%23%23\">" + rsid + "</a>"
-	).join(' ,')
-      href_litvar +=")";
-    }  
-
     let links = href_pubmed;
     links += href_pubtator;
-    links += href_litvar;
 
     let html = "";
-    html += "<b>" + pubtator_litvar[pmid].title + "</b><br>\n";
-    html += pubtator_litvar[pmid].author + "<br>\n";
-    html += "<i><b>" + pubtator_litvar[pmid].journal + "</b></i><br>\n";
+    html += "<b>" + bib_pubtator[pmid].title + "</b><br>\n";
+    html += bib_pubtator[pmid].author + "<br>\n";
+    html += "<i><b>" + bib_pubtator[pmid].journal + "</b></i><br>\n";
 
     articles.push([
       links,
       html,
-      pubtator_litvar[pmid].year.split(" ")[0],
+      bib_pubtator[pmid].year.split(" ")[0],
       "<a href=\"http://colil.dbcls.jp/browse/papers/" + pmid + "/\" >" + (colil[pmid] == undefined ? 0 : colil[pmid]) + "</a>"
     ]);
   }
