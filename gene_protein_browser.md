@@ -422,7 +422,7 @@ async ({SPARQLIST_TOGOVAR_APP, hgnc_id, id, uniprot_ptm, uniprot_substitution, p
           alt: a3to1[alt],
           hgvs_p: hgvs_p,
           symbol: a3to1[alt],
-          link: SPARQLIST_TOGOVAR_APP + "/variant/" + v.id,
+          link: "/variant/" + v.id,
           html: html,
           type: "sig_" + min_sig,
           sig_level: cln_sig[min_sig]
