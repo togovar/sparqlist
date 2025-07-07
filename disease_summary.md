@@ -4,7 +4,7 @@
 
 * `medgen_cid` MedGen CID
   * default:
-  * example: C0023467, C2675520, C2608086
+  * example: C0023467, C2675520, C2608086, C0553580 (linked with Nando)
 
 ## Endpoint
 
@@ -57,25 +57,57 @@ WHERE {
 }
 ```
 
+## Endpoint
+
+https://nanbyodata.jp/sparql
+
+## `nando`
+
+```sparql
+PREFIX medgen: <http://www.ncbi.nlm.nih.gov/medgen/>
+PREFIX nando: <http://nanbyodata.jp/ontology/NANDO_>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX mo: <http://med2rdf/ontology/medgen#>
+PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+
+SELECT DISTINCT ?medgen ?nando
+WHERE {
+  VALUES ?medgen { medgen:{{medgen_cid}} }
+
+  GRAPH <https://nanbyodata.jp/rdf/medgen> {
+    ?medgen mo:mgconso ?mgconso .
+    ?mgconso
+      dct:source mo:MONDO ;
+      rdfs:seeAlso ?mondo.
+  }
+
+  GRAPH <https://nanbyodata.jp/rdf/ontology/nando> {
+    ?nando skos:exactMatch | skos:closeMatch ?mondo .
+  }
+}
+```
+
 ## `result`
 
 ```javascript
-({medgen}) => {
+({medgen, nando}) => {
   const d = medgen.results.bindings[0];
-  if(d == null){
-    return [];
-  }
+  const d2 = nando.results.bindings[0];
 
-  const medgen_definition = d.medgen_definition ? d.medgen_definition.value : ""
-  const efo_link = d.efo ? `EFO:&ensp;<a href="${d.efo.value}">${d.efo.value.replace("http://www.ebi.ac.uk/efo/", "")}</a>` : "EFO:&ensp;No Data";
-  const medgen_link = d.medgen_cid ? `MedGen:&ensp;<a href="https://www.ncbi.nlm.nih.gov/medgen/${d.medgen_cid.value}">${d.medgen_cid.value}</a>` : ""
-  const mesh_link = d.mesh ? `MeSH:&ensp;<a href="${d.mesh.value}">${d.mesh.value.replace("http://id.nlm.nih.gov/mesh/", "")}</a>` : "MeSH:&ensp;No Data"
-  const mondo_link = d.mondo ? `MONDO:&ensp;<a href="${d.mondo.value.replace("http://purl.obolibrary.org/obo/MONDO_", "https://monarchinitiative.org/disease/MONDO:")}">${d.mondo.value.replace("http://purl.obolibrary.org/obo/MONDO_", "MONDO:")}</a>` : "MONDO:&ensp;No Data";
+  const medgen_definition = d?.medgen_definition ? d.medgen_definition.value : ""
+  const efo_link = d?.efo ? `EFO:&ensp;<a href="${d.efo.value}">${d.efo.value.replace("http://www.ebi.ac.uk/efo/", "")}</a>` : "EFO:&ensp;No Data";
+  const medgen_link = d?.medgen_cid ? `MedGen:&ensp;<a href="https://www.ncbi.nlm.nih.gov/medgen/${d.medgen_cid.value}">${d.medgen_cid.value}</a>` : ""
+  const mesh_link = d?.mesh ? `MeSH:&ensp;<a href="${d.mesh.value}">${d.mesh.value.replace("http://id.nlm.nih.gov/mesh/", "")}</a>` : "MeSH:&ensp;No Data"
+  const mondo_link = d?.mondo ? `MONDO:&ensp;<a href="${d.mondo.value.replace("http://purl.obolibrary.org/obo/MONDO_", "https://monarchinitiative.org/disease/MONDO:")}">${d.mondo.value.replace("http://purl.obolibrary.org/obo/MONDO_", "MONDO:")}</a>` : "MONDO:&ensp;No Data";
+  const nando_link = d2?.nando ? `NANDO:&ensp;<a href="${d2.nando.value}">${d2.nando.value}</a>` : "NANDO:&ensp;No Data";
 
   return [{
-    label: d.medgen_label.value,
+    label: d?.medgen_label.value,
     definition: medgen_definition,
-    links: [efo_link, medgen_link, mesh_link, mondo_link].join("&emsp;"),
+    links: [efo_link, medgen_link, mesh_link, mondo_link, nando_link].join("&emsp;"),
   }];
 }
 ```
