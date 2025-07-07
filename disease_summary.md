@@ -10,6 +10,16 @@
 
 {{SPARQLIST_TOGOVAR_SPARQL}}
 
+## `trimmed_medgen_cid` Validate MedGen_CID
+
+```javascript
+({medgen_cid}) => {
+  matched = medgen_cid.match(/^(C\d+)/);
+  return matched ? matched[1] : null;
+}
+```
+
+
 ## `medgen`
 
 ```sparql
@@ -22,7 +32,7 @@ PREFIX skos:     <http://www.w3.org/2004/02/skos/core#>
 
 SELECT DISTINCT ?medgen_cid ?medgen_label ?medgen_definition ?mondo ?efo ?mesh
 WHERE {
-  VALUES ?medgen { medgen:{{medgen_cid}} }
+  VALUES ?medgen { medgen:{{trimmed_medgen_cid}} }
 
   GRAPH <http://togovar.org/medgen> {
     ?medgen a mo:ConceptID;
@@ -75,7 +85,7 @@ PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 SELECT DISTINCT ?medgen ?nando
 WHERE {
-  VALUES ?medgen { medgen:{{medgen_cid}} }
+  VALUES ?medgen { medgen:{{trimmed_medgen_cid}} }
 
   GRAPH <https://nanbyodata.jp/rdf/medgen> {
     ?medgen mo:mgconso ?mgconso .
@@ -97,6 +107,7 @@ WHERE {
   const d = medgen.results.bindings[0];
   const d2 = nando.results.bindings[0];
 
+  const medgen_label = d?.medgen_label ? d.medgen_label.value : ""
   const medgen_definition = d?.medgen_definition ? d.medgen_definition.value : ""
   const efo_link = d?.efo ? `EFO:&ensp;<a href="${d.efo.value}">${d.efo.value.replace("http://www.ebi.ac.uk/efo/", "")}</a>` : "EFO:&ensp;No Data";
   const medgen_link = d?.medgen_cid ? `MedGen:&ensp;<a href="https://www.ncbi.nlm.nih.gov/medgen/${d.medgen_cid.value}">${d.medgen_cid.value}</a>` : ""
@@ -105,9 +116,9 @@ WHERE {
   const nando_link = d2?.nando ? `NANDO:&ensp;<a href="${d2.nando.value}">${d2.nando.value}</a>` : "NANDO:&ensp;No Data";
 
   return [{
-    label: d?.medgen_label.value,
+    label: medgen_label,
     definition: medgen_definition,
-    links: [efo_link, medgen_link, mesh_link, mondo_link, nando_link].join("&emsp;"),
+    links: [efo_link, medgen_link, mesh_link, mondo_link, nando_link].join("&emsp;")
   }];
 }
 ```
