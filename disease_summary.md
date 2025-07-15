@@ -19,7 +19,6 @@
 }
 ```
 
-
 ## `medgen`
 
 ```sparql
@@ -113,7 +112,7 @@ WHERE {
   const medgen_link = d?.medgen_cid ? `MedGen:&ensp;<a href="https://www.ncbi.nlm.nih.gov/medgen/${d.medgen_cid.value}">${d.medgen_cid.value}</a>` : ""
   const mesh_link = d?.mesh ? `MeSH:&ensp;<a href="${d.mesh.value}">${d.mesh.value.replace("http://id.nlm.nih.gov/mesh/", "")}</a>` : "MeSH:&ensp;No Data"
   const mondo_link = d?.mondo ? `MONDO:&ensp;<a href="${d.mondo.value.replace("http://purl.obolibrary.org/obo/MONDO_", "https://monarchinitiative.org/disease/MONDO:")}">${d.mondo.value.replace("http://purl.obolibrary.org/obo/MONDO_", "MONDO:")}</a>` : "MONDO:&ensp;No Data";
-  const nando_link = d2?.nando ? `NANDO:&ensp;<a href="${d2.nando.value}">${d2.nando.value}</a>` : "NANDO:&ensp;No Data";
+  const nando_link = d2?.nando ? `NANDO:&ensp;<a href="${d2.nando.value}">${d2.nando.value.replace("http://nanbyodata.jp/ontology/", "")}</a>` : "NANDO:&ensp;No Data";
 
   return [{
     label: medgen_label,
