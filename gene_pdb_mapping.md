@@ -276,36 +276,28 @@ async ({hgnc_id, togovar_api, uniprot, ensp, pdb_align, pdb_str})=>{
         }
         if (!pos || !hgvs_p) break;
 
+	let sig = false;
         if (v.significance) {
-          let sig = "";
           let min = 99;
           for (const s of v.significance) {
-	    if (!s.interpretations[0]) continue;
+            if (!s.interpretations[0]) continue;
             if (sig2label[s.interpretations[0]].score < min) {
               min = sig2label[s.interpretations[0]].score;
               sig = s.interpretations[0];
             }
           }
-          res.variant.push(
-        	{
-              id: id,
-              position: parseInt(pos),
-              label: hgvs_p,
-              sig: sig,
-              sig_label: sig2label[sig].label,
-              color: num2color[sig2label[sig].color],
-              color_num: sig2label[sig].color
-            }
-          )
-        } else {
-          res.variant.push(
-        	{
-              id: id,
-              position: parseInt(pos),
-              label: hgvs_p
-            }
-          )
-        }
+	}
+        res.variant.push(
+          {
+            id: id,
+            position: parseInt(pos),
+            label: hgvs_p,
+            ...(sig && {sig: sig}),
+            ...(sig && {sig_label: sig2label[sig].label}),
+            ...(sig && {color: num2color[sig2label[sig].color]}),
+            ...(sig && {color_num: sig2label[sig].color})
+          }
+        );
       }
     }
     offset = '["' + togovar.data[togovar.data.length - 1].chromosome.replace("X", "23").replace("Y", "24").replace("MT", "25") + '","' + togovar.data[togovar.data.length - 1].position + '","' + togovar.data[togovar.data.length - 1].reference + '","' + togovar.data[togovar.data.length - 1].alternate + '"]';
