@@ -274,8 +274,12 @@ async ({SPARQLIST_TOGOVAR_SPARQLIST, SPARQLIST_TOGOVAR_APP, mogplus_ver, symbol,
     const [tgv_id, rs, chr, hsa_pos, hsa_ref, hsa_alt, symbol, transcript_id, consequence, sift_qualitative_prediction, 
            sift_score, polyphen2_qualitative_prediction, polyphen2_score, alphamissense_pathogenicity, alphamissense_score] = d.split(/\t/);
     const mmu_pos = hsa2mmu[hsa_pos];
+    let mmu_ref_orig;
     let mmu_ref;
-    if (mmu_var_pos[mmu_pos]?.ref) mmu_ref = conv_nt(mmu_strand, mmu_var_pos[mmu_pos].ref);
+    if (mmu_var_pos[mmu_pos]?.ref) {
+      mmu_ref_orig = mmu_var_pos[mmu_pos].ref;
+      mmu_ref = conv_nt(mmu_strand, mmu_ref_orig);
+    }
     if (mmu_ref == hsa_ref && mmu_var_pos[mmu_pos]?.alt[0] && hsa_ref.length == 1 && hsa_alt.length == 1) {
       for (const mmu_alt of mmu_var_pos[mmu_pos].alt) {
         let alt_match = false;
@@ -304,8 +308,8 @@ async ({SPARQLIST_TOGOVAR_SPARQLIST, SPARQLIST_TOGOVAR_APP, mogplus_ver, symbol,
           clinsig: interpretation ? interpretation : "",
           condition: condition ? condition : "",
           mmu_strand: mmu_strand,
-          allele_grcm39: mmu_chr + ":" + mmu_pos + "-" + mmu_ref + "-" + mmu_alt,
-          ref_grcm39: mmu_ref,
+          allele_grcm39: mmu_chr + ":" + mmu_pos + "-" + mmu_ref_orig + "-" + mmu_alt,
+          ref_grcm39: mmu_ref_orig,
           alt_grcm39: mmu_alt,
           alt_match: alt_match == true ? "Yes" : "No",
           mouse_strains: mouse_strains.join("<br/>"),
