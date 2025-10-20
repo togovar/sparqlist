@@ -216,7 +216,7 @@ async ({hgnc_id, togovar_api, uniprot, ensp, pdb_align, pdb_str})=>{
   res.structure.push(
     {
       pdb: "AlphaFold",
-      url: "https://alphafold.ebi.ac.uk/files/AF-" + uniprot.results.bindings[0].uniprot.value.replace(/.+uniprot\//, "") + "-F1-model_v4.pdb",
+      url: "https://alphafold.ebi.ac.uk/files/AF-" + uniprot.results.bindings[0].uniprot.value.replace(/.+uniprot\//, "") + "-F1-model_v6.pdb",
       uniprot: uniprot.results.bindings[0].uniprot.value.replace(/.+uniprot\//, ""),
       chains: ["A"]
     }
