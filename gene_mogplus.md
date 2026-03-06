@@ -44,7 +44,7 @@ FROM <http://rdfportal.org/dataset/ensembl>
 WHERE {
   [] a ensterm:EnsemblGene ;
      rdfs:label "{{symbol.results.bindings.0.symbol.value}}" ;
-     obo:RO_0002162 tax:9606 ;
+     obo:RO_0002162 <http://ensembl.org/Homo_sapiens> ;
      so:part_of ?chr ;
      faldo:location [
        faldo:begin / faldo:position ?b ;
