@@ -261,33 +261,127 @@ function create_snippet(text, markup_ranges, max_length) {
   return snippet.trim();
 }
 
+/**
+ * Convert a list of PMIDs to PMCIDs using TogoID.
+ * @param {string[]} pmids - e.g., ["12345", "31452104", "28924058"]
+ * @param {number} chunkSize - optional chunk size for requests
+ * @returns {Promise<Map<string, string[]>>} Map from PMID -> array of PMCIDs
+ */
+async function pmidsToPmcids(pmids, chunkSize = 300) {
+  const base = "https://api.togoid.dbcls.jp/convert";
+  const map = new Map();
+  pmids.forEach(id => map.set(id, [])); // 初期化
+
+  if (pmids.length === 0) {
+    return map;
+  }
+
+  for (let i = 0; i < pmids.length; i += chunkSize) {
+    const ids = pmids.slice(i, i + chunkSize);
+    const params =
+      "ids=" + encodeURIComponent(ids.join(",")) +
+      "&route=" + encodeURIComponent("pubmed,pmc") +
+      "&format=" + encodeURIComponent("json") +
+      "&report=" + encodeURIComponent("pair");
+
+    const res = await fetch(`${base}?${params}`);
+    if (!res.ok) {
+      throw new Error(`TogoID request failed: ${res.status} ${res.statusText}`);
+    }
+
+    const json = await res.json();
+    const results = Array.isArray(json?.results) ? json.results : [];
+
+    for (const pair of results) {
+      const [pmid, pmcid] = Array.isArray(pair)
+        ? pair
+        : [pair?.source ?? pair?.from ?? pair?.pmid, pair?.target ?? pair?.to ?? pair?.pmcid];
+
+      if (pmid && pmcid && map.has(String(pmid))) {
+        map.get(String(pmid)).push(String(pmcid));
+      }
+    }
+  }
+
+  return map; // Map { PMID → [PMCID, ...] }
+}
+
+async function fetchPubTatorDocument(pmid) {
+  const url = "https://www.ncbi.nlm.nih.gov/research/pubtator-api/publications/export/biocjson?pmids=" + encodeURIComponent(pmid);
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch from " + url);
+  }
+
+  const json = await response.json();
+  const docs = Array.isArray(json?.PubTator3) ? json.PubTator3 : [];
+
+  if (docs.length === 0) {
+    throw new Error("No PubTator document found for PMID " + pmid);
+  }
+
+  return docs[0];
+}
+
+function annotationMatchesVariant(annotation, mutationId) {
+  const infons = annotation?.infons || {};
+  const rsids = Array.isArray(infons.rsids) ? infons.rsids.map(String) : [];
+  const normalized = Array.isArray(infons.normalized) ? infons.normalized.map(String) : [];
+
+  return (
+    infons.rsid === mutationId ||
+    rsids.includes(mutationId) ||
+    infons.normalized_id === mutationId + "##" ||
+    normalized.includes(mutationId + "##")
+  );
+}
+
+function buildSnippetFromPubTatorDocument(doc, mutationId, snippetMaxLength) {
+  const snippets = [];
+
+  for (const passage of doc.passages || []) {
+    const text = passage?.text || "";
+    const passageOffset = Number(passage?.offset || 0);
+    const annotations = Array.isArray(passage?.annotations) ? passage.annotations : [];
+
+    const markup_ranges = annotations
+      .filter(annotation => annotationMatchesVariant(annotation, mutationId))
+      .flatMap(annotation => Array.isArray(annotation?.locations) ? annotation.locations : [])
+      .map(location => {
+        const begin = Number(location.offset) - passageOffset;
+        const end = begin + Number(location.length);
+        return { begin, end };
+      })
+      .filter(({ begin, end }) => begin >= 0 && end > begin && end <= text.length);
+
+    if (markup_ranges.length === 0) {
+      continue;
+    }
+
+    const snippet = create_snippet(text, markup_ranges, snippetMaxLength);
+    if (snippet) {
+      snippets.push(snippet);
+    }
+  }
+
+  return snippets.join(" ... ");
+}
+
+
+
 async({rs, pubtator}) => {
   const mutationId = rs;
   const snippet_maxlength = 300;
   const snippets = {};
 
   for (const pmid in pubtator) {
-    const url = "https://pubannotation.org/projects/PubTator4TogoVar/docs/sourcedb/PubMed/sourceid/" + pmid + "/annotations.json";
-
     try {
-      const response = await fetch(url);
-      if (!response.ok) { throw new Error("Failed to fetch from " + url); }
-
-      const jsonInput = await response.json();
-      const text = jsonInput.text;
-      const denotations = jsonInput.denotations;
-
-      // Find the denotation object for the mutationId
-      const denotations_incl_mutationId = jsonInput.attributes.filter(attr => attr.obj === mutationId);
-
-      // Get array of ranges for markup
-      const markup_ranges = denotations_incl_mutationId.map(denotation_incl_mutationId => {
-        return { begin, end } = denotations.find(d => d.id === denotation_incl_mutationId.subj).span;
-      });
-
-      // create snippet
-      snippet = create_snippet(text, markup_ranges, snippet_maxlength);
-      snippets[pmid] = snippet;
+      const doc = await fetchPubTatorDocument(pmid);
+      const snippet = buildSnippetFromPubTatorDocument(doc, mutationId, snippet_maxlength);
+      if (snippet) {
+        snippets[pmid] = snippet;
+      }
     } catch (error) {
       console.log(error);
     }
@@ -323,7 +417,8 @@ async({rs, pubtator}) => {
     html += pubtator_litvar[pmid].author + "<br>\n";
     html += "<i><b>" + pubtator_litvar[pmid].journal + "</b></i><br>\n";
     if (pmid in snippets) {
-      html += "</br>" + snippets[pmid] + "</br>\n";
+      html += "<br>\n";
+      html += "<span style=\"display: inline-block; padding: 0.2rem 0.45rem; border-left: 3px solid #777; background-color: #f5f5f5; color: #222;\">Mentioned text: " + snippets[pmid] + "</span><br>\n";
     }
 
     articles.push([
