@@ -7,6 +7,9 @@ Generate rs2pubmed table data by dbSNP ID
 * `rs` dbSNP ID
   * default: rs114202595
   * example: rs671(hit both), rs797044836(pubTatorCentral only), rs112750067(no hits)
+* `snippet_source` source for snippets
+  * default: pubannotation
+  * example: ncbi, pubannotation, none
 
 ## Endpoint
 
@@ -297,11 +300,6 @@ async function pmidsToPmcids(pmids, chunkSize = 300) {
 }
 
 async function fetchPubAnnotationDocument(pmid, pmcids = []) {
-  const pubmedUrls = [
-    "https://pubannotation.org/projects/PubTator4TogoVar/docs/sourcedb/PubMed/sourceid/" + encodeURIComponent(pmid) + "/annotations.json",
-    "https://pubannotation.org/docs/sourcedb/PubMed/sourceid/" + encodeURIComponent(pmid) + "/annotations.json"
-  ];
-
   const pmcUrls = pmcids.flatMap(pmcid => {
     const normalized = String(pmcid).startsWith("PMC") ? String(pmcid) : "PMC" + String(pmcid);
     return [
@@ -312,7 +310,7 @@ async function fetchPubAnnotationDocument(pmid, pmcids = []) {
     ];
   });
 
-  for (const url of pubmedUrls.concat(pmcUrls)) {
+  for (const url of pmcUrls) {
     try {
       const response = await fetch(url);
       if (!response.ok) {
@@ -329,6 +327,68 @@ async function fetchPubAnnotationDocument(pmid, pmcids = []) {
   }
 
   throw new Error("No PubAnnotation document found for PMID " + pmid);
+}
+
+async function fetchNcbiPubTatorDocument(pmid) {
+  const url = "https://www.ncbi.nlm.nih.gov/research/pubtator-api/publications/export/biocjson?pmids=" + encodeURIComponent(pmid);
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch from " + url);
+  }
+
+  const json = await response.json();
+  const docs = Array.isArray(json?.PubTator3) ? json.PubTator3 : [];
+
+  if (docs.length === 0) {
+    throw new Error("No NCBI PubTator document found for PMID " + pmid);
+  }
+
+  return docs[0];
+}
+
+function annotationMatchesVariant(annotation, mutationId) {
+  const infons = annotation?.infons || {};
+  const rsids = Array.isArray(infons.rsids) ? infons.rsids.map(String) : [];
+  const normalized = Array.isArray(infons.normalized) ? infons.normalized.map(String) : [];
+
+  return (
+    infons.rsid === mutationId ||
+    rsids.includes(mutationId) ||
+    infons.normalized_id === mutationId + "##" ||
+    normalized.includes(mutationId + "##")
+  );
+}
+
+function buildSnippetFromNcbiPubTatorDocument(doc, mutationId, snippetMaxLength) {
+  const snippets = [];
+
+  for (const passage of doc.passages || []) {
+    const text = passage?.text || "";
+    const passageOffset = Number(passage?.offset || 0);
+    const annotations = Array.isArray(passage?.annotations) ? passage.annotations : [];
+
+    const markup_ranges = annotations
+      .filter(annotation => annotationMatchesVariant(annotation, mutationId))
+      .flatMap(annotation => Array.isArray(annotation?.locations) ? annotation.locations : [])
+      .map(location => {
+        const begin = Number(location.offset) - passageOffset;
+        const end = begin + Number(location.length);
+        return { begin, end };
+      })
+      .filter(({ begin, end }) => begin >= 0 && end > begin && end <= text.length);
+
+    if (markup_ranges.length === 0) {
+      continue;
+    }
+
+    const snippet = create_snippet(text, markup_ranges, snippetMaxLength);
+    if (snippet) {
+      snippets.push(snippet);
+    }
+  }
+
+  return snippets.join(" ... ");
 }
 
 function buildSnippetFromPubAnnotationDocument(jsonInput, mutationId, snippetMaxLength) {
@@ -353,12 +413,37 @@ function buildSnippetFromPubAnnotationDocument(jsonInput, mutationId, snippetMax
 
 
 
-async({rs, pubtator}) => {
+async({rs, pubtator, snippet_source}) => {
   const mutationId = rs;
   const snippet_maxlength = 300;
   const snippets = {};
-  const pmidToPmcids = await pmidsToPmcids(Object.keys(pubtator));
+  const source = (snippet_source || "pubannotation").toLowerCase();
 
+  if (source === "none" || source === "off" || source === "false") {
+    return snippets;
+  }
+
+  if (source === "ncbi" || source === "pubtator") {
+    for (const pmid in pubtator) {
+      try {
+        const doc = await fetchNcbiPubTatorDocument(pmid);
+        const snippet = buildSnippetFromNcbiPubTatorDocument(doc, mutationId, snippet_maxlength);
+        if (snippet) {
+          snippets[pmid] = snippet;
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    }
+
+    return snippets;
+  }
+
+  if (source !== "pubannotation" && source !== "pubannotator") {
+    return snippets;
+  }
+
+  const pmidToPmcids = await pmidsToPmcids(Object.keys(pubtator));
   for (const pmid in pubtator) {
     try {
       const jsonInput = await fetchPubAnnotationDocument(pmid, pmidToPmcids.get(pmid) || []);
