@@ -160,45 +160,35 @@ WHERE {
 }
 ```
 
-## Endpoint
-
-https://colil.dbcls.jp/sparql
-
-## `colil_sparql` Get citation count from Colil
-
-```sparql
-DEFINE sql:select-option "order"
-
-PREFIX bibo:   <http://purl.org/ontology/bibo/>
-PREFIX colil:  <http://purl.jp/bio/10/colil/ontology/201303#>
-PREFIX togows: <http://togows.dbcls.jp/ontology/ncbi-pubmed#>
-PREFIX rdfs:   <http://www.w3.org/2000/01/rdf-schema#>
-
-SELECT ?pmid (COUNT(?citation_paper) AS ?citation_count)
-WHERE {
-  VALUES ?pmid { {{#each pmids_pubtator_union_litvar}}'{{this}}' {{/each}} }
-
-  GRAPH <http://purl.jp/bio/10/colil/core> {
-    ?pmid ^togows:pmid ?pubmed .
-    ?pubmed a colil:PubMed ;
-      ^rdfs:seeAlso/^bibo:cites ?citation_paper.
-  }
-}
-```
-
-## `colil` Reformat JSON from Colil
+## `colil` PubMed IDs to their citation count
 
 ```javascript
-({colil_sparql}) => {
-  const colil = {}
+async ({pmids_pubtator_union_litvar}) => {
+  let pmids = pmids_pubtator_union_litvar.filter(pmid => pmid !== "no data");
+  const PMIDS_PER_REQUEST = 300;
 
-  colil_sparql.results.bindings.forEach(x => {
-    const pmid = x.pmid.value;
-    colil[pmid] = x.citation_count.value;
+  let results = {};
+
+  try {
+    while(pmids.length > 0){
+      let pmids_per_request =
+        encodeURIComponent(pmids.splice(0, Math.min(PMIDS_PER_REQUEST, pmids.length)).map(num => String(num)).join(','));
+
+      const sparqlist = ("/sparqlist/api/colil?pmids=").concat(pmids_per_request);
+      const response = await fetch(sparqlist, {method: "get", headers: {"Accept": "application/json"}});
+      if (!response.ok) {
+        throw new Error("Failed to fetch from " + sparqlist);
+      }
+
+      const res = await response.json();
+      results = { ...results, ...res };
     }
-  );
+  } catch (error) {
+    console.log(error);
+    return null;
+  }
 
-  return colil
+  return results;
 }
 ```
 
@@ -419,7 +409,7 @@ async({rs, pubtator}) => {
       links,
       html,
       pubtator_litvar[pmid].year.split(" ")[0],
-      "<a href=\"http://colil.dbcls.jp/browse/papers/" + pmid + "/\">" + (colil[pmid] == undefined ? 0 : colil[pmid]) + "</a>"
+      "<a href=\"http://colil.dbcls.jp/browse/papers/" + pmid + "/\">" + (colil === null ? "N/A" : (colil[pmid] == undefined ? 0 : colil[pmid])) + "</a>"
     ]);
   }
 
