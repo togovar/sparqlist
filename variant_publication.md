@@ -306,66 +306,59 @@ async function pmidsToPmcids(pmids, chunkSize = 300) {
   return map; // Map { PMID → [PMCID, ...] }
 }
 
-async function fetchPubTatorDocument(pmid) {
-  const url = "https://www.ncbi.nlm.nih.gov/research/pubtator-api/publications/export/biocjson?pmids=" + encodeURIComponent(pmid);
-  const response = await fetch(url);
+async function fetchPubAnnotationDocument(pmid, pmcids = []) {
+  const pubmedUrls = [
+    "https://pubannotation.org/projects/PubTator4TogoVar/docs/sourcedb/PubMed/sourceid/" + encodeURIComponent(pmid) + "/annotations.json",
+    "https://pubannotation.org/docs/sourcedb/PubMed/sourceid/" + encodeURIComponent(pmid) + "/annotations.json"
+  ];
 
-  if (!response.ok) {
-    throw new Error("Failed to fetch from " + url);
-  }
+  const pmcUrls = pmcids.flatMap(pmcid => {
+    const normalized = String(pmcid).startsWith("PMC") ? String(pmcid) : "PMC" + String(pmcid);
+    return [
+      "https://pubannotation.org/projects/PubTator4TogoVar/docs/sourcedb/PMC/sourceid/" + encodeURIComponent(normalized) + "/annotations.json",
+      "https://pubannotation.org/projects/PubTator4TogoVar/docs/sourcedb/PMC/sourceid/" + encodeURIComponent(String(pmcid)) + "/annotations.json",
+      "https://pubannotation.org/docs/sourcedb/PMC/sourceid/" + encodeURIComponent(normalized) + "/annotations.json",
+      "https://pubannotation.org/docs/sourcedb/PMC/sourceid/" + encodeURIComponent(String(pmcid)) + "/annotations.json"
+    ];
+  });
 
-  const json = await response.json();
-  const docs = Array.isArray(json?.PubTator3) ? json.PubTator3 : [];
+  for (const url of pubmedUrls.concat(pmcUrls)) {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        continue;
+      }
 
-  if (docs.length === 0) {
-    throw new Error("No PubTator document found for PMID " + pmid);
-  }
-
-  return docs[0];
-}
-
-function annotationMatchesVariant(annotation, mutationId) {
-  const infons = annotation?.infons || {};
-  const rsids = Array.isArray(infons.rsids) ? infons.rsids.map(String) : [];
-  const normalized = Array.isArray(infons.normalized) ? infons.normalized.map(String) : [];
-
-  return (
-    infons.rsid === mutationId ||
-    rsids.includes(mutationId) ||
-    infons.normalized_id === mutationId + "##" ||
-    normalized.includes(mutationId + "##")
-  );
-}
-
-function buildSnippetFromPubTatorDocument(doc, mutationId, snippetMaxLength) {
-  const snippets = [];
-
-  for (const passage of doc.passages || []) {
-    const text = passage?.text || "";
-    const passageOffset = Number(passage?.offset || 0);
-    const annotations = Array.isArray(passage?.annotations) ? passage.annotations : [];
-
-    const markup_ranges = annotations
-      .filter(annotation => annotationMatchesVariant(annotation, mutationId))
-      .flatMap(annotation => Array.isArray(annotation?.locations) ? annotation.locations : [])
-      .map(location => {
-        const begin = Number(location.offset) - passageOffset;
-        const end = begin + Number(location.length);
-        return { begin, end };
-      })
-      .filter(({ begin, end }) => begin >= 0 && end > begin && end <= text.length);
-
-    if (markup_ranges.length === 0) {
-      continue;
-    }
-
-    const snippet = create_snippet(text, markup_ranges, snippetMaxLength);
-    if (snippet) {
-      snippets.push(snippet);
+      const json = await response.json();
+      if (json?.text && Array.isArray(json?.denotations)) {
+        return json;
+      }
+    } catch (error) {
+      console.log(error);
     }
   }
 
-  return snippets.join(" ... ");
+  throw new Error("No PubAnnotation document found for PMID " + pmid);
+}
+
+function buildSnippetFromPubAnnotationDocument(jsonInput, mutationId, snippetMaxLength) {
+  const text = jsonInput?.text || "";
+  const denotations = Array.isArray(jsonInput?.denotations) ? jsonInput.denotations : [];
+  const attributes = Array.isArray(jsonInput?.attributes) ? jsonInput.attributes : [];
+
+  const denotations_incl_mutationId = attributes.filter(attr => attr?.obj === mutationId);
+  const markup_ranges = denotations_incl_mutationId
+    .map(denotation_incl_mutationId => denotations.find(d => d.id === denotation_incl_mutationId.subj))
+    .filter(Boolean)
+    .map(denotation => denotation.span)
+    .filter(span => span && Number.isInteger(span.begin) && Number.isInteger(span.end))
+    .map(span => ({ begin: span.begin, end: span.end }));
+
+  if (markup_ranges.length === 0) {
+    return "";
+  }
+
+  return create_snippet(text, markup_ranges, snippetMaxLength);
 }
 
 
@@ -374,11 +367,12 @@ async({rs, pubtator}) => {
   const mutationId = rs;
   const snippet_maxlength = 300;
   const snippets = {};
+  const pmidToPmcids = await pmidsToPmcids(Object.keys(pubtator));
 
   for (const pmid in pubtator) {
     try {
-      const doc = await fetchPubTatorDocument(pmid);
-      const snippet = buildSnippetFromPubTatorDocument(doc, mutationId, snippet_maxlength);
+      const jsonInput = await fetchPubAnnotationDocument(pmid, pmidToPmcids.get(pmid) || []);
+      const snippet = buildSnippetFromPubAnnotationDocument(jsonInput, mutationId, snippet_maxlength);
       if (snippet) {
         snippets[pmid] = snippet;
       }
