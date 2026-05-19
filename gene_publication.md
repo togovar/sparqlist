@@ -142,21 +142,28 @@ ORDER BY DESC(?year)
 
 ```javascript
 async ({SPARQLIST_TOGOVAR_APP, pmids_all}) => {
-  let pmids = pmids_all;
+  let pmids = pmids_all.filter(pmid => pmid !== "no data");
   const PMIDS_PER_REQUEST = 300;
 
   let results = {};
 
-  return results;
+  try {
+    while(pmids.length > 0){
+      let pmids_per_request =
+        encodeURIComponent(pmids.splice(0, Math.min(PMIDS_PER_REQUEST, pmids.length)).map(num => String(num)).join(','));
 
-  while(pmids.length > 0){
-    let pmids_per_request =
-      encodeURIComponent(pmids.splice(0, Math.min(PMIDS_PER_REQUEST, pmids.length)).map(num => String(num)).join(','));
+      const sparqlist = ("/sparqlist/api/colil?pmids=").concat(pmids_per_request);
+      const response = await fetch(sparqlist, {method: "get", headers: {"Accept": "application/json"}});
+      if (!response.ok) {
+        throw new Error("Failed to fetch from " + sparqlist);
+      }
 
-    const sparqlist = ("/sparqlist/api/colil?pmids=").concat(pmids_per_request);
-    const res = await fetch(sparqlist, {method: "get", headers: {"Accept": "application/json"}}).then(res => res.json());
-
-    results = { ...results, ...res };
+      const res = await response.json();
+      results = { ...results, ...res };
+    }
+  } catch (error) {
+    console.log(error);
+    return null;
   }
 
   return results;
@@ -185,7 +192,7 @@ async ({SPARQLIST_TOGOVAR_APP, pmids_all}) => {
       links,
       html,
       bib_pubtator[pmid].year.split(" ")[0],
-      "<a href=\"http://colil.dbcls.jp/browse/papers/" + pmid + "/\" >" + (colil[pmid] == undefined ? 0 : colil[pmid]) + "</a>"
+      "<a href=\"http://colil.dbcls.jp/browse/papers/" + pmid + "/\" >" + (colil === null ? "N/A" : (colil[pmid] == undefined ? 0 : colil[pmid])) + "</a>"
     ]);
   }
 
