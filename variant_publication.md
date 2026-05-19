@@ -9,7 +9,7 @@ Generate rs2pubmed table data by dbSNP ID
   * example: rs671(hit both), rs797044836(pubTatorCentral only), rs112750067(no hits)
 * `snippet_source` source for snippets
   * default: ncbi
-  * example: ncbi, pubannotation, none
+  * example: ncbi, pubannotation, hybrid, none
 
 ## Endpoint
 
@@ -300,21 +300,21 @@ async function pmidsToPmcids(pmids, chunkSize = 300) {
 }
 
 async function fetchPubAnnotationDocument(pmid, pmcids = []) {
+  if (pmcids.length === 0) {
+    return null;
+  }
+
   const pmcUrls = pmcids.flatMap(pmcid => {
-    const normalized = String(pmcid).startsWith("PMC") ? String(pmcid) : "PMC" + String(pmcid);
     return [
-      "https://pubannotation.org/projects/PubTator4TogoVar/docs/sourcedb/PMC/sourceid/" + encodeURIComponent(normalized) + "/annotations.json",
-      "https://pubannotation.org/projects/PubTator4TogoVar/docs/sourcedb/PMC/sourceid/" + encodeURIComponent(String(pmcid)) + "/annotations.json",
-      "https://pubannotation.org/docs/sourcedb/PMC/sourceid/" + encodeURIComponent(normalized) + "/annotations.json",
-      "https://pubannotation.org/docs/sourcedb/PMC/sourceid/" + encodeURIComponent(String(pmcid)) + "/annotations.json"
+      "https://pubannotation.org/projects/PubTatorOnTogoVar/docs/sourcedb/PMC/sourceid/" + encodeURIComponent(String(pmcid)) + "/annotations.json"
     ];
   });
 
-  for (const url of pmcUrls) {
+  const documents = await Promise.all(pmcUrls.map(async url => {
     try {
       const response = await fetch(url);
       if (!response.ok) {
-        continue;
+        return null;
       }
 
       const json = await response.json();
@@ -324,9 +324,11 @@ async function fetchPubAnnotationDocument(pmid, pmcids = []) {
     } catch (error) {
       console.log(error);
     }
-  }
 
-  throw new Error("No PubAnnotation document found for PMID " + pmid);
+    return null;
+  }));
+
+  return documents.find(Boolean) || null;
 }
 
 async function fetchNcbiPubTatorDocuments(pmids, chunkSize = 100) {
@@ -350,6 +352,21 @@ async function fetchNcbiPubTatorDocuments(pmids, chunkSize = 100) {
   }
 
   return docs;
+}
+
+async function mapWithConcurrency(items, concurrency, mapper) {
+  const results = [];
+  let index = 0;
+
+  const workers = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
+    while (index < items.length) {
+      const currentIndex = index++;
+      results[currentIndex] = await mapper(items[currentIndex], currentIndex);
+    }
+  });
+
+  await Promise.all(workers);
+  return results;
 }
 
 function annotationMatchesVariant(annotation, mutationId) {
@@ -400,8 +417,18 @@ function buildSnippetFromPubAnnotationDocument(jsonInput, mutationId, snippetMax
   const text = jsonInput?.text || "";
   const denotations = Array.isArray(jsonInput?.denotations) ? jsonInput.denotations : [];
   const attributes = Array.isArray(jsonInput?.attributes) ? jsonInput.attributes : [];
+  const rsNumber = mutationId.replace(/^rs/i, "");
 
-  const denotations_incl_mutationId = attributes.filter(attr => attr?.obj === mutationId);
+  const denotations_incl_mutationId = attributes.filter(attr => {
+    const obj = String(attr?.obj || "");
+    return (
+      obj === mutationId ||
+      obj.includes(mutationId + "##") ||
+      obj.includes("tmVar:" + mutationId + ";") ||
+      obj.includes("RS#:" + rsNumber + ";") ||
+      obj.endsWith("RS#:" + rsNumber)
+    );
+  });
   const markup_ranges = denotations_incl_mutationId
     .map(denotation_incl_mutationId => denotations.find(d => d.id === denotation_incl_mutationId.subj))
     .filter(Boolean)
@@ -428,9 +455,11 @@ async({rs, pubtator, snippet_source}) => {
     return snippets;
   }
 
-  if (source === "ncbi" || source === "pubtator") {
+  const pmids = Object.keys(pubtator);
+
+  if (source === "ncbi" || source === "pubtator" || source === "hybrid") {
     try {
-      const docs = await fetchNcbiPubTatorDocuments(Object.keys(pubtator));
+      const docs = await fetchNcbiPubTatorDocuments(pmids);
       for (const doc of docs) {
         const pmid = String(doc?.id || doc?.pmid || "");
         const snippet = buildSnippetFromNcbiPubTatorDocument(doc, mutationId, snippet_maxlength);
@@ -442,17 +471,25 @@ async({rs, pubtator, snippet_source}) => {
       console.log(error);
     }
 
+    if (source !== "hybrid") {
+      return snippets;
+    }
+  }
+
+  if (source !== "pubannotation" && source !== "pubannotator" && source !== "hybrid") {
     return snippets;
   }
 
-  if (source !== "pubannotation" && source !== "pubannotator") {
-    return snippets;
-  }
+  const pmidToPmcids = await pmidsToPmcids(pmids);
+  const pubannotationPmids = pmids.filter(pmid => !(pmid in snippets));
 
-  const pmidToPmcids = await pmidsToPmcids(Object.keys(pubtator));
-  for (const pmid in pubtator) {
+  await mapWithConcurrency(pubannotationPmids, 8, async pmid => {
     try {
       const jsonInput = await fetchPubAnnotationDocument(pmid, pmidToPmcids.get(pmid) || []);
+      if (jsonInput === null) {
+        return;
+      }
+
       const snippet = buildSnippetFromPubAnnotationDocument(jsonInput, mutationId, snippet_maxlength);
       if (snippet) {
         snippets[pmid] = snippet;
@@ -460,7 +497,7 @@ async({rs, pubtator, snippet_source}) => {
     } catch (error) {
       console.log(error);
     }
-  }
+  });
 
   return snippets;
 }
