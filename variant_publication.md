@@ -27,7 +27,7 @@ PREFIX foaf:  <http://xmlns.com/foaf/0.1/>
 PREFIX oa:    <http://www.w3.org/ns/oa#>
 PREFIX olo:   <http://purl.org/ontology/olo/core#>
 
-SELECT DISTINCT ?pmid_uri ?pmid ?title ?year ?author ?journal
+SELECT DISTINCT ?pmid_uri ?pmid ?title ?year ?author ?author_index ?length ?journal
 WHERE {
   GRAPH <http://togovar.org/pubtator> {
     dbsnp:{{rs}} ^oa:hasBody ?pubtator_node .
@@ -41,7 +41,16 @@ WHERE {
       dct:title ?title ;
       dct:issued ?year ;
       bibo:pmid ?pmid ;
-      dct:creator/olo:slot/olo:item/foaf:name ?author .
+      dct:creator ?creatorList .
+
+    ?creatorList a olo:OrderedList ;
+      olo:length ?length ;
+      olo:slot ?slot .
+
+    ?slot olo:index ?author_index ;
+      olo:item/foaf:name ?author .
+
+    FILTER(?author_index <= 3)
   }
 }
 ```
@@ -53,14 +62,16 @@ WHERE {
   const ref = {};
 
   rs2pubtator.results.bindings.forEach(x => {
+    const author = Number(x.author_index?.value || 0) == 3 && Number(x.length?.value || 0) > 3 ? x.author.value + " et al." : x.author.value;
+
     if (ref[x.pmid.value]) {
-      ref[x.pmid.value]["author"] = ref[x.pmid.value]["author"] + ", " + x.author.value
+      ref[x.pmid.value]["author"] = ref[x.pmid.value]["author"] + ", " + author
     } else {
       ref[x.pmid.value] = {
         pmid_uri: x.pmid_uri.value,
         title: x.title.value,
         year: x.year.value,
-        author: x.author.value,
+        author,
         journal: x.journal.value
       }
     }
@@ -125,7 +136,7 @@ PREFIX olo:    <http://purl.org/ontology/olo/core#>
 PREFIX foaf:   <http://xmlns.com/foaf/0.1/>
 PREFIX pubmed: <http://rdf.ncbi.nlm.nih.gov/pubmed/>
 
-SELECT DISTINCT ?pmid_uri ?pmid ?title ?year ?author ?journal
+SELECT DISTINCT ?pmid_uri ?pmid ?title ?year ?author ?author_index ?length ?journal
 WHERE {
   VALUES ?pmid_uri { {{#each pmids_litvar_minus_pubtator}}pubmed:{{this}} {{/each}} }
 
@@ -133,8 +144,17 @@ WHERE {
     ?pmid_uri bibo:pmid ?pmid ;
       dct:title ?title ;
       dct:issued ?year ;
-      dct:creator/olo:slot/olo:item/foaf:name ?author ;
+      dct:creator ?creatorList ;
       dct:source ?journal .
+
+    ?creatorList a olo:OrderedList ;
+      olo:length ?length ;
+      olo:slot ?slot .
+
+    ?slot olo:index ?author_index ;
+      olo:item/foaf:name ?author .
+
+    FILTER(?author_index <= 3)
   }
 }
 ```
@@ -146,14 +166,16 @@ WHERE {
   const ref = {}
 
   pubmed_litvar_only.results.bindings.forEach(x => {
+    const author = Number(x.author_index?.value || 0) == 3 && Number(x.length?.value || 0) > 3 ? x.author.value + " et al." : x.author.value;
+
     if (ref[x.pmid.value]) {
-      ref[x.pmid.value]["author"] = ref[x.pmid.value]["author"] + ", " + x.author.value
+      ref[x.pmid.value]["author"] = ref[x.pmid.value]["author"] + ", " + author
     } else {
       ref[x.pmid.value] = {
         pmid_uri: x.pmid_uri.value,
         title: x.title.value,
         year: x.year.value,
-        author: x.author.value,
+        author,
         journal: x.journal.value
       }
     }
