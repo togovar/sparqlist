@@ -8,7 +8,7 @@ Generate rs2pubmed table data by dbSNP ID
   * default: rs114202595
   * example: rs671(hit both), rs797044836(pubTatorCentral only), rs112750067(no hits)
 * `snippet_source` source for snippets
-  * default: pubannotation
+  * default: ncbi
   * example: ncbi, pubannotation, none
 
 ## Endpoint
@@ -329,22 +329,27 @@ async function fetchPubAnnotationDocument(pmid, pmcids = []) {
   throw new Error("No PubAnnotation document found for PMID " + pmid);
 }
 
-async function fetchNcbiPubTatorDocument(pmid) {
-  const url = "https://www.ncbi.nlm.nih.gov/research/pubtator-api/publications/export/biocjson?pmids=" + encodeURIComponent(pmid);
-  const response = await fetch(url);
+async function fetchNcbiPubTatorDocuments(pmids, chunkSize = 100) {
+  const docs = [];
 
-  if (!response.ok) {
-    throw new Error("Failed to fetch from " + url);
+  for (let i = 0; i < pmids.length; i += chunkSize) {
+    try {
+      const chunk = pmids.slice(i, i + chunkSize);
+      const url = "https://www.ncbi.nlm.nih.gov/research/pubtator-api/publications/export/biocjson?pmids=" + encodeURIComponent(chunk.join(","));
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch from " + url);
+      }
+
+      const json = await response.json();
+      docs.push(...(Array.isArray(json?.PubTator3) ? json.PubTator3 : []));
+    } catch (error) {
+      console.log(error);
+    }
   }
 
-  const json = await response.json();
-  const docs = Array.isArray(json?.PubTator3) ? json.PubTator3 : [];
-
-  if (docs.length === 0) {
-    throw new Error("No NCBI PubTator document found for PMID " + pmid);
-  }
-
-  return docs[0];
+  return docs;
 }
 
 function annotationMatchesVariant(annotation, mutationId) {
@@ -417,23 +422,24 @@ async({rs, pubtator, snippet_source}) => {
   const mutationId = rs;
   const snippet_maxlength = 300;
   const snippets = {};
-  const source = (snippet_source || "pubannotation").toLowerCase();
+  const source = (snippet_source || "ncbi").toLowerCase();
 
   if (source === "none" || source === "off" || source === "false") {
     return snippets;
   }
 
   if (source === "ncbi" || source === "pubtator") {
-    for (const pmid in pubtator) {
-      try {
-        const doc = await fetchNcbiPubTatorDocument(pmid);
+    try {
+      const docs = await fetchNcbiPubTatorDocuments(Object.keys(pubtator));
+      for (const doc of docs) {
+        const pmid = String(doc?.id || doc?.pmid || "");
         const snippet = buildSnippetFromNcbiPubTatorDocument(doc, mutationId, snippet_maxlength);
-        if (snippet) {
+        if (pmid && snippet) {
           snippets[pmid] = snippet;
         }
-      } catch (error) {
-        console.log(error);
       }
+    } catch (error) {
+      console.log(error);
     }
 
     return snippets;
