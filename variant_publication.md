@@ -406,6 +406,10 @@ async function mapWithConcurrency(items, concurrency, mapper) {
 
 function annotationMatchesVariant(annotation, mutationId) {
   const infons = annotation?.infons || {};
+  const rsNumber = mutationId.replace(/^rs/i, "");
+  const identifier = String(infons.identifier || "");
+  const name = String(infons.name || "");
+  const accession = String(infons.accession || "");
   const rsids = Array.isArray(infons.rsids) ? infons.rsids.map(String) : [];
   const normalized = Array.isArray(infons.normalized) ? infons.normalized.map(String) : [];
 
@@ -413,7 +417,12 @@ function annotationMatchesVariant(annotation, mutationId) {
     infons.rsid === mutationId ||
     rsids.includes(mutationId) ||
     infons.normalized_id === mutationId + "##" ||
-    normalized.includes(mutationId + "##")
+    normalized.includes(mutationId + "##") ||
+    identifier.includes("tmVar:" + mutationId + ";") ||
+    identifier.includes("RS#:" + rsNumber + ";") ||
+    identifier.endsWith("RS#:" + rsNumber) ||
+    name === mutationId ||
+    accession.includes(mutationId)
   );
 }
 
