@@ -353,13 +353,18 @@ async function fetchPubAnnotationDocument(pmid, pmcids = []) {
   return documents.find(Boolean) || null;
 }
 
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 async function fetchNcbiPubTatorDocuments(pmids, chunkSize = 100) {
+  const NCBI_REQUEST_INTERVAL_MS = 350;
   const docs = [];
 
   for (let i = 0; i < pmids.length; i += chunkSize) {
     try {
       const chunk = pmids.slice(i, i + chunkSize);
-      const url = "https://www.ncbi.nlm.nih.gov/research/pubtator-api/publications/export/biocjson?pmids=" + encodeURIComponent(chunk.join(","));
+      const url = "https://www.ncbi.nlm.nih.gov/research/pubtator3-api/publications/export/biocjson?pmids=" + encodeURIComponent(chunk.join(","));
       const response = await fetch(url);
 
       if (!response.ok) {
@@ -370,6 +375,10 @@ async function fetchNcbiPubTatorDocuments(pmids, chunkSize = 100) {
       docs.push(...(Array.isArray(json?.PubTator3) ? json.PubTator3 : []));
     } catch (error) {
       console.log(error);
+    }
+
+    if (i + chunkSize < pmids.length) {
+      await sleep(NCBI_REQUEST_INTERVAL_MS);
     }
   }
 
