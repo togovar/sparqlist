@@ -191,6 +191,7 @@ WHERE {
 async ({pmids_pubtator_union_litvar}) => {
   let pmids = pmids_pubtator_union_litvar.filter(pmid => pmid !== "no data");
   const PMIDS_PER_REQUEST = 300;
+  const COLIL_TIMEOUT_MS = 3000;
 
   let results = {};
 
@@ -200,7 +201,10 @@ async ({pmids_pubtator_union_litvar}) => {
         encodeURIComponent(pmids.splice(0, Math.min(PMIDS_PER_REQUEST, pmids.length)).map(num => String(num)).join(','));
 
       const sparqlist = ("/sparqlist/api/colil?pmids=").concat(pmids_per_request);
-      const response = await fetch(sparqlist, {method: "get", headers: {"Accept": "application/json"}});
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), COLIL_TIMEOUT_MS);
+      const response = await fetch(sparqlist, {method: "get", headers: {"Accept": "application/json"}, signal: controller.signal})
+        .finally(() => clearTimeout(timeoutId));
       if (!response.ok) {
         throw new Error("Failed to fetch from " + sparqlist);
       }
