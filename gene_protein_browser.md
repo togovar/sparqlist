@@ -368,7 +368,7 @@ async ({SPARQLIST_TOGOVAR_APP, hgnc_id, id, uniprot_ptm, uniprot_substitution, p
   const limit = 500;
   let offset = 0;
   let count = 0;
-  let stat_off = "";
+  let stat_off = "?stat=1";
   let variant_data= [];
   while (!filtered || filtered > count) {
     tgv_opt.body = tgv_bdy.replace(/#hgncid/, hgnc_id).replace(/#offset/, offset).replace(/#limit/, limit);
