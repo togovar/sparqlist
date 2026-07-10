@@ -18,7 +18,7 @@ PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX obo: <http://purl.obolibrary.org/obo/>
 PREFIX dct: <http://purl.org/dc/terms/>
 PREFIX hgnc: <http://identifiers.org/hgnc/>
-PREFIX tgvo: <http://togovar.biosciencedbc.jp/vocabulary/>
+PREFIX tgvo: <http://togovar.org/vocabulary/>
 SELECT DISTINCT ?symbol
 WHERE {
   VALUES ?hgnc_uri { hgnc:{{hgnc_id}} }

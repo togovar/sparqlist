@@ -44,7 +44,7 @@ PREFIX dct:  <http://purl.org/dc/terms/>
 PREFIX ensg: <http://rdf.ebi.ac.uk/resource/ensembl/>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX sio:  <http://semanticscience.org/resource/>
-PREFIX tgvo: <http://togovar.biosciencedbc.jp/vocabulary/>
+PREFIX tgvo: <http://togovar.org/vocabulary/>
 
 SELECT DISTINCT ?tgv_id ?rs_id ?variant ?title ?interpretation ?review_status ?last_evaluated ?condition ?medgen
 WHERE {

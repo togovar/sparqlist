@@ -59,7 +59,7 @@ PREFIX foaf: <http://xmlns.com/foaf/0.1/>
 PREFIX oa:   <http://www.w3.org/ns/oa#>
 PREFIX olo:  <http://purl.org/ontology/olo/core#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX tgvo: <http://togovar.biosciencedbc.jp/vocabulary/>
+PREFIX tgvo: <http://togovar.org/vocabulary/>
 
 SELECT DISTINCT ?rs_id ?pmid ?title ?year ?authors ?journal
 WHERE {

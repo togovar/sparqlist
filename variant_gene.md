@@ -34,7 +34,7 @@ async ({SPARQLIST_TOGOVAR_SPARQLIST, variant, tgv_id}) => {
 
 ```sparql
 PREFIX dct:  <http://purl.org/dc/terms/>
-PREFIX tgvo: <http://togovar.biosciencedbc.jp/vocabulary/>
+PREFIX tgvo: <http://togovar.org/vocabulary/>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
 
