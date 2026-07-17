@@ -3,13 +3,17 @@
 ## Parameters
 
 * `variant` VCF representation (CHROM-POS-REF-ALT)
-  * default: 16-89196249-G-A
+  * default: 12-111803962-G-A
+  * example:
+    * 12:111803962:G>A
+    * chr12-111803962-G-A
+    * chr12:111803962:G>A
 
 ## `result`
 
 ```javascript
 async ({SPARQLIST_TOGOVAR_APP, variant}) => {
-  const regex = /^(chr)?(?<chr>[1-9]|1[0-9]|2[0-2]|X|Y|MT?)-(?<pos>\d+)-(?<ref>.+)-(?<alt>.+)/;
+  const regex = /^(chr)?(?<chr>[1-9]|1[0-9]|2[0-2]|X|Y|MT?)[-:](?<pos>\d+)[-:](?<ref>.+)[->](?<alt>.+)/;
   const match = variant.match(regex);
 
   if (match && match.groups) {
