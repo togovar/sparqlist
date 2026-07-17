@@ -2,31 +2,35 @@
 
 ## Parameters
 
-* `variant` VCF representation (CHROM-POS-REF-ALT)
-  * example: 16-89196249-G-A
 * `tgv_id` TogoVar ID
   * example: tgv56616325
+* `variant` VCF representation (CHROM-POS-REF-ALT)
+  * example: 16-89196249-G-A
 
 ## Endpoint
 
 {{SPARQLIST_TOGOVAR_SPARQL}}
 
-## `tgv_id`
+## `variant`
 
 ```javascript
 async ({SPARQLIST_TOGOVAR_SPARQLIST, variant, tgv_id}) => {
-  if (variant.length > 0) {
-    const url = SPARQLIST_TOGOVAR_SPARQLIST.concat(`/api/variant2tgv?variant=${encodeURIComponent(variant)}`);
-    const res = await fetch(url);
-
-    return await res.text();
-  }
-
+  let params;
   if (tgv_id.length > 0) {
-    return tgv_id
+    params = `tgv_id=${encodeURIComponent(tgv_id)}`;
+  } else if (variant.length > 0) {
+    params = `variant=${encodeURIComponent(variant)}`;
+  } else {
+    throw new Error("Either tgv_id or variant must be provided.");
   }
 
-  return 'not found'
+  const res = await fetch(SPARQLIST_TOGOVAR_SPARQLIST.concat(`/api/resolve_variant?${params}`));
+
+  if (!res.ok) {
+    throw new Error((await res.text()).replace(/^Error: /, ""));
+  }
+
+  return await res.text();
 }
 ```
 
@@ -36,14 +40,16 @@ async ({SPARQLIST_TOGOVAR_SPARQLIST, variant, tgv_id}) => {
 PREFIX dct:   <http://purl.org/dc/terms/>
 PREFIX faldo: <http://biohackathon.org/resource/faldo#>
 PREFIX gvo:   <http://genome-variation.org/resource#>
+PREFIX tgvo:  <http://togovar.org/vocabulary/>
+PREFIX rdfs:  <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX skos:  <http://www.w3.org/2004/02/skos/core#>
 
-SELECT DISTINCT ?type ?reference ?position ?ref ?alt
+SELECT DISTINCT ?type ?reference ?position ?ref ?alt ?gene ?hgnc ?symbol ?approved_name
 WHERE {
-  VALUES ?tgv_id { "{{tgv_id}}" }
+  VALUES ?variant { <{{variant}}> }
 
   GRAPH <http://togovar.org/variant> {
     ?variant a ?class ;
-      dct:identifier ?tgv_id ;
       faldo:location/faldo:begin?/faldo:reference ?reference ;
       gvo:pos_vcf ?position ;
       gvo:ref_vcf ?ref ;
@@ -60,6 +66,19 @@ WHERE {
         )
       ) AS ?type
     )
+  }
+
+  OPTIONAL {
+    GRAPH <http://togovar.org/variant/annotation/ensembl> {
+      ?variant tgvo:hasConsequence/tgvo:gene ?gene ;
+        tgvo:hasConsequence/tgvo:hgnc ?hgnc .
+      FILTER STRSTARTS(STR(?gene), "http://rdf.ebi.ac.uk/resource/ensembl/ENSG")
+    }
+
+    GRAPH <http://togovar.org/hgnc> {
+      ?hgnc rdfs:label ?symbol ;
+        dct:description ?approved_name .
+    }
   }
 }
 ```
