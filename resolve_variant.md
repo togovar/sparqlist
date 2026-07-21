@@ -14,12 +14,17 @@ async ({SPARQLIST_TOGOVAR_SPARQLIST, SPARQLIST_TOGOVAR_REFERENCE, variant, tgv_i
   if (tgv_id.length > 0) {
     const url = SPARQLIST_TOGOVAR_SPARQLIST.concat(`/api/tgv2variant?tgv_id=${encodeURIComponent(tgv_id)}`);
     const res = await fetch(url);
+    const result = await res.text();
 
     if (!res.ok) {
-      throw new Error((await res.text()).replace(/^Error: /, ""));
+      throw new Error(result.replace(/^Error: /, ""));
+    }
+    
+    if (result === "Not found") {
+      throw new Error("Not found");
     }
 
-    return res.text();
+    return result;
   }
 
   if (variant.length > 0) {

@@ -17,19 +17,30 @@ async ({SPARQLIST_TOGOVAR_APP, variant}) => {
   const match = variant.match(regex);
 
   if (match && match.groups) {
-    const url = SPARQLIST_TOGOVAR_APP.concat(`/variant/${match.groups.chr}-${match.groups.pos}-${match.groups.ref}-${match.groups.alt}`);
+    const url = SPARQLIST_TOGOVAR_APP.concat("/api/search/variant");
     const json = await fetch(url, {
-      method: 'GET',
+      method: "POST",
       headers: {
-        Accept: 'application/json'
-      }
+        "Accept": 'application/json',
+        "Content-Type": 'application/json',
+      },
+      body: JSON.stringify({
+        "query": {
+          "variant": {
+            "chromosome": match.groups.chr,
+            "position": parseInt(match.groups.pos),
+            "reference": match.groups.ref,
+            "alternate": match.groups.alt,
+          }
+        }
+      })
     }).then(res => res.json());
 
-    if (json.result && json.result[0]) {
-      return json.result[0];
+    if (json?.data?.[0]?.id) {
+      return json.data[0].id;
     }
   }
 
-  return 'not found';
-}
+  return "Not found";
+};
 ```

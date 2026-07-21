@@ -14,9 +14,8 @@
 ```javascript
 async ({tgv_id}) => {
   const regex = /^tgv\d+$/;
-  const match = tgv_id.match(regex);
 
-  if (match) {
+  if (tgv_id.match(regex)) {
     return tgv_id;
   } else {
     throw new Error(`Invalid ID: ${tgv_id}`);
@@ -48,8 +47,8 @@ async ({variant}) => {
 
   if (bindings[0]) {
     return bindings[0].variant.value;
-  } else {
-    throw new Error(`Variant not found`);
   }
+
+  return "Not found";
 }
 ```
