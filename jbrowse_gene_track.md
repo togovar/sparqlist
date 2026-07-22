@@ -3,7 +3,7 @@
 ## Parameters
 
 * `query` {chromosome}:{start}:{end}:{assembly}
-  * default: chr12:112200000:112250000:GRCh37
+  * default: chr12:111766888:111817532:GRCh38
 
 ## Endpoint
 

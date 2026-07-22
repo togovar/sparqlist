@@ -5,7 +5,11 @@
 * `tgv_id` TogoVar ID
   * example: tgv47264307
 * `variant` VCF representation (CHROM-POS-REF-ALT)
-  * example: 12-111803962-G-A
+  * example:
+    * 12-111803962-G-A
+    * 12:111803962:G>A
+    * chr12-111803962-G-A
+    * chr12:111803962:G>A
 
 ## `tgv_id`
 
