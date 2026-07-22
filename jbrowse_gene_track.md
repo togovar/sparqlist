@@ -3,7 +3,7 @@
 ## Parameters
 
 * `query` {chromosome}:{start}:{end}:{assembly}
-  * default: 12:112200000:112250000:GRCh37
+  * default: chr12:112200000:112250000:GRCh37
 
 ## Endpoint
 
@@ -14,7 +14,7 @@
 ```javascript
 ({
   json({query}) {
-    return query.match(/^([1-9]|1[0-9]|2[0-2]|X|Y|MT):(\d+):(\d+):(GRCh\d+)/).slice(1,5);
+    return query.match(/^chr([1-9]|1[0-9]|2[0-2]|X|Y|MT):(\d+):(\d+):(GRCh\d+)/).slice(1,5);
   }
 })
 ```
