@@ -57,13 +57,23 @@ WHERE {
 ## `clinvar`
 ```javascript
 async ({SPARQLIST_TOGOVAR_SPARQLIST, SPARQLIST_TOGOVAR_APP, hgnc_id})=>{
-  const clinvar = await fetch("/sparqlist/api/gene_clinvar?hgnc_id=" + hgnc_id, {
+  if (!String(hgnc_id).match(/^\d+$/)) return [];
+
+  const res = await fetch(SPARQLIST_TOGOVAR_SPARQLIST.concat("/api/gene_clinvar?hgnc_id=", encodeURIComponent(hgnc_id)), {
     headers: {
       Accept: 'application/json',
       'Content-Type': 'application/json',
     },
-  }).then(res => res.json());
-  return clinvar;
+  });
+
+  if (!res.ok) return [];
+
+  try {
+    const clinvar = await res.json();
+    return Array.isArray(clinvar) ? clinvar : [];
+  } catch (error) {
+    return [];
+  }
 }
 ```
 
@@ -162,20 +172,22 @@ function get_clinvar(tgv_id, rs_id, clinvars_by_gene) {
 }
 
 async ({SPARQLIST_TOGOVAR_SPARQLIST, SPARQLIST_TOGOVAR_APP, mogplus_ver, symbol, range, clinvar})=>{
-  if (! symbol.results.bindings[0]) return "Gene symbol not found or invalid.";
-  if (! range.results.bindings[0]) return "Genomic position not found for gene symbol " + symbol.results.bindings[0];
+  if (!String(mogplus_ver).match(/^mogplus(3|21)$/)) return [];
+  if (! symbol.results.bindings[0]) return [];
+  if (! range.results.bindings[0]) return [];
 
   const chr = range.results.bindings[0].chr.value.replace("http://identifiers.org/hco/", "").replace("/GRCh38","");
   const begin  = range.results.bindings[0].begin.value;
   const end    = range.results.bindings[0].end.value;  
 
   // make strain list
-  const strain2id = await fetch("/sparqlist/api/mouse_strain?strain_id=&strain=all", {
+  const strain2id_res = await fetch(SPARQLIST_TOGOVAR_SPARQLIST.concat("/api/mouse_strain?strain_id=&strain=all"), {
     headers: {
       Accept: 'application/json',
       'Content-Type': 'application/json',
     },
-  }).then(res => res.json());
+  });
+  const strain2id = strain2id_res.ok ? await strain2id_res.json() : {};
 
   // convert strand
   const conv_nt = (strand, nt) => {
@@ -209,11 +221,12 @@ async ({SPARQLIST_TOGOVAR_SPARQLIST, SPARQLIST_TOGOVAR_APP, mogplus_ver, symbol,
       hsa2mmu[hsa_pos] = mmu_pos;
     }
   }
-  if (!mmu_start) return "Liftover position not found";
+  if (!mmu_start) return [];
 
   // MoG+ GRCm389(mm39) variants
   const options = {method: 'GET', headers: {'Accept': 'application/json'}};
-  const mmu_strains = await fetch("/sparqlist/api/mouse_strain?strain_id=all", options).then(d => d.json());
+  const mmu_strains_res = await fetch(SPARQLIST_TOGOVAR_SPARQLIST.concat("/api/mouse_strain?strain_id=all"), options);
+  const mmu_strains = mmu_strains_res.ok ? await mmu_strains_res.json() : {};
   let strain_ids = [];
   for (const d of Object.keys(mmu_strains)) {
     if ((mmu_strains[d].category == "mogplus3" && mogplus_ver == "mogplus21")
@@ -232,7 +245,7 @@ async ({SPARQLIST_TOGOVAR_SPARQLIST, SPARQLIST_TOGOVAR_APP, mogplus_ver, symbol,
   const mogp_res = mogp.split(/\n/);
   let pos_list = mogp_res[0].split(/\t/);
   let var_list = mogp_res[1].split(/\t/);
-  if (!pos_list[1]) return "MoG+ variant not found";
+  if (!pos_list[1]) return [];
 
   let mmu_var_pos = {};
   let col2pos = [];
