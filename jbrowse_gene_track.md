@@ -15,7 +15,7 @@
 ({
   json({query}) {
     const regex = /^(chr)?(?<chr>[1-9]|1[0-9]|2[0-2]|X|Y|MT?):(?<start>\d+):(?<stop>\d+):(?<assembly>GRCh\d+)$/;
-    const match = variant.match(regex);
+    const match = query.match(regex);
 
     return [match.groups.chr, match.groups.start, match.groups.stop, match.groups.assembly];
   }
