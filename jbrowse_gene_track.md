@@ -14,7 +14,10 @@
 ```javascript
 ({
   json({query}) {
-    return query.match(/^chr([1-9]|1[0-9]|2[0-2]|X|Y|MT):(\d+):(\d+):(GRCh\d+)/).slice(1,5);
+    const regex = /^(chr)?(?<chr>[1-9]|1[0-9]|2[0-2]|X|Y|MT?):(?<start>\d+):(?<stop>\d+):(?<assembly>GRCh\d+)$/;
+    const match = variant.match(regex);
+
+    return [match.groups.chr, match.groups.start, match.groups.stop, match.groups.assembly];
   }
 })
 ```
