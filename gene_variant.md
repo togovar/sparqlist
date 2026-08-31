@@ -78,17 +78,6 @@ async ({SPARQLIST_TOGOVAR_APP, hgnc_id, offset}) => {
     SO_0002007: "MNV",
   };
 
-  const siftRank = {
-    deleterious: { key: "D" },
-    tolerated: { key: "T" },
-  };
-
-  const polyphenRank = {
-    probably_damaging: { key: "PROBD" },
-    possibly_damaging: { key: "POSSD" },
-    benign: { key: "B" },
-  };
-
   const consequenceLabel = {
     SO_0001893: { label: "Transcript ablation", order: 1 },
     SO_0001574: { label: "Splice acceptor variant", order: 2 },
@@ -178,15 +167,33 @@ async ({SPARQLIST_TOGOVAR_APP, hgnc_id, offset}) => {
     association_not_found: "AN",
   };
 
+  const caddRank = {
+    P20: { key: "P20" },
+    P10: { key: "P10" },
+    P0: { key: "P0" },
+  };
+
+  const alphamissenseRank = {
+    likely_pathogenic: { key: "LP" },
+    ambiguous: { key: "AMBIGUOUS" },
+    likely_benign: { key: "LB" },
+  };
+
+  const siftRank = {
+    deleterious: { key: "D" },
+    tolerated: { key: "T" },
+  };
+
+  const polyphenRank = {
+    probably_damaging: { key: "PROBD" },
+    possibly_damaging: { key: "POSSD" },
+    benign: { key: "B" },
+  };
+
   const fractionDigits3 = new Intl.NumberFormat("en", {
     minimumFractionDigits: 3,
     maximumFractionDigits: 3,
   });
-
-  const formatRefAlt = (sequence) => {
-    const value = sequence || "";
-    return value.substring(0, 4) + (value.length > 4 ? "..." : "");
-  };
 
   const escapeAttribute = (value) => {
     return String(value)
@@ -225,6 +232,21 @@ async ({SPARQLIST_TOGOVAR_APP, hgnc_id, offset}) => {
     minimumFractionDigits: 4,
     maximumFractionDigits: 4,
   });
+
+  const formatDbSnpLinks = (values) => {
+    return (values || [])
+      .filter((id) => String(id).match(/^rs\d+$/))
+      .map((id) => {
+        const rsId = String(id);
+        return `<a class="hyper-text -external dbsnp-link" href="https://identifiers.org/dbsnp/${encodeURIComponent(rsId)}" target="_blank" rel="noopener noreferrer">${escapeAttribute(rsId)}</a>`;
+      })
+      .join(", ");
+  };
+
+  const formatRefAlt = (sequence) => {
+    const value = sequence || "";
+    return value.substring(0, 4) + (value.length > 4 ? "..." : "");
+  };
 
   const resolveFrequencyLevel = (alleleCount, alleleFrequency) => {
     if (Number.isNaN(alleleCount)) return "na";
@@ -331,16 +353,6 @@ async ({SPARQLIST_TOGOVAR_APP, hgnc_id, offset}) => {
       .join("")}</div>`;
   };
 
-  const formatDbSnpLinks = (values) => {
-    return (values || [])
-      .filter((id) => String(id).match(/^rs\d+$/))
-      .map((id) => {
-        const rsId = String(id);
-        return `<a class="hyper-text -external dbsnp-link" href="https://identifiers.org/dbsnp/${encodeURIComponent(rsId)}" target="_blank" rel="noopener noreferrer">${escapeAttribute(rsId)}</a>`;
-      })
-      .join(", ");
-  };
-
   const formatConsequences = (values) => {
     const items = values
       .map((id) => {
@@ -362,33 +374,6 @@ async ({SPARQLIST_TOGOVAR_APP, hgnc_id, offset}) => {
     return `<div class="remains-content" data-consequences="${escapeAttribute(JSON.stringify(consequenceLabels))}"><div class="consequence-item">${escapeAttribute(items[0].label)}</div><span class="remains-badge" data-remains="${remains}">${remainsLabel}</span></div>`;
   };
 
-  const formatSift = (value) => {
-    const numericValue = toNumericValue(value);
-    if (Number.isNaN(numericValue)) {
-      return "";
-    }
-
-    const rank =
-      numericValue >= 0.05 ? siftRank.tolerated : siftRank.deleterious;
-    return `<span class="variant-function" data-function="${rank.key}">${fractionDigits3.format(numericValue)}</span>`;
-  };
-
-  const formatPolyphen = (value) => {
-    const numericValue = toNumericValue(value);
-    if (Number.isNaN(numericValue)) {
-      return "";
-    }
-
-    const rank =
-      numericValue > 0.908
-        ? polyphenRank.probably_damaging
-        : numericValue > 0.446
-          ? polyphenRank.possibly_damaging
-          : polyphenRank.benign;
-
-    return `<span class="variant-function" data-function="${rank.key}">${fractionDigits3.format(numericValue)}</span>`;
-  };
-
   const formatSignificance = (values) => {
     return (values || [])
       .flatMap((item) => item.interpretations || [])
@@ -405,6 +390,65 @@ async ({SPARQLIST_TOGOVAR_APP, hgnc_id, offset}) => {
       })
       .filter(Boolean)
       .join("<br>");
+  };
+
+  const formatRankedScore = (value, resolveRank) => {
+    const numericValue = toNumericValue(value);
+    if (Number.isNaN(numericValue)) {
+      return "";
+    }
+
+    const rank = resolveRank(numericValue);
+    return `<span class="variant-function" data-function="${rank.key}">${fractionDigits3.format(numericValue)}</span>`;
+  };
+
+  const formatCadd = (value) =>
+    formatRankedScore(value, (numericValue) =>
+      numericValue >= 20
+        ? caddRank.P20
+        : numericValue >= 10
+          ? caddRank.P10
+          : caddRank.P0,
+    );
+
+  const formatAlphamissense = (value) =>
+    formatRankedScore(value, (numericValue) =>
+      numericValue > 0.564
+        ? alphamissenseRank.likely_pathogenic
+        : numericValue >= 0.34
+          ? alphamissenseRank.ambiguous
+          : alphamissenseRank.likely_benign,
+    );
+
+  const formatSift = (value) =>
+    formatRankedScore(value, (numericValue) =>
+      numericValue >= 0.05 ? siftRank.tolerated : siftRank.deleterious,
+    );
+
+  const formatPolyphen = (value) =>
+    formatRankedScore(value, (numericValue) =>
+      numericValue > 0.908
+        ? polyphenRank.probably_damaging
+        : numericValue > 0.446
+          ? polyphenRank.possibly_damaging
+          : polyphenRank.benign,
+    );
+
+  const formatSscvDb = (values, links) => {
+    return (values || [])
+      .map((item, index) => {
+        const label = item?.predicted_splicing_type;
+        const xref = links?.[index]?.xref;
+        if (!label) {
+          return "";
+        }
+        const nowrapLabel = escapeAttribute(label).replace(/ /g, "&nbsp;");
+        return xref
+          ? `<a class="hyper-text -external sscv-link" href="${escapeAttribute(xref)}" target="_blank" rel="noopener noreferrer">${nowrapLabel}</a>`
+          : nowrapLabel;
+      })
+      .filter(Boolean)
+      .join(", ");
   };
 
   return data.flatMap((variant) => {
@@ -441,6 +485,10 @@ async ({SPARQLIST_TOGOVAR_APP, hgnc_id, offset}) => {
       }
 
       const significance = formatSignificance(variant.significance);
+      const sscvDb = formatSscvDb(
+        variant.sscv_db,
+        variant.external_links?.sscv_db,
+      );
 
       return [
         {
@@ -458,9 +506,12 @@ async ({SPARQLIST_TOGOVAR_APP, hgnc_id, offset}) => {
           symbols: symbols,
           frequencies: frequencies,
           consequence: formatConsequences(consequences),
+          significance: significance,
+          cadd_phred: formatCadd(variant.cadd_phred),
+          alphamissense: formatAlphamissense(variant.alphamissense),
           sift: formatSift(variant.sift),
           polyphen: formatPolyphen(variant.polyphen),
-          significance: significance,
+          sscv_db: sscvDb,
         },
       ];
     } catch (error) {
