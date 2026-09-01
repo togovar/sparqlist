@@ -259,6 +259,7 @@ async ({hgnc_id, togovar_api, uniprot, ensp, pdb_align, pdb_str})=>{
     const togovar = await fetch(togovar_api, tgv_opt).then(res => res.json());
     filtered = togovar.statistics?.filtered;
     if (filtered == 0) break;
+    if (togovar.data.length == 0) break;
     if (togovar.data) {
       for (const v of togovar.data) {
         let id = "";
