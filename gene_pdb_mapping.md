@@ -234,7 +234,7 @@ async ({hgnc_id, togovar_api, uniprot, ensp, pdb_align, pdb_str})=>{
     US: {label: "Uncertain significance", score: 7, color: 3},
     LB: {label: "Likely benign", score: 8, color: 4},
     B: {label: "Benign", score: 9, color: 5},
-    CC: {label: "Conflicting interpretations of pathogenicity", score: 10, color: 6},
+    CC: {label: "Conflicting classifications of pathogenicity", score: 10, color: 6},
     CI: {label: "Conflicting interpretations of pathogenicity", score: 10, color: 6}, // discon CI -> CC
     DR: {label: "Drug response", score: 11, color: 7},
     CS: {label: "Confers sensitivity", score: 12, color: 7},
