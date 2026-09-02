@@ -34,7 +34,7 @@ async ({SPARQLIST_TOGOVAR_SPARQLIST, variant, tgv_id}) => {
 }
 ```
 
-## `result`
+## `sparql_result`
 
 ```sparql
 PREFIX dct:  <http://purl.org/dc/terms/>
@@ -83,4 +83,85 @@ WHERE {
   }
 }
 ORDER BY ?transcript
+```
+
+## `result`
+
+```javascript
+async ({SPARQLIST_TOGOVAR_APP, variant, sparql_result}) => {
+  const match = String(variant).match(/^http:\/\/identifiers\.org\/hco\/(?<chr>[1-9]|1[0-9]|2[0-2]|X|Y|MT?)\/(?<reference>GRCh3[78])#(?<pos>\d+)-(?<ref>.+)-(?<alt>.+)$/);
+
+  if (!match || !match.groups) {
+    return sparql_result;
+  }
+
+  const position = Number.parseInt(match.groups.pos, 10);
+  if (!Number.isFinite(position)) {
+    return sparql_result;
+  }
+
+  if (!SPARQLIST_TOGOVAR_APP) {
+    return sparql_result;
+  }
+
+  let data;
+  try {
+    const res = await fetch(SPARQLIST_TOGOVAR_APP.concat("/api/search/variant?stat=0&data=1"), {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        query: {
+          variant: {
+            chromosome: match.groups.chr,
+            position: position,
+            reference: match.groups.ref,
+            alternate: match.groups.alt
+          }
+        },
+        offset: 0,
+        limit: 1
+      })
+    });
+
+    if (!res.ok) {
+      return sparql_result;
+    }
+
+    const json = await res.json();
+    data = Array.isArray(json.data) ? json.data[0] : null;
+  } catch (error) {
+    return sparql_result;
+  }
+
+  const maneSelectTranscripts = new Set(
+    (data?.transcripts || [])
+      .filter(transcript => transcript.mane_select === true)
+      .map(transcript => transcript.transcript_id)
+      .filter(Boolean)
+  );
+
+  if (maneSelectTranscripts.size === 0) {
+    return sparql_result;
+  }
+
+  if (!sparql_result.head.vars.includes("mane")) {
+    sparql_result.head.vars.push("mane");
+  }
+
+  for (const binding of sparql_result.results.bindings) {
+    const transcriptId = binding.enst_id?.value || String(binding.hgvs_c?.value || "").split(":")[0];
+
+    if (maneSelectTranscripts.has(transcriptId)) {
+      binding.mane = {
+        type: "literal",
+        value: "MANE_Select"
+      };
+    }
+  }
+
+  return sparql_result;
+}
 ```
