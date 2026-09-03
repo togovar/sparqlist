@@ -58,24 +58,26 @@ WHERE {
     OPTIONAL { ?_consequence tgvo:polyphen ?polyphen . }
     OPTIONAL { ?_consequence tgvo:alphamissense ?alpha_missense . }
     OPTIONAL { ?_consequence tgvo:cadd_phred ?cadd_phred . }
+    OPTIONAL { ?_consequence tgvo:hgvsp ?hgvs_p . }
+    OPTIONAL { ?_consequence tgvo:hgvsc ?hgvs_c . }
     OPTIONAL {
-      ?_consequence tgvo:hgvsp ?hgvs_p .
-    }
-    OPTIONAL {
-      ?_consequence tgvo:hgvsc ?hgvs_c .
-    }
-    OPTIONAL {
-      ?_consequence tgvo:transcript ?transcript .
+      ?_consequence tgvo:transcript ?_transcript .
       OPTIONAL {
         GRAPH <http://togovar.org/ensembl> {
-          ?transcript dct:identifier|dc11:identifier ?enst_id .
+          ?_transcript dct:identifier|dc11:identifier ?enst_id .
         }
       }
     }
+    BIND(
+      COALESCE(
+        ?_transcript,
+        URI(CONCAT("https://www.ncbi.nlm.nih.gov/nuccore/", STRBEFORE(STR(?hgvs_c), ":")))
+      ) AS ?transcript
+    )
     OPTIONAL {
       ?_consequence tgvo:gene_symbol ?gene_symbol ;
                     tgvo:gene_symbol_source ?_gene_symbol_source .
-      FILTER ( ?_gene_symbol_source IN ("HGNC", "EntrezGene") )
+      FILTER (?_gene_symbol_source IN ("HGNC", "EntrezGene"))
     }
     OPTIONAL {
       ?_consequence tgvo:hgnc ?gene_xref .
