@@ -42,7 +42,7 @@ WHERE {
       faldo:location/faldo:begin/faldo:position ?start ;
       faldo:location/faldo:end/faldo:position ?stop .
 
-    BIND(REPLACE(REPLACE(STR(?reference), hco:, ""), "#.*", "") AS ?chromosome)
+    BIND(CONCAT("chr", REPLACE(REPLACE(STR(?reference), hco:, ""), "#.*", "")) AS ?chromosome)
   }
   {{/if}}
 }
