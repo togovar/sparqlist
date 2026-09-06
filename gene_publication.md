@@ -24,20 +24,49 @@ Generate gene2pubmed table data by dbSNP ID
 
 ## `xref` Get ENSG_ID from HGNC_ID 
 
-```sparql
-PREFIX hgnc: <http://identifiers.org/hgnc/>
+```javascript
+async ({SPARQLIST_TOGOVAR_SPARQL, validated_hgnc_id}) => {
+  const emptyResult = {
+    head: { vars: ["xref"] },
+    results: { bindings: [] }
+  };
+
+  if (!validated_hgnc_id) {
+    return emptyResult;
+  }
+
+  const query = `
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 SELECT DISTINCT ?xref
 WHERE {
-  {{#if validated_hgnc_id}}
-  VALUES ?hgnc_uri { hgnc:{{validated_hgnc_id}} }
+  VALUES ?hgnc_uri { <http://identifiers.org/hgnc/${validated_hgnc_id}> }
 
   GRAPH <http://togovar.org/hgnc> {
-    ?hgnc_uri rdfs:seeAlso ?xref .    
+    ?hgnc_uri rdfs:seeAlso ?xref .
     FILTER STRSTARTS(STR(?xref), "http://identifiers.org/ensembl/")
   }
-  {{/if}}
+}`;
+
+  try {
+    const response = await fetch(SPARQLIST_TOGOVAR_SPARQL, {
+      method: "POST",
+      headers: {
+        "Accept": "application/sparql-results+json",
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body: "query=" + encodeURIComponent(query)
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch HGNC cross-references: HTTP " + response.status);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.log(error);
+    return emptyResult;
+  }
 }
 ```
 
@@ -51,10 +80,25 @@ WHERE {
 
 ## `pubtator_sparql` Get bibliography from PubMed for articles identified by PubTator 
 
-```sparql
+```javascript
+async ({SPARQLIST_TOGOVAR_SPARQL, ensembl_gene}) => {
+  const emptyResult = {
+    head: { vars: ["rs_id", "pmid", "title", "year", "authors", "journal"] },
+    results: { bindings: [] }
+  };
+  const ensemblGeneUris = ensembl_gene
+    .map(gene => String(gene))
+    .filter(gene => /^ENSG\d+(?:\.\d+)?$/.test(gene))
+    .map(gene => "<http://rdf.ebi.ac.uk/resource/ensembl/" + gene + ">")
+    .join(" ");
+
+  if (ensemblGeneUris.length === 0) {
+    return emptyResult;
+  }
+
+  const query = `
 PREFIX bibo: <http://purl.org/ontology/bibo/>
 PREFIX dct:  <http://purl.org/dc/terms/>
-PREFIX ensg: <http://rdf.ebi.ac.uk/resource/ensembl/>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
 PREFIX oa:   <http://www.w3.org/ns/oa#>
 PREFIX olo:  <http://purl.org/ontology/olo/core#>
@@ -63,7 +107,7 @@ PREFIX tgvo: <http://togovar.org/vocabulary/>
 
 SELECT DISTINCT ?rs_id ?pmid ?title ?year ?authors ?journal
 WHERE {
-  VALUES ?ens_gene { {{#each ensembl_gene}} ensg:{{this}} {{/each}} }
+  VALUES ?ens_gene { ${ensemblGeneUris} }
 
   GRAPH <http://togovar.org/variant/annotation/ensembl> {
     ?ens_gene ^tgvo:gene/^tgvo:hasConsequence/rdfs:seeAlso ?rs_id.
@@ -94,7 +138,28 @@ WHERE {
     BIND(IF(?length > 1, CONCAT(?author, " et al."), ?author) AS ?authors)
   }
 }
-ORDER BY DESC(?year)
+ORDER BY DESC(?year)`;
+
+  try {
+    const response = await fetch(SPARQLIST_TOGOVAR_SPARQL, {
+      method: "POST",
+      headers: {
+        "Accept": "application/sparql-results+json",
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body: "query=" + encodeURIComponent(query)
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch PubTator bibliography: HTTP " + response.status);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.log(error);
+    return emptyResult;
+  }
+}
 ```
 
 ## `bib_pubtator` Concatenate authors from Pubtator 
