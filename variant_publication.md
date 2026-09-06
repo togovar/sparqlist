@@ -129,16 +129,31 @@ async ({rs}) => {
 
 ## `pubmed_litvar_only` Get bibliography from PubMed for PMIDs included in LitVar only
 
-```sparql
-PREFIX bibo:   <http://purl.org/ontology/bibo/>
-PREFIX dct:    <http://purl.org/dc/terms/>
-PREFIX olo:    <http://purl.org/ontology/olo/core#>
-PREFIX foaf:   <http://xmlns.com/foaf/0.1/>
-PREFIX pubmed: <http://rdf.ncbi.nlm.nih.gov/pubmed/>
+```javascript
+async ({SPARQLIST_TOGOVAR_SPARQL, pmids_litvar_minus_pubtator}) => {
+  const emptyResult = {
+    head: { vars: ["pmid_uri", "pmid", "title", "year", "author", "author_index", "length", "journal"] },
+    results: { bindings: [] }
+  };
+  const pmidUris = pmids_litvar_minus_pubtator
+    .map(pmid => String(pmid))
+    .filter(pmid => /^\d+$/.test(pmid))
+    .map(pmid => "<http://rdf.ncbi.nlm.nih.gov/pubmed/" + pmid + ">")
+    .join(" ");
+
+  if (pmidUris.length === 0) {
+    return emptyResult;
+  }
+
+  const query = `
+PREFIX bibo: <http://purl.org/ontology/bibo/>
+PREFIX dct:  <http://purl.org/dc/terms/>
+PREFIX olo:  <http://purl.org/ontology/olo/core#>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
 
 SELECT DISTINCT ?pmid_uri ?pmid ?title ?year ?author ?author_index ?length ?journal
 WHERE {
-  VALUES ?pmid_uri { {{#each pmids_litvar_minus_pubtator}}pubmed:{{this}} {{/each}} }
+  VALUES ?pmid_uri { ${pmidUris} }
 
   GRAPH <http://togovar.org/pubmed> {
     ?pmid_uri bibo:pmid ?pmid ;
@@ -155,6 +170,27 @@ WHERE {
       olo:item/foaf:name ?author .
 
     FILTER(?author_index <= 3)
+  }
+}`;
+
+  try {
+    const response = await fetch(SPARQLIST_TOGOVAR_SPARQL, {
+      method: "POST",
+      headers: {
+        "Accept": "application/sparql-results+json",
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body: "query=" + encodeURIComponent(query)
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch PubMed bibliography: HTTP " + response.status);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.log(error);
+    return emptyResult;
   }
 }
 ```
