@@ -328,29 +328,33 @@ async function pmidsToPmcids(pmids, chunkSize = 300) {
   }
 
   for (let i = 0; i < pmids.length; i += chunkSize) {
-    const ids = pmids.slice(i, i + chunkSize);
-    const params =
-      "ids=" + encodeURIComponent(ids.join(",")) +
-      "&route=" + encodeURIComponent("pubmed,pmc") +
-      "&format=" + encodeURIComponent("json") +
-      "&report=" + encodeURIComponent("pair");
+    try {
+      const ids = pmids.slice(i, i + chunkSize);
+      const params =
+        "ids=" + encodeURIComponent(ids.join(",")) +
+        "&route=" + encodeURIComponent("pubmed,pmc") +
+        "&format=" + encodeURIComponent("json") +
+        "&report=" + encodeURIComponent("pair");
 
-    const res = await fetch(`${base}?${params}`);
-    if (!res.ok) {
-      throw new Error(`TogoID request failed: ${res.status} ${res.statusText}`);
-    }
-
-    const json = await res.json();
-    const results = Array.isArray(json?.results) ? json.results : [];
-
-    for (const pair of results) {
-      const [pmid, pmcid] = Array.isArray(pair)
-        ? pair
-        : [pair?.source ?? pair?.from ?? pair?.pmid, pair?.target ?? pair?.to ?? pair?.pmcid];
-
-      if (pmid && pmcid && map.has(String(pmid))) {
-        map.get(String(pmid)).push(String(pmcid));
+      const res = await fetch(`${base}?${params}`);
+      if (!res.ok) {
+        throw new Error(`TogoID request failed: ${res.status} ${res.statusText}`);
       }
+
+      const json = await res.json();
+      const results = Array.isArray(json?.results) ? json.results : [];
+
+      for (const pair of results) {
+        const [pmid, pmcid] = Array.isArray(pair)
+          ? pair
+          : [pair?.source ?? pair?.from ?? pair?.pmid, pair?.target ?? pair?.to ?? pair?.pmcid];
+
+        if (pmid && pmcid && map.has(String(pmid))) {
+          map.get(String(pmid)).push(String(pmcid));
+        }
+      }
+    } catch (error) {
+      console.log(error);
     }
   }
 
