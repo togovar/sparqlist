@@ -5,7 +5,7 @@ Generate rs2pubmed table data by dbSNP ID
 ## Parameters
 
 * `rs` dbSNP ID
-  * default: rs114202595
+  * default:
   * example: rs671(hit both), rs797044836(pubTatorCentral only), rs112750067(no hits)
 * `snippet_source` source for snippets
   * default: ncbi
