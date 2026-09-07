@@ -43,8 +43,9 @@ PREFIX gvo:   <http://genome-variation.org/resource#>
 PREFIX tgvo:  <http://togovar.org/vocabulary/>
 PREFIX rdfs:  <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX skos:  <http://www.w3.org/2004/02/skos/core#>
+PREFIX xsd:   <http://www.w3.org/2001/XMLSchema#>
 
-SELECT DISTINCT ?type ?reference ?position ?ref ?alt ?gene ?hgnc ?symbol ?approved_name
+SELECT DISTINCT ?type ?reference ?position ?ref ?alt ?gene ?hgnc ?symbol ?approved_name ?cadd_phred
 WHERE {
   VALUES ?variant { <{{variant}}> }
 
@@ -79,6 +80,17 @@ WHERE {
       ?hgnc rdfs:label ?symbol ;
         dct:description ?approved_name .
     }
+  }
+
+  OPTIONAL {
+    SELECT ?variant (MAX(xsd:decimal(?_cadd_phred)) AS ?cadd_phred)
+    WHERE {
+      VALUES ?variant { <{{variant}}> }
+      GRAPH <http://togovar.org/variant/annotation/ensembl> {
+        ?variant tgvo:hasConsequence/tgvo:cadd_phred ?_cadd_phred .
+      }
+    }
+    GROUP BY ?variant
   }
 }
 ```
