@@ -174,20 +174,21 @@ ORDER BY ?pos
 PREFIX gco: <http://purl.jp/bio/12/glyco/conjugate#>
 PREFIX faldo: <http://biohackathon.org/resource/faldo#>
 PREFIX sio: <http://semanticscience.org/resource/>
-SELECT DISTINCT ?pos (GROUP_CONCAT(DISTINCT ?gtc_id ; separator = ",") AS ?gtcs) (GROUP_CONCAT(DISTINCT ?db ; separator = ",") AS ?dbs)
+SELECT DISTINCT ?pos (GROUP_CONCAT(DISTINCT ?gtc_id ; separator = ",") AS ?gtcs)
 FROM <http://rdf.glycosmos.org/glycoprotein>
 FROM <http://rdf.glycosmos.org/glycans/seq>
 FROM <http://rdf.glycosmos.org/glycans/subsumption>
 WHERE{
   VALUES ?protein {<http://glycosmos.org/glycoprotein/{{id.uniprot}}>}
   ?protein gco:glycosylated_at ?glycosylated .
-  ?glycosylated sio:SIO_000772 ?db ;
-                faldo:location / faldo:position ?pos .
+  ?glycosylated faldo:location / faldo:position ?pos .
   OPTIONAL{
-    ?glycosylated gco:has_saccharide ?gtc .
+    ?glycosylated sio:SIO_000255 ?annotation .
+    ?annotation gco:has_saccharide ?gtc .
     BIND(STRAFTER(STR(?gtc), "http://rdf.glycoinfo.org/glycan/") AS ?gtc_id)
   }
 }
+GROUP BY ?pos
 ORDER BY ?pos
 ```
 
