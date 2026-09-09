@@ -176,8 +176,6 @@ PREFIX faldo: <http://biohackathon.org/resource/faldo#>
 PREFIX sio: <http://semanticscience.org/resource/>
 SELECT DISTINCT ?pos (GROUP_CONCAT(DISTINCT ?gtc_id ; separator = ",") AS ?gtcs)
 FROM <http://rdf.glycosmos.org/glycoprotein>
-FROM <http://rdf.glycosmos.org/glycans/seq>
-FROM <http://rdf.glycosmos.org/glycans/subsumption>
 WHERE{
   VALUES ?protein {<http://glycosmos.org/glycoprotein/{{id.uniprot}}>}
   ?protein gco:glycosylated_at ?glycosylated .
