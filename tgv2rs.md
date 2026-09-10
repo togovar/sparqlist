@@ -3,11 +3,30 @@
 ## Parameters
 
 * `tgv_id` TogoVar ID
-  * default: tgv47264307
+  * example: tgv47264307
 
 ## Endpoint
 
 {{SPARQLIST_TOGOVAR_SPARQL}}
+
+## `tgv_id`
+
+```javascript
+async ({tgv_id}) => {
+  const value = String(tgv_id || "").trim();
+  const regex = /^tgv\d+$/;
+
+  if (value.length === 0) {
+    return "";
+  }
+
+  if (value.match(regex)) {
+    return value;
+  }
+
+  throw new Error(`Invalid ID: ${tgv_id}`);
+}
+```
 
 ## `result`
 

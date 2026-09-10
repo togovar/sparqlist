@@ -1,12 +1,20 @@
 # TogoVar variant_publication stanza query
 
-Generate rs2pubmed table data by dbSNP ID
+Generate rs2pubmed table data by dbSNP ID, TogoVar ID, or VCF representation
+
+Exactly one of `rs`, `tgv_id`, or `variant` can be provided.
+
+When `tgv_id` or `variant` is provided and multiple dbSNP IDs are associated with the variant, the lowest numeric dbSNP ID is used.
 
 ## Parameters
 
 * `rs` dbSNP ID
   * default:
   * example: rs671(hit both), rs797044836(pubTatorCentral only), rs112750067(no hits)
+* `tgv_id` TogoVar ID
+  * example: tgv56616325
+* `variant` VCF representation (CHROM-POS-REF-ALT)
+  * example: 16-89196249-G-A
 * `snippet_source` source for snippets
   * default: ncbi
   * example: ncbi, pubannotation, hybrid, none
@@ -15,13 +23,101 @@ Generate rs2pubmed table data by dbSNP ID
 
 {{SPARQLIST_TOGOVAR_SPARQL}}
 
+## `rs`
+
+```javascript
+async ({SPARQLIST_TOGOVAR_SPARQL, SPARQLIST_TOGOVAR_SPARQLIST, rs, tgv_id, variant}) => {
+  const normalizeRs = value => {
+    const match = String(value || "").trim().match(/^(?:https?:\/\/identifiers\.org\/dbsnp\/)?(rs\d+)$/i);
+    return match ? match[1].toLowerCase() : "";
+  };
+
+  const fetchRs = async query => {
+    const res = await fetch(SPARQLIST_TOGOVAR_SPARQL, {
+      method: "POST",
+      headers: {
+        "Accept": "application/sparql-results+json",
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body: "query=" + encodeURIComponent(query)
+    });
+
+    if (!res.ok) {
+      throw new Error((await res.text()).replace(/^Error: /, ""));
+    }
+
+    const json = await res.json();
+    return normalizeRs(json?.results?.bindings?.[0]?.rs?.value);
+  };
+
+  const rsValue = String(rs || "").trim();
+  const tgvId = String(tgv_id || "").trim();
+  const variantValue = String(variant || "").trim();
+  const inputCount = [rsValue, tgvId, variantValue].filter(value => value.length > 0).length;
+
+  if (inputCount > 1) {
+    throw new Error("Only one of rs, tgv_id, or variant can be provided.");
+  }
+
+  if (rsValue.length > 0) {
+    const directRs = normalizeRs(rsValue);
+    if (directRs.length > 0) {
+      return directRs;
+    }
+
+    throw new Error(`Invalid dbSNP ID: ${rs}`);
+  }
+
+  if (tgvId.length === 0 && variantValue.length === 0) {
+    return "";
+  }
+
+  let params;
+  if (tgvId.length > 0) {
+    params = `tgv_id=${encodeURIComponent(tgvId)}`;
+  } else {
+    params = `variant=${encodeURIComponent(variantValue)}`;
+  }
+
+  const variantResponse = await fetch(SPARQLIST_TOGOVAR_SPARQLIST.concat(`/api/resolve_variant?${params}`));
+
+  if (!variantResponse.ok) {
+    throw new Error((await variantResponse.text()).replace(/^Error: /, ""));
+  }
+
+  const variantIri = await variantResponse.text();
+  const variantIriRegex = /^http:\/\/identifiers\.org\/hco\/(?:[1-9]|1[0-9]|2[0-2]|X|Y|MT?)\/[^<>"\s{}|^`\\]+#[^<>"\s{}|^`\\]+$/;
+  if (!variantIriRegex.test(variantIri)) {
+    throw new Error(`Invalid variant IRI: ${variantIri}`);
+  }
+
+  const query = `
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+
+SELECT DISTINCT ?rs
+WHERE {
+  GRAPH <http://togovar.org/variant/annotation/ensembl> {
+    <${variantIri}> rdfs:seeAlso ?rs .
+    FILTER STRSTARTS(STR(?rs), "http://identifiers.org/dbsnp/rs")
+    FILTER REGEX(STR(?rs), "^http://identifiers\\\\.org/dbsnp/rs[0-9]+$")
+  }
+
+  BIND(xsd:integer(STRAFTER(STR(?rs), "http://identifiers.org/dbsnp/rs")) AS ?rs_number)
+}
+ORDER BY ?rs_number
+LIMIT 1`;
+
+  return await fetchRs(query);
+}
+```
+
 ## `rs2pubtator` dbSNP ID to PubMed Info by Pubtator and PubMed
 
 ```sparql
 DEFINE sql:select-option "order"
 
 PREFIX bibo:  <http://purl.org/ontology/bibo/>
-PREFIX dbsnp: <http://identifiers.org/dbsnp/>
 PREFIX dct:   <http://purl.org/dc/terms/>
 PREFIX foaf:  <http://xmlns.com/foaf/0.1/>
 PREFIX oa:    <http://www.w3.org/ns/oa#>
@@ -30,7 +126,7 @@ PREFIX olo:   <http://purl.org/ontology/olo/core#>
 SELECT DISTINCT ?pmid_uri ?pmid ?title ?year ?author ?author_index ?length ?journal
 WHERE {
   GRAPH <http://togovar.org/pubtator> {
-    dbsnp:{{rs}} ^oa:hasBody ?pubtator_node .
+    <http://identifiers.org/dbsnp/{{rs}}> ^oa:hasBody ?pubtator_node .
 
     ?pubtator_node a oa:Annotation ;
       oa:hasTarget ?pmid_uri .
@@ -85,6 +181,10 @@ WHERE {
 
 ```javascript
 async ({rs}) => {
+  if (!/^rs\d+$/i.test(String(rs || ""))) {
+    return [];
+  }
+
   try {
     const res = await fetch("https://www.ncbi.nlm.nih.gov/research/litvar2-api/variant/get/litvar%40" + rs + "%23%23/publications?format=json", {
       method: 'GET',
