@@ -76,5 +76,5 @@ WHERE {
     FILTER(?db IN ("MedGen"))
   }
 }
-ORDER BY ?title ?review_status ?interpretation DESC(?last_evaluated) ?condition
+ORDER BY ?title ?vcv_review_status ?rcv_review_status ?interpretation DESC(?last_evaluated) ?condition
 ```
