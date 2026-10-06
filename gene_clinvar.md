@@ -56,11 +56,13 @@ WHERE {
 
   GRAPH <http://togovar.org/variant> {
     ?variant dct:identifier ?tgv_id .
+    FILTER REGEX(?tgv_id, "^tgv")
   }
   
-  GRAPH <http://togovar.org/variant/annotation/clinvar> {
+  # TODO: http://togovar.org/variant/clinvar
+  GRAPH <http://togovar.org/variant> {
     ?variant dct:identifier ?variation_id .
-
+    FILTER REGEX(?variation_id, "^[0-9]+$")
     BIND(IRI(CONCAT("http://ncbi.nlm.nih.gov/clinvar/variation/", ?variation_id)) AS ?clinvar)
   }
 

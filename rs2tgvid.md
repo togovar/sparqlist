@@ -34,6 +34,7 @@ WHERE {
 
   GRAPH <http://togovar.org/variant> {
     ?variant dct:identifier ?tgv_id .
+    FILTER REGEX(?tgv_id, "^tgv")
   }
 }
 ```

@@ -19,6 +19,7 @@ PREFIX obo: <http://purl.obolibrary.org/obo/>
 PREFIX dct: <http://purl.org/dc/terms/>
 PREFIX hgnc: <http://identifiers.org/hgnc/>
 PREFIX tgvo: <http://togovar.org/vocabulary/>
+
 SELECT DISTINCT ?symbol
 WHERE {
   VALUES ?hgnc_uri { hgnc:{{hgnc_id}} }
@@ -39,6 +40,7 @@ PREFIX obo: <http://purl.obolibrary.org/obo/>
 PREFIX faldo: <http://biohackathon.org/resource/faldo#>
 PREFIX so: <http://purl.obolibrary.org/obo/so#>
 PREFIX tax: <http://identifiers.org/taxonomy/>
+
 SELECT DISTINCT ?chr (MIN(?b) AS ?begin) (MAX(?e) AS ?end)
 FROM <http://rdfportal.org/dataset/ensembl>
 WHERE {

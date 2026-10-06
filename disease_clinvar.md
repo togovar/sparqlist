@@ -53,12 +53,14 @@ WHERE {
     FILTER(?dbname IN ("dbSNP"))
   }
 
-  GRAPH <http://togovar.org/variant/annotation/clinvar> {
+  # TODO: http://togovar.org/variant/clinvar
+  GRAPH <http://togovar.org/variant> {
     ?variant dct:identifier ?variation_id .
   }
 
   GRAPH <http://togovar.org/variant> {
     ?variant dct:identifier ?tgv_id .
+    FILTER REGEX(?tgv_id, "^tgv")
   }
 }
 ORDER BY ?title ?review_status ?interpretation DESC(?last_evaluated) ?condition
