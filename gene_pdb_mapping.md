@@ -98,7 +98,7 @@ https://rdfportal.org/pdb/sparql
 * UniProt と PDB cahin の alignment 位置関係情報
   * 複数に分割される場合あり
 ```sparql
-PREFIX pdbo: <http://rdf.wwpdb.org/schema/pdbx-v50.owl#>
+PREFIX pdbo: <http://rdf.wwpdb.org/schema/pdbx-with-vrptx-v50.owl#>
 PREFIX dct: <http://purl.org/dc/terms/>
 PREFIX up: <http://purl.uniprot.org/uniprot/>
 SELECT DISTINCT ?pdb ?db_align_begin ?auth_align_begin ?auth_align_end ?resolution_high ?rfree ?rwork ?date (GROUP_CONCAT(DISTINCT ?chain_id ;  separator=',') AS ?chains)
@@ -106,7 +106,7 @@ WHERE {
 {{#if ensp.id}}
   ?entry dct:identifier ?pdb ;
          pdbo:has_pdbx_audit_revision_historyCategory/pdbo:has_pdbx_audit_revision_history [
-           pdbo:pdbx_audit_revision_history.ordinal "1" ;
+           pdbo:pdbx_audit_revision_history.ordinal 1 ;
            pdbo:pdbx_audit_revision_history.revision_date ?date 
          ] ;
          pdbo:has_entityCategory/pdbo:has_entity [
