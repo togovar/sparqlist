@@ -91,22 +91,16 @@ PREFIX : <https://dbcls.github.io/ncbigene-rdf/ontology.ttl#>
 SELECT DISTINCT ?human ?human_label ?mouse ?mouse_label
 WHERE {
 {{#if gene.is_human}}
-  ncbigene:{{gene.ncbigene}} orth:hasOrtholog+ ?mouse ;
-                             :taxid taxid:9606 ;
-                             rdfs:label ?human_label .
-  ?mouse :taxid taxid:10090 ;
-         rdfs:label ?mouse_label .
-  BIND(ncbigene:{{gene.ncbigene}} AS ?human)
+  VALUES ?human { ncbigene:{{gene.ncbigene}} }
 {{/if}}
 {{#if gene.is_mouse}}
-  ?human orth:hasOrtholog+ ncbigene:{{gene.ncbigene}} ;
+  VALUES ?mouse { ncbigene:{{gene.ncbigene}} }
+{{/if}}
+  ?human orth:hasOrtholog+ ?mouse ;
          :taxid taxid:9606 ;
          rdfs:label ?human_label .
-  ncbigene:{{gene.ncbigene}} :taxid taxid:10090 ;
-                             rdfs:label ?mouse_label .
-  BIND(ncbigene:{{gene.ncbigene}} AS ?mouse)
-{{/if}}
-  FILTER(BOUND(?human))
+  ?mouse :taxid taxid:10090 ;
+         rdfs:label ?mouse_label .
 }
 ```
 
@@ -389,10 +383,17 @@ WHERE {
 
   //// ---- the genes themselves ---------------------------------------------
   const window_of = (own, other) => {
-    const p = own.flatMap(d => [d.cre_start, d.cre_end])
-      .concat(other.flatMap(d => [d.lift_start, d.lift_end]).filter(x => x != null))
+    const chrom = (own.find(d => d.cre_chrom) || {}).cre_chrom;
+    // Only positions on this track's own chromosome. A lifted position can land
+    // on another one -- the hg38-to-mm39 chain puts part of BRCA1 on mouse
+    // chr8, a duplicated region -- and mixing that in stretched the mouse
+    // window from 27 kb to 5 Mb, far enough that the annotation call came back
+    // truncated with the gene itself cut off.
+    const p = own.filter(d => d.cre_chrom == chrom).flatMap(d => [d.cre_start, d.cre_end])
+      .concat(other.filter(d => d.lift_chr == chrom).flatMap(d => [d.lift_start, d.lift_end]))
       .filter(x => x != null).map(Number);
-    return p.length ? [Math.min(...p), Math.max(...p)] : null;
+    if (!p.length) return null;
+    return [p.reduce((a, b) => Math.min(a, b)), p.reduce((a, b) => Math.max(a, b))];
   };
   const sequence_of = (list) => (list.find(d => d.cre_sequence) || {}).cre_sequence;
   const h_win = window_of(human_cre, mouse_cre);
