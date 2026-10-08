@@ -101,6 +101,7 @@ WHERE {
          rdfs:label ?human_label .
   ?mouse :taxid taxid:10090 ;
          rdfs:label ?mouse_label .
+  FILTER(BOUND(?human))
 }
 ```
 
