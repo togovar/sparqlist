@@ -73,14 +73,14 @@ async ({hgnc, mgi, ncbigene}) => {
 
 ## Endpoint
 
-https://spang.dbcls.jp/sparql
+https://rdfportal.org/ncbi/sparql
+* https://spang.dbcls.jp/sparql
 
 ## `orth`
 
-One query, no UNION: the entry gene's species is known by now, so the
-conditionals emit only the half that applies and the other half is never sent.
-The trailing filter is for the case where neither fires -- an empty `WHERE {}`
-returns one row with nothing bound rather than no rows at all.
+One query, no UNION: the entry gene's species is settled by the step above, so
+the conditionals pin whichever end it is and the other is looked up. Exactly one
+of them always fires.
 
 ```sparql
 PREFIX orth: <http://purl.org/net/orth#>
@@ -89,6 +89,7 @@ PREFIX ncbigene: <http://identifiers.org/ncbigene/>
 PREFIX : <https://dbcls.github.io/ncbigene-rdf/ontology.ttl#>
 
 SELECT DISTINCT ?human ?human_label ?mouse ?mouse_label
+FROM <http://rdfportal.org/dataset/ncbigene>
 WHERE {
 {{#if gene.is_human}}
   VALUES ?human { ncbigene:{{gene.ncbigene}} }
@@ -101,7 +102,6 @@ WHERE {
          rdfs:label ?human_label .
   ?mouse :taxid taxid:10090 ;
          rdfs:label ?mouse_label .
-  FILTER(BOUND(?human))
 }
 ```
 
@@ -429,6 +429,7 @@ PREFIX ncbigene: <http://identifiers.org/ncbigene/>
 PREFIX : <https://dbcls.github.io/ncbigene-rdf/ontology.ttl#>
 
 SELECT DISTINCT ?human ?human_label ?mouse ?mouse_label
+FROM <http://rdfportal.org/dataset/ncbigene>
 WHERE {
   VALUES ?human { {{cre.human_tf}} }
   ?human orth:hasOrtholog+ ?mouse ;
