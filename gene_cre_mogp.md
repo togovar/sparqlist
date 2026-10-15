@@ -61,7 +61,7 @@ somewhere else in the genome, and gets the unpaired row instead.
 
 ## `sequence`
 ```javascript
-async ({ranges, mmu_ranges, range, mmu_range, merge_gap, max_window, mogplus_ver, togocoord}) => {
+async ({SPARQLIST_TOGOVAR_APP, ranges, mmu_ranges, range, mmu_range, merge_gap, max_window, mogplus_ver, togocoord}) => {
   const base = (togocoord || "https://togocoord.dbcls.jp/").replace(/\/*$/, "/");
   const gap = Number(merge_gap ?? 1000);
   // A ceiling on how wide one MoG+ query may get. Real CRE windows come to a
@@ -277,12 +277,13 @@ async ({ranges, mmu_ranges, range, mmu_range, merge_gap, max_window, mogplus_ver
   await Promise.all(windows.map(async (w) => {
     // The two are independent, and a window with no MoG+ variant must still
     // fetch its human variants.
+    const mogplus_api = "https://molossinus.brc.riken.jp/" + mogplus + "/variantTable/?";
+    const togovar_api = SPARQLIST_TOGOVAR_APP + "/api/search/gene_annotation?query=";
+    const togovar_options = {method: 'GET', headers: {'Accept': 'text/tab-separated-values'}};
     const [mog, tgv] = await Promise.all([
-      fetch("https://molossinus.brc.riken.jp/" + mogplus + "/variantTable/?" + strain_param
-        + "&chrName=" + w.mmu.chr + "&chrStart=" + w.mmu.start + "&chrEnd=" + w.mmu.end
+      fetch(mogplus_api + strain_param + "&chrName=" + w.mmu.chr + "&chrStart=" + w.mmu.start + "&chrEnd=" + w.mmu.end
         + "&seqType=genome&geneNameSearchText=&index=submit&presentType=dwnld").then(d => d.text()),
-      Promise.all(w.hsa.map(h => fetch("https://sparql-support.dbcls.jp/api/getTogoVarGeneAnn?q="
-        + h.chr + ":" + h.start + "-" + h.end).then(d => d.text())))
+      Promise.all(w.hsa.map(h => fetch(togovar_api + h.chr + ":" + h.start + "-" + h.end, togovar_options).then(d => d.text())))
     ]);
     w.togovar = tgv.join("\n");
     const rows = mog.split(/\n/);
