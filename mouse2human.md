@@ -4,14 +4,9 @@
 
 * `mouse_range`
   * example: chr5:121702449-121731689
-* `togovar_stg` : staging
-  * default: grch38
-  * example: grch38
 * `mogplus_ver` : version
   * default: mogplus21
   * example: mogplus3
-* `mogplus_strain_api`
-  * default: https://grch38.togovar.org/sparqlist/api/mouse_strain
 
 ## `range`
 ```javascript
@@ -41,14 +36,14 @@ async ({mouse_range}) => {
 
 ## `sequence`
 ```javascript
-async ({togovar_stg, mogplus_ver, mogplus_strain_api, range})=>{
+async ({SPARQLIST_TOGOVAR_SPARQLIST, SPARQLIST_TOGOVAR_APP, mogplus_ver, range})=>{
   if (! range.chr) return "Gneome position not found";
   const chr    = range.chr.replace("chr", "");
   const begin  = range.begin;
   const end    = range.end;
 
   // make strain list
-  const strain2id = await fetch(mogplus_strain_api + "?strain=all", {
+  const strain2id = await fetch(SPARQLIST_TOGOVAR_SPARQLIST + "/api/mouse_strain?strain=all", {
     headers: {
       Accept: 'application/json',
       'Content-Type': 'application/json',
@@ -63,11 +58,12 @@ async ({togovar_stg, mogplus_ver, mogplus_strain_api, range})=>{
     if (nt == "C") return "G";
     if (nt == "G") return "C";
   }
-  
-  let api = "https://sparql-support.dbcls.jp/api/getTogoVarGeneAnn?q=";
+ 
+  let api = SPARQLIST_TOGOVAR_APP + "/api/search/gene_annotation?query=";
   let position = chr + ":" + begin + "-" + end;
-  const togovar = await fetch(api + position).then(d=>d.text());
-
+  const togovar_options = {method: 'GET', headers: {'Accept': 'text/tab-separated-values'}};
+  const togovar = await fetch(api + position, togovar_options).then(d=>d.text());
+ 
 
   // 千葉さん API (UCSC chain file)
   // GRCh38 => GRCm39(mm39)
@@ -94,7 +90,7 @@ async ({togovar_stg, mogplus_ver, mogplus_strain_api, range})=>{
 
   // MoG+ GRCm389(mm39) variants
   const options = {method: 'GET', headers: {'Accept': 'application/json'}};
-  const mmu_strains = await fetch(mogplus_strain_api + "?strain_id=all", options).then(d => d.json());
+  const mmu_strains = await fetch(SPARQLIST_TOGOVAR_SPARQLIST + "/api/mouse_strain?strain_id=all", options).then(d => d.json());
   let strain_ids = [];
   for (const d of Object.keys(mmu_strains)) {
     if ((mmu_strains[d].category == "mogplus3" && mogplus_ver == "mogplus21")

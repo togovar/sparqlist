@@ -200,9 +200,10 @@ async ({SPARQLIST_TOGOVAR_SPARQLIST, SPARQLIST_TOGOVAR_APP, mogplus_ver, symbol,
     if (nt == "G") return "C";
   }
 
-  let api = "https://sparql-support.dbcls.jp/api/getTogoVarGeneAnn?q=";
+  let api = SPARQLIST_TOGOVAR_APP + "/api/search/gene_annotation?query=";
   let position = chr + ":" + begin + "-" + end;
-  const togovar = await fetch(api + position).then(d=>d.text());
+  const togovar_options = {method: 'GET', headers: {'Accept': 'text/tab-separated-values'}};
+  const togovar = await fetch(api + position, togovar_options).then(d=>d.text());
 
   // GRCh38 => GRCm39(mm39)  
   api = "https://orth.dbcls.jp/cgi-bin/liftOver/";
