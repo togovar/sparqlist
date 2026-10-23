@@ -53,8 +53,7 @@ WHERE {
     FILTER(?dbname IN ("dbSNP"))
   }
 
-  # TODO: http://togovar.org/variant/clinvar
-  GRAPH <http://togovar.org/variant> {
+  GRAPH <http://togovar.org/variant/clinvar> {
     ?variant dct:identifier ?variation_id .
   }
 
