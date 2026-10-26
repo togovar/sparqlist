@@ -50,8 +50,8 @@ WHERE {
 
   FILTER(?faldo_type IN (faldo:ForwardStrandPosition, faldo:ReverseStrandPosition, faldo:BothStrandsPosition))
   BIND(IF (?faldo_type = faldo:ForwardStrandPosition, 1, IF (?faldo_type = faldo:ReverseStrandPosition, -1, 0)) AS ?strand)
-  BIND(IF (?faldo_type = faldo:ReverseStrandPosition, ?gene_end_pos, ?gene_start_pos) AS ?gene_start)
-  BIND(IF (!(?faldo_type = faldo:ReverseStrandPosition), ?gene_end_pos, ?gene_start_pos) AS ?gene_end)
+  BIND(IF (?gene_start_pos <= ?gene_end_pos, ?gene_start_pos, ?gene_end_pos) AS ?gene_start)
+  BIND(IF (?gene_start_pos <= ?gene_end_pos, ?gene_end_pos, ?gene_start_pos) AS ?gene_end)
 
   FILTER(!(?gene_start > ?region_end || ?gene_end < ?region_start))
 
@@ -65,8 +65,8 @@ WHERE {
   ?feat_id faldo:location ?feat_loc .
   ?feat_loc faldo:begin/faldo:position ?feat_start_pos .
   ?feat_loc faldo:end/faldo:position ?feat_end_pos .
-  BIND(IF (?faldo_type = faldo:ReverseStrandPosition, ?feat_end_pos, ?feat_start_pos) AS ?feat_start)
-  BIND(IF (!(?faldo_type = faldo:ReverseStrandPosition), ?feat_end_pos, ?feat_start_pos) AS ?feat_end)
+  BIND(IF (?feat_start_pos <= ?feat_end_pos, ?feat_start_pos, ?feat_end_pos) AS ?feat_start)
+  BIND(IF (?feat_start_pos <= ?feat_end_pos, ?feat_end_pos, ?feat_start_pos) AS ?feat_end)
 
   # exon
   BIND("CDS" AS ?exon_type)
@@ -75,8 +75,8 @@ WHERE {
   ?exon_id faldo:location ?exon_loc .
   ?exon_loc faldo:begin/faldo:position ?exon_start_pos .
   ?exon_loc faldo:end/faldo:position ?exon_end_pos .
-  BIND(IF (?faldo_type = faldo:ReverseStrandPosition, ?exon_end_pos, ?exon_start_pos) AS ?exon_start)
-  BIND(IF (!(?faldo_type = faldo:ReverseStrandPosition), ?exon_end_pos, ?exon_start_pos) AS ?exon_end)
+  BIND(IF (?exon_start_pos <= ?exon_end_pos, ?exon_start_pos, ?exon_end_pos) AS ?exon_start)
+  BIND(IF (?exon_start_pos <= ?exon_end_pos, ?exon_end_pos, ?exon_start_pos) AS ?exon_end)
 
   OPTIONAL { ?gene_id dct:identifier ?gene_name . }
   OPTIONAL { ?gene_id rdfs:label ?gene_description . }
